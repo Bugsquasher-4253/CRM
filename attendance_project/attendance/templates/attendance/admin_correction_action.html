@@ -1,0 +1,114 @@
+{% extends 'attendance/base.html' %}
+{% block title %}Review Correction - AttendTrack{% endblock %}
+{% block page_title %}Review Correction Request{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-7">
+
+    <div class="d-flex align-items-center gap-3 mb-4">
+      <a href="{% url 'admin_corrections' %}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left me-1"></i>Back
+      </a>
+    </div>
+
+    <!-- Request Details -->
+    <div class="card mb-4" style="border-left:4px solid #BAF2BF;">
+      <div class="card-header py-3">
+        <i class="bi bi-person-exclamation me-2 text-warning"></i>Request from {{ correction.employee.user.get_full_name }}
+      </div>
+      <div class="card-body">
+        <div class="row g-3">
+          <div class="col-md-6">
+            <div class="text-muted small fw-semibold mb-1">EMPLOYEE</div>
+            <div class="fw-semibold">{{ correction.employee.user.get_full_name }}</div>
+            <div class="text-muted small">{{ correction.employee.employee_id }} · {{ correction.employee.designation }}</div>
+          </div>
+          <div class="col-md-6">
+            <div class="text-muted small fw-semibold mb-1">DATE</div>
+            <div class="fw-semibold">{{ correction.date|date:"l, d F Y" }}</div>
+          </div>
+          <div class="col-md-6">
+            <div class="text-muted small fw-semibold mb-1">REQUESTED CHECK-IN</div>
+            {% if correction.requested_check_in %}
+              <div class="fw-bold text-success fs-5">{{ correction.requested_check_in|time:"h:i A" }}</div>
+            {% else %}
+              <div class="text-muted">No change requested</div>
+            {% endif %}
+          </div>
+          <div class="col-md-6">
+            <div class="text-muted small fw-semibold mb-1">REQUESTED CHECK-OUT</div>
+            {% if correction.requested_check_out %}
+              <div class="fw-bold text-danger fs-5">{{ correction.requested_check_out|time:"h:i A" }}</div>
+            {% else %}
+              <div class="text-muted">No change requested</div>
+            {% endif %}
+          </div>
+          <div class="col-12">
+            <div class="text-muted small fw-semibold mb-1">REASON</div>
+            <div class="p-3 rounded" style="background:#f8f9fa;font-size:0.9rem;">{{ correction.reason }}</div>
+          </div>
+          <div class="col-12">
+            <div class="text-muted small">Submitted on {{ correction.created_at|date:"d M Y, h:i A" }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    {% if correction.status == 'pending' %}
+    <!-- Action -->
+    <div class="card">
+      <div class="card-header py-3">
+        <i class="bi bi-check2-square me-2 text-primary"></i>Your Decision
+      </div>
+      <div class="card-body">
+
+        <div class="d-flex gap-3 p-3 rounded mb-4" style="background:#e8f4fd;border-left:4px solid #1565c0;">
+          <i class="bi bi-info-circle text-primary fs-5 mt-1"></i>
+          <div style="font-size:0.85rem;color:#111827;">
+            <strong>Approve</strong> — The attendance record for {{ correction.date|date:"d M Y" }} will be automatically updated with the requested times.<br>
+            <strong>Reject</strong> — The attendance record stays unchanged. Employee is notified.
+          </div>
+        </div>
+
+        <form method="POST">
+          {% csrf_token %}
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Decision <span class="text-danger">*</span></label>
+            {{ form.status }}
+          </div>
+          <div class="mb-4">
+            <label class="form-label fw-semibold">Note for Employee <span class="text-muted fw-normal">(optional)</span></label>
+            {{ form.admin_note }}
+          </div>
+          <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary px-4">
+              <i class="bi bi-check-lg me-1"></i>Submit Decision
+            </button>
+            <a href="{% url 'admin_corrections' %}" class="btn btn-outline-secondary px-4">Cancel</a>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    {% else %}
+    <!-- Already actioned -->
+    <div class="card">
+      <div class="card-body">
+        <div class="d-flex align-items-center gap-3 p-3 rounded
+          {% if correction.status == 'approved' %}bg-success{% else %}bg-danger{% endif %} bg-opacity-10">
+          <i class="bi {% if correction.status == 'approved' %}bi-check-circle-fill text-success{% else %}bi-x-circle-fill text-danger{% endif %} fs-4"></i>
+          <div>
+            <div class="fw-bold">{{ correction.status|capfirst }} on {{ correction.updated_at|date:"d M Y" }}</div>
+            {% if correction.admin_note %}
+              <div class="text-muted small">Note: {{ correction.admin_note }}</div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+  </div>
+</div>
+{% endblock %}

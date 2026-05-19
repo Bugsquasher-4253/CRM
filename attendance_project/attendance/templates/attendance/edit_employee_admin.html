@@ -1,0 +1,149 @@
+{% extends 'attendance/base.html' %}
+{% block title %}Edit Employee - AttendTrack{% endblock %}
+{% block page_title %}Edit Employee{% endblock %}
+
+{% block content %}
+<div class="d-flex align-items-center gap-3 mb-4">
+  <a href="{% url 'employee_detail' employee.id %}" class="btn btn-outline-secondary btn-sm">
+    <i class="bi bi-arrow-left me-1"></i>Back
+  </a>
+  <div>
+    <h6 class="mb-0 fw-bold">{{ employee.user.get_full_name }}</h6>
+    <small class="text-muted">{{ employee.employee_id }} &middot; {{ employee.designation }}</small>
+  </div>
+</div>
+
+<form method="POST" enctype="multipart/form-data">
+{% csrf_token %}
+<div class="row g-4">
+
+  <!-- Account Details -->
+  <div class="col-lg-6">
+    <div class="card h-100">
+      <div class="card-header py-3">
+        <i class="bi bi-person-circle me-2 text-primary"></i>Account Details
+      </div>
+      <div class="card-body">
+        <div class="row g-3">
+          <div class="col-6">
+            <label class="form-label fw-semibold">First Name</label>
+            {{ form.first_name }}
+          </div>
+          <div class="col-6">
+            <label class="form-label fw-semibold">Last Name</label>
+            {{ form.last_name }}
+          </div>
+          <div class="col-12">
+            <label class="form-label fw-semibold">Email</label>
+            {{ form.email }}
+          </div>
+          <div class="col-12">
+            <label class="form-label fw-semibold">Username</label>
+            {{ form.username }}
+          </div>
+          <div class="col-12">
+            <div class="form-check mt-1">
+              {{ form.is_active_user }}
+              <label class="form-check-label fw-semibold ms-2" for="{{ form.is_active_user.id_for_label }}">
+                Account Active (can log in)
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Employee Details -->
+  <div class="col-lg-6">
+    <div class="card h-100">
+      <div class="card-header py-3">
+        <i class="bi bi-briefcase me-2 text-success"></i>Employee Details
+      </div>
+      <div class="card-body">
+        <div class="row g-3">
+          <div class="col-6">
+            <label class="form-label fw-semibold">Employee ID</label>
+            {{ form.employee_id }}
+          </div>
+          <div class="col-6">
+            <label class="form-label fw-semibold">Phone</label>
+            {{ form.phone }}
+          </div>
+          <div class="col-12">
+            <label class="form-label fw-semibold">Designation</label>
+            {{ form.designation }}
+          </div>
+          <div class="col-12">
+            <label class="form-label fw-semibold">Department</label>
+            {{ form.department }}
+          </div>
+          <div class="col-12">
+            <label class="form-label fw-semibold">Date Joined</label>
+            {{ form.date_joined }}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Documents -->
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header py-3">
+        <i class="bi bi-file-earmark-text me-2 text-warning"></i>Documents &amp; Profile Photo
+        <small class="text-muted fw-normal ms-2">(leave blank to keep existing)</small>
+      </div>
+      <div class="card-body">
+        <div class="row g-3">
+          <div class="col-md-4">
+            <label class="form-label fw-semibold">Profile Photo</label>
+            {{ form.profile_photo }}
+            {% if employee.profile_photo %}
+              <div class="mt-2">
+                <img src="{{ employee.profile_photo.url }}" alt="Current"
+                     style="width:50px;height:50px;border-radius:50%;object-fit:cover;border:2px solid #dee2e6;">
+                <small class="text-muted ms-2">Current photo</small>
+              </div>
+            {% endif %}
+          </div>
+          <div class="col-md-4">
+            <label class="form-label fw-semibold">Aadhaar Card</label>
+            {{ form.aadhaar_card }}
+            {% if employee.aadhaar_card %}
+              <div class="mt-1">
+                <a href="{{ employee.aadhaar_card.url }}" target="_blank" class="small text-primary">
+                  <i class="bi bi-file-earmark me-1"></i>View current
+                </a>
+              </div>
+            {% endif %}
+          </div>
+          <div class="col-md-4">
+            <label class="form-label fw-semibold">PAN Card</label>
+            {{ form.pan_card }}
+            {% if employee.pan_card %}
+              <div class="mt-1">
+                <a href="{{ employee.pan_card.url }}" target="_blank" class="small text-primary">
+                  <i class="bi bi-file-earmark me-1"></i>View current
+                </a>
+              </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Actions -->
+  <div class="col-12">
+    <div class="d-flex gap-2">
+      <button type="submit" class="btn btn-primary px-4">
+        <i class="bi bi-check-lg me-1"></i>Save Changes
+      </button>
+      <a href="{% url 'employee_detail' employee.id %}" class="btn btn-outline-secondary px-4">Cancel</a>
+    </div>
+  </div>
+
+</div>
+</form>
+{% endblock %}

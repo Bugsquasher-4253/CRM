@@ -1,0 +1,117 @@
+{% extends 'attendance/base.html' %}
+{% block title %}My Attendance - AttendTrack{% endblock %}
+{% block page_title %}My Attendance History{% endblock %}
+
+{% block content %}
+<!-- Filter Bar -->
+<div class="card mb-4">
+  <div class="card-body">
+    <form method="GET" class="row g-3 align-items-end">
+      <div class="col-md-4">
+        <label class="form-label fw-semibold">Month</label>
+        <select name="month" class="form-select">
+          {% for m, mname in months %}
+            <option value="{{ m }}" {% if m == month %}selected{% endif %}>{{ mname }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label fw-semibold">Year</label>
+        <select name="year" class="form-select">
+          {% for y in years %}
+            <option value="{{ y }}" {% if y == year %}selected{% endif %}>{{ y }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-4">
+        <button type="submit" class="btn btn-primary w-100">
+          <i class="bi bi-search me-2"></i>Filter
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Stats Row -->
+<div class="row g-3 mb-4">
+  <div class="col-md-4">
+    <div class="stat-card text-center">
+      <div class="icon mx-auto" style="background:#d4edda;">
+        <i class="bi bi-check-circle-fill text-success"></i>
+      </div>
+      <div style="font-size:2rem; font-weight:700; color:#155724;">{{ present }}</div>
+      <div class="text-muted">Present Days</div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="stat-card text-center">
+      <div class="icon mx-auto" style="background:#f8d7da;">
+        <i class="bi bi-x-circle-fill text-danger"></i>
+      </div>
+      <div style="font-size:2rem; font-weight:700; color:#721c24;">{{ absent }}</div>
+      <div class="text-muted">Absent Days</div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="stat-card text-center">
+      <div class="icon mx-auto" style="background:#fff3cd;">
+        <i class="bi bi-calendar-x-fill" style="color:#856404;"></i>
+      </div>
+      <div style="font-size:2rem; font-weight:700; color:#856404;">{{ leave }}</div>
+      <div class="text-muted">Leave Days</div>
+    </div>
+  </div>
+</div>
+
+<!-- Attendance Table -->
+<div class="card">
+  <div class="card-header py-3">
+    <i class="bi bi-table me-2"></i>Attendance for {{ month_name }} {{ year }}
+  </div>
+  <div class="card-body p-0">
+    <table class="table table-hover mb-0">
+      <thead style="background:#f8f9fa;">
+        <tr>
+          <th class="px-4 py-3">Date</th>
+          <th class="py-3">Day</th>
+          <th class="py-3">Check In</th>
+          <th class="py-3">Check Out</th>
+          <th class="py-3">Total Hours</th>
+          <th class="py-3">Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for record in records %}
+        <tr>
+          <td class="px-4 py-3 fw-semibold">{{ record.date|date:"d M Y" }}</td>
+          <td class="py-3 text-muted">{{ record.date|date:"D" }}</td>
+          <td class="py-3">
+            {% if record.check_in_time %}
+              <span class="text-success">{{ record.check_in_time|time:"h:i A" }}</span>
+            {% else %}<span class="text-muted">-</span>{% endif %}
+          </td>
+          <td class="py-3">
+            {% if record.check_out_time %}
+              <span class="text-danger">{{ record.check_out_time|time:"h:i A" }}</span>
+            {% else %}<span class="text-muted">-</span>{% endif %}
+          </td>
+          <td class="py-3">{{ record.total_hours|default:"-" }} {% if record.total_hours %}hrs{% endif %}</td>
+          <td class="py-3">
+            <span class="badge badge-{{ record.status }} px-3 py-2 rounded-pill">
+              {{ record.get_status_display }}
+            </span>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="6" class="text-center py-5 text-muted">
+            <i class="bi bi-calendar-x display-6 d-block mb-2"></i>
+            No attendance records for this month
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

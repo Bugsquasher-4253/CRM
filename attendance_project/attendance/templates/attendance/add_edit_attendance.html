@@ -1,0 +1,76 @@
+{% extends 'attendance/base.html' %}
+{% block title %}{{ title }} - AttendTrack{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-6">
+
+    <div class="d-flex align-items-center gap-3 mb-4">
+      <a href="{% url 'admin_attendance_records' %}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left me-1"></i>Back to Records
+      </a>
+    </div>
+
+    <div class="card">
+      <div class="card-header py-3">
+        <i class="bi bi-calendar2-plus me-2 text-primary"></i>{{ title }}
+      </div>
+      <div class="card-body">
+        <form method="POST">
+          {% csrf_token %}
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Employee <span class="text-danger">*</span></label>
+            {{ form.employee }}
+          </div>
+
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Date <span class="text-danger">*</span></label>
+              {{ form.date }}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Status <span class="text-danger">*</span></label>
+              {{ form.status }}
+            </div>
+          </div>
+
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Check In Time</label>
+              {{ form.check_in_time }}
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Check Out Time</label>
+              {{ form.check_out_time }}
+            </div>
+          </div>
+
+          <div class="mb-4">
+            <label class="form-label fw-semibold">Notes</label>
+            {{ form.notes }}
+          </div>
+
+          {% if form.non_field_errors %}
+            <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+          {% endif %}
+          {% for field in form %}
+            {% if field.errors %}
+              <div class="text-danger small mb-2">{{ field.label }}: {{ field.errors.0 }}</div>
+            {% endif %}
+          {% endfor %}
+
+          <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary px-4">
+              <i class="bi bi-check-lg me-1"></i>Save Record
+            </button>
+            <a href="{% url 'admin_attendance_records' %}" class="btn btn-outline-secondary px-4">Cancel</a>
+          </div>
+        </form>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

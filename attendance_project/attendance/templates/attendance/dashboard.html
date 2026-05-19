@@ -1,0 +1,146 @@
+{% extends 'attendance/base.html' %}
+{% block title %}My Dashboard - AttendTrack{% endblock %}
+{% block page_title %}My Dashboard{% endblock %}
+
+{% block content %}
+<div class="row g-4 mb-4">
+  <!-- Check In Card -->
+  <div class="col-md-6">
+    <div class="stat-card h-100">
+      <h5 class="fw-bold mb-4"><i class="bi bi-clock me-2 text-primary"></i>Today's Attendance</h5>
+      <div class="text-center py-3">
+        <div style="font-size:3rem;" id="clock">--:--:--</div>
+        <div class="text-muted mb-4">{{ today|date:"l, d F Y" }}</div>
+
+        {% if today_attendance %}
+          <div class="mb-3">
+            <span class="badge bg-success fs-6 px-3 py-2">
+              <i class="bi bi-check-circle me-1"></i>
+              Checked In: {{ today_attendance.check_in_time|time:"h:i A" }}
+            </span>
+          </div>
+          {% if today_attendance.check_out_time %}
+            <div class="mb-3">
+              <span class="badge bg-danger fs-6 px-3 py-2">
+                <i class="bi bi-x-circle me-1"></i>
+                Checked Out: {{ today_attendance.check_out_time|time:"h:i A" }}
+              </span>
+            </div>
+            {% if today_attendance.total_hours %}
+              <p class="text-muted">Total Hours Today: <strong>{{ today_attendance.total_hours }} hrs</strong></p>
+            {% endif %}
+            <p class="text-success fw-bold mt-2">Day Complete!</p>
+          {% else %}
+            <a href="{% url 'check_out' %}" class="btn btn-checkout btn-lg px-5 rounded-pill mt-2">
+              <i class="bi bi-box-arrow-right me-2"></i>Check Out
+            </a>
+          {% endif %}
+        {% else %}
+          <p class="text-muted mb-4">You haven't checked in yet today</p>
+          <a href="{% url 'check_in' %}" class="btn btn-checkin btn-lg px-5 rounded-pill">
+            <i class="bi bi-box-arrow-in-right me-2"></i>Check In Now
+          </a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Monthly Stats -->
+  <div class="col-md-6">
+    <div class="stat-card h-100">
+      <h5 class="fw-bold mb-4"><i class="bi bi-bar-chart me-2 text-success"></i>This Month's Summary</h5>
+      <div class="row g-3 mt-2">
+        <div class="col-4 text-center">
+          <div class="p-3 rounded-3" style="background:#d4edda;">
+            <div style="font-size:2rem; font-weight:700; color:#155724;">{{ present_days }}</div>
+            <div class="text-muted small">Present</div>
+          </div>
+        </div>
+        <div class="col-4 text-center">
+          <div class="p-3 rounded-3" style="background:#f8d7da;">
+            <div style="font-size:2rem; font-weight:700; color:#721c24;">{{ absent_days }}</div>
+            <div class="text-muted small">Absent</div>
+          </div>
+        </div>
+        <div class="col-4 text-center">
+          <div class="p-3 rounded-3" style="background:#fff3cd;">
+            <div style="font-size:2rem; font-weight:700; color:#856404;">{{ leave_days }}</div>
+            <div class="text-muted small">Leave</div>
+          </div>
+        </div>
+      </div>
+      <div class="mt-4">
+        <div class="d-flex justify-content-between mb-1">
+          <small>Attendance Rate</small>
+          {% with total=present_days|add:absent_days|add:leave_days %}
+            {% if total > 0 %}
+              <small>{{ present_days }} / {{ total }} days</small>
+            {% else %}
+              <small>No records yet</small>
+            {% endif %}
+          {% endwith %}
+        </div>
+        {% with total=present_days|add:absent_days|add:leave_days %}
+          {% if total > 0 %}
+            <div class="progress" style="height:10px; border-radius:5px;">
+              <div class="progress-bar bg-success" style="width:{% widthratio present_days total 100 %}%"></div>
+            </div>
+          {% endif %}
+        {% endwith %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Recent Attendance Table -->
+<div class="card">
+  <div class="card-header d-flex justify-content-between align-items-center py-3">
+    <span><i class="bi bi-calendar3 me-2"></i>Last 7 Days Attendance</span>
+    <a href="{% url 'my_attendance' %}" class="btn btn-sm btn-outline-primary">View All</a>
+  </div>
+  <div class="card-body p-0">
+    <table class="table table-hover mb-0">
+      <thead style="background:#f8f9fa;">
+        <tr>
+          <th class="px-4 py-3">Date</th>
+          <th class="py-3">Check In</th>
+          <th class="py-3">Check Out</th>
+          <th class="py-3">Hours</th>
+          <th class="py-3">Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for record in recent_attendance %}
+        <tr>
+          <td class="px-4 py-3">{{ record.date|date:"d M Y" }} <small class="text-muted">({{ record.date|date:"D" }})</small></td>
+          <td class="py-3">{{ record.check_in_time|time:"h:i A"|default:"-" }}</td>
+          <td class="py-3">{{ record.check_out_time|time:"h:i A"|default:"-" }}</td>
+          <td class="py-3">{{ record.total_hours|default:"-" }}</td>
+          <td class="py-3">
+            <span class="badge badge-{{ record.status }} px-3 py-2 rounded-pill">
+              {{ record.get_status_display }}
+            </span>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="5" class="text-center py-4 text-muted">No attendance records found</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+function updateClock() {
+  const now = new Date();
+  const h = String(now.getHours()).padStart(2, '0');
+  const m = String(now.getMinutes()).padStart(2, '0');
+  const s = String(now.getSeconds()).padStart(2, '0');
+  document.getElementById('clock').textContent = h + ':' + m + ':' + s;
+}
+updateClock();
+setInterval(updateClock, 1000);
+</script>
+{% endblock %}

@@ -1,0 +1,175 @@
+{% extends 'attendance/base.html' %}
+{% block title %}Salary Management - AttendTrack{% endblock %}
+{% block page_title %}Salary Management{% endblock %}
+
+{% block content %}
+
+<!-- Month Filter -->
+<div class="card mb-4">
+  <div class="card-body">
+    <form method="GET" class="row g-3 align-items-end">
+      <div class="col-md-4">
+        <label class="form-label fw-semibold">Month</label>
+        <select name="month" class="form-select">
+          {% for m, mname in months %}
+            <option value="{{ m }}" {% if m == month %}selected{% endif %}>{{ mname }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label fw-semibold">Year</label>
+        <select name="year" class="form-select">
+          {% for y in years %}
+            <option value="{{ y }}" {% if y == year %}selected{% endif %}>{{ y }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-3">
+        <button type="submit" class="btn btn-primary w-100">
+          <i class="bi bi-search me-2"></i>View Salaries
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Summary Cards -->
+<div class="row g-3 mb-4">
+  <div class="col-md-4">
+    <a href="?month={{ month }}&year={{ year }}&filter=total"
+       class="text-decoration-none">
+      <div class="stat-card text-center py-3 {% if status_filter == 'total' %}active-filter-card{% endif %}"
+           style="{% if status_filter == 'total' %}border:2px solid #1565c0;{% else %}border:2px solid transparent;{% endif %}cursor:pointer;">
+        <div class="icon mx-auto mb-2" style="background:#e3f2fd;">
+          <i class="bi bi-people-fill" style="color:#1565c0;"></i>
+        </div>
+        <div style="font-size:2rem;font-weight:700;color:#111827;">{{ total }}</div>
+        <div class="text-muted">Total Employees</div>
+      </div>
+    </a>
+  </div>
+  <div class="col-md-4">
+    <a href="?month={{ month }}&year={{ year }}&filter=paid"
+       class="text-decoration-none">
+      <div class="stat-card text-center py-3"
+           style="{% if status_filter == 'paid' %}border:2px solid #155724;{% else %}border:2px solid transparent;{% endif %}cursor:pointer;">
+        <div class="icon mx-auto mb-2" style="background:#d4edda;">
+          <i class="bi bi-check-circle-fill" style="color:#155724;"></i>
+        </div>
+        <div style="font-size:2rem;font-weight:700;color:#155724;">{{ paid_count }}</div>
+        <div class="text-muted">Salary Paid</div>
+      </div>
+    </a>
+  </div>
+  <div class="col-md-4">
+    <a href="?month={{ month }}&year={{ year }}&filter=pending"
+       class="text-decoration-none">
+      <div class="stat-card text-center py-3"
+           style="{% if status_filter == 'pending' %}border:2px solid #856404;{% else %}border:2px solid transparent;{% endif %}cursor:pointer;">
+        <div class="icon mx-auto mb-2" style="background:#fff3cd;">
+          <i class="bi bi-hourglass-split" style="color:#856404;"></i>
+        </div>
+        <div style="font-size:2rem;font-weight:700;color:#856404;">{{ unpaid_count }}</div>
+        <div class="text-muted">Salary Pending</div>
+      </div>
+    </a>
+  </div>
+</div>
+
+<!-- Salary Table -->
+<div class="card">
+  <div class="card-header py-3 d-flex justify-content-between align-items-center">
+    <span><i class="bi bi-cash-coin me-2 text-success"></i>Salary — {{ month_name }} {{ year }}</span>
+    <div class="d-flex gap-2">
+      <a href="?month={{ month }}&year={{ year }}&filter=total"
+         class="btn btn-sm {% if status_filter == 'total' %}btn-primary{% else %}btn-outline-secondary{% endif %}">
+        All ({{ total }})
+      </a>
+      <a href="?month={{ month }}&year={{ year }}&filter=paid"
+         class="btn btn-sm {% if status_filter == 'paid' %}btn-success{% else %}btn-outline-secondary{% endif %}">
+        Paid ({{ paid_count }})
+      </a>
+      <a href="?month={{ month }}&year={{ year }}&filter=pending"
+         class="btn btn-sm {% if status_filter == 'pending' %}btn-warning{% else %}btn-outline-secondary{% endif %}">
+        Pending ({{ unpaid_count }})
+      </a>
+    </div>
+  </div>
+  <div class="card-body p-0">
+    <table class="table table-hover mb-0">
+      <thead style="background:#f8f9fa;">
+        <tr>
+          <th class="px-4 py-3">Employee</th>
+          <th class="py-3">Department</th>
+          <th class="py-3 text-end">Basic</th>
+          <th class="py-3 text-end">Allowances</th>
+          <th class="py-3 text-end">Deductions</th>
+          <th class="py-3 text-end fw-bold">Net Salary</th>
+          <th class="py-3 text-center">Status</th>
+          <th class="py-3 text-center">Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in rows %}
+        <tr>
+          <td class="px-4 py-3">
+            <div class="d-flex align-items-center gap-3">
+              <div style="width:40px;height:40px;border-radius:50%;background:#111827;display:flex;align-items:center;justify-content:center;color:white;font-weight:700;">
+                {{ row.employee.user.first_name|first|upper }}
+              </div>
+              <div>
+                <div class="fw-semibold">{{ row.employee.user.get_full_name }}</div>
+                <small class="text-muted">{{ row.employee.employee_id }} · {{ row.employee.designation }}</small>
+              </div>
+            </div>
+          </td>
+          <td class="py-3 text-muted">{{ row.employee.department|default:"—" }}</td>
+
+          {% if row.salary %}
+            <td class="py-3 text-end">₹{{ row.salary.basic_salary|floatformat:0 }}</td>
+            <td class="py-3 text-end text-success">+₹{{ row.salary.allowances|floatformat:0 }}</td>
+            <td class="py-3 text-end text-danger">-₹{{ row.salary.deductions|floatformat:0 }}</td>
+            <td class="py-3 text-end">
+              <span class="fw-bold fs-6">₹{{ row.salary.net_salary|floatformat:0 }}</span>
+            </td>
+            <td class="py-3 text-center">
+              {% if row.salary.is_paid %}
+                <span class="badge bg-success px-3 py-2 rounded-pill">
+                  <i class="bi bi-check-circle me-1"></i>Paid
+                </span>
+                {% if row.salary.paid_date %}
+                  <div class="text-muted" style="font-size:0.7rem;">{{ row.salary.paid_date|date:"d M Y" }}</div>
+                {% endif %}
+              {% else %}
+                <span class="badge bg-warning text-dark px-3 py-2 rounded-pill">
+                  <i class="bi bi-hourglass me-1"></i>Pending
+                </span>
+              {% endif %}
+            </td>
+          {% else %}
+            <td class="py-3 text-muted text-end">—</td>
+            <td class="py-3 text-muted text-end">—</td>
+            <td class="py-3 text-muted text-end">—</td>
+            <td class="py-3 text-muted text-end">—</td>
+            <td class="py-3 text-center">
+              <span class="badge bg-secondary px-3 py-2 rounded-pill">Not Set</span>
+            </td>
+          {% endif %}
+
+          <td class="py-3 text-center">
+            <a href="{% url 'update_salary' row.employee.id %}?month={{ month }}&year={{ year }}"
+               class="btn btn-sm {% if row.salary %}btn-outline-primary{% else %}btn-primary{% endif %}">
+              <i class="bi bi-pencil me-1"></i>{% if row.salary %}Edit{% else %}Set{% endif %}
+            </a>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="8" class="text-center py-5 text-muted">No employees found.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

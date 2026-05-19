@@ -1,0 +1,73 @@
+{% extends 'attendance/base.html' %}
+{% block title %}Raise Ticket - AttendTrack{% endblock %}
+{% block page_title %}Raise a Support Ticket{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-7">
+
+    <!-- What to use tickets for -->
+    <div class="card mb-4" style="border-left: 4px solid #111827;">
+      <div class="card-body py-3">
+        <h6 class="fw-bold mb-2">When to raise a ticket?</h6>
+        <div class="row g-2" style="font-size:0.88rem; color:#555;">
+          <div class="col-6"><i class="bi bi-dot text-primary"></i> Salary / payroll issue</div>
+          <div class="col-6"><i class="bi bi-dot text-primary"></i> Attendance correction needed</div>
+          <div class="col-6"><i class="bi bi-dot text-primary"></i> Equipment / IT problem</div>
+          <div class="col-6"><i class="bi bi-dot text-primary"></i> HR policy question</div>
+          <div class="col-6"><i class="bi bi-dot text-primary"></i> Workplace complaint</div>
+          <div class="col-6"><i class="bi bi-dot text-primary"></i> Any other issue</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Form -->
+    <div class="card">
+      <div class="card-header py-3">
+        <i class="bi bi-ticket-perforated me-2 text-warning"></i>New Support Ticket
+      </div>
+      <div class="card-body p-4">
+        <form method="POST">
+          {% csrf_token %}
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Subject <span class="text-danger">*</span></label>
+            {{ form.subject }}
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Priority</label>
+            {{ form.priority }}
+            <small class="text-muted d-block mt-1">
+              🟢 Low — not urgent &nbsp;|&nbsp; 🟡 Medium — needs attention &nbsp;|&nbsp; 🔴 High — urgent
+            </small>
+          </div>
+
+          <div class="mb-4">
+            <label class="form-label fw-semibold">Description <span class="text-danger">*</span></label>
+            {{ form.description }}
+            <small class="text-muted">Be as detailed as possible so admin can help you faster.</small>
+          </div>
+
+          <!-- Employee Info (read only display) -->
+          <div class="p-3 rounded-3 mb-4" style="background:#f8f9fa;">
+            <small class="text-muted fw-semibold d-block mb-1">This ticket will be submitted as:</small>
+            <div class="fw-bold">{{ employee.user.get_full_name }}</div>
+            <div class="text-muted small">{{ employee.employee_id }} · {{ employee.designation }}</div>
+          </div>
+
+          <div class="d-flex gap-3">
+            <button type="submit" class="btn btn-warning text-dark px-5 fw-semibold">
+              <i class="bi bi-send me-2"></i>Submit Ticket
+            </button>
+            <a href="{% url 'my_tickets' %}" class="btn btn-outline-secondary px-4">
+              View My Tickets
+            </a>
+          </div>
+        </form>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

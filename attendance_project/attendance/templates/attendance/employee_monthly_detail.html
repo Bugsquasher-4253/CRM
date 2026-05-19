@@ -1,0 +1,203 @@
+{% extends 'attendance/base.html' %}
+{% block title %}{{ employee.user.get_full_name }} — {{ month_name }} {{ year }}{% endblock %}
+{% block page_title %}Employee Monthly Detail{% endblock %}
+
+{% block content %}
+
+<!-- Employee Header -->
+<div class="card mb-4">
+  <div class="card-body p-4">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+      <div class="d-flex align-items-center gap-3">
+        {% if employee.profile_photo %}
+          <img src="{{ employee.profile_photo.url }}" style="width:55px;height:55px;border-radius:50%;object-fit:cover;border:2px solid #BAF2BF;">
+        {% else %}
+          <div style="width:55px;height:55px;border-radius:50%;background:#111827;display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:1.3rem;">
+            {{ employee.user.first_name|first|upper }}
+          </div>
+        {% endif %}
+        <div>
+          <h5 class="fw-bold mb-0">{{ employee.user.get_full_name }}</h5>
+          <span class="text-muted">{{ employee.employee_id }} &nbsp;·&nbsp; {{ employee.designation }} &nbsp;·&nbsp; {{ employee.department }}</span>
+        </div>
+      </div>
+      <!-- Month Filter -->
+      <form method="GET" class="d-flex gap-2 align-items-end flex-wrap">
+        <div>
+          <label class="form-label fw-semibold mb-1 small">Month</label>
+          <select name="month" class="form-select form-select-sm" style="width:130px;">
+            {% for m, mname in months %}
+              <option value="{{ m }}" {% if m == month %}selected{% endif %}>{{ mname }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div>
+          <label class="form-label fw-semibold mb-1 small">Year</label>
+          <select name="year" class="form-select form-select-sm" style="width:90px;">
+            {% for y in years %}
+              <option value="{{ y }}" {% if y == year %}selected{% endif %}>{{ y }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <button class="btn btn-primary btn-sm">Go</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Summary Stats -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3">
+    <div class="stat-card text-center py-3">
+      <div style="font-size:2rem;font-weight:700;color:#155724;">{{ present }}</div>
+      <div class="text-muted small">Present Days</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card text-center py-3">
+      <div style="font-size:2rem;font-weight:700;color:#721c24;">{{ absent }}</div>
+      <div class="text-muted small">Absent Days</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card text-center py-3">
+      <div style="font-size:2rem;font-weight:700;color:#856404;">{{ leave }}</div>
+      <div class="text-muted small">On Leave</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card text-center py-3">
+      <div style="font-size:2rem;font-weight:700;color:#111827;">{{ total_hours }}</div>
+      <div class="text-muted small">Total Hours</div>
+    </div>
+  </div>
+</div>
+
+<!-- Avg Times -->
+{% if avg_checkin or avg_checkout %}
+<div class="card mb-4">
+  <div class="card-body py-3 px-4">
+    <div class="row text-center">
+      <div class="col-6">
+        <small class="text-muted d-block">Average Check-in Time</small>
+        <span class="fw-bold fs-5 text-success">
+          {% if avg_checkin %}{{ avg_checkin }}{% else %}—{% endif %}
+        </span>
+      </div>
+      <div class="col-6">
+        <small class="text-muted d-block">Average Check-out Time</small>
+        <span class="fw-bold fs-5 text-danger">
+          {% if avg_checkout %}{{ avg_checkout }}{% else %}—{% endif %}
+        </span>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<!-- Day-by-Day Table -->
+<div class="card">
+  <div class="card-header py-3 d-flex justify-content-between align-items-center">
+    <span><i class="bi bi-table me-2"></i>Day-by-Day: {{ month_name }} {{ year }}</span>
+    <small class="text-muted">
+      <span class="badge" style="background:#f0f0f0;color:#888;">Weekend</span>
+      &nbsp;
+      <span class="badge" style="background:#d4edda;color:#155724;">Present</span>
+      &nbsp;
+      <span class="badge" style="background:#f8d7da;color:#721c24;">Absent</span>
+    </small>
+  </div>
+  <div class="card-body p-0">
+    <table class="table table-hover mb-0">
+      <thead style="background:#f8f9fa;">
+        <tr>
+          <th class="px-4 py-3">Date</th>
+          <th class="py-3">Day</th>
+          <th class="py-3 text-success">Check-in Time</th>
+          <th class="py-3 text-danger">Check-out Time</th>
+          <th class="py-3">Hours Worked</th>
+          <th class="py-3">Status</th>
+          <th class="py-3">Notes</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in daily_rows %}
+        <tr style="
+          {% if row.is_weekend %}background:#fafafa;opacity:0.7;{% endif %}
+          {% if row.is_future %}opacity:0.4;{% endif %}
+        ">
+          <td class="px-4 py-3 fw-semibold">
+            {{ row.date|date:"d M Y" }}
+          </td>
+          <td class="py-3">
+            <span class="{% if row.is_weekend %}text-muted{% else %}text-dark{% endif %}">
+              {{ row.day_name }}
+            </span>
+            {% if row.is_weekend %}<span class="badge ms-1" style="background:#f0f0f0;color:#888;font-size:0.6rem;">Weekend</span>{% endif %}
+          </td>
+
+          {% if row.is_future %}
+            <td class="py-3 text-muted" colspan="5"><em>Future date</em></td>
+          {% elif row.is_weekend and not row.record %}
+            <td class="py-3 text-muted" colspan="5"><em>Weekend / Holiday</em></td>
+          {% elif row.record %}
+            <td class="py-3">
+              {% if row.record.check_in_time %}
+                <span class="fw-semibold text-success">
+                  <i class="bi bi-box-arrow-in-right me-1"></i>{{ row.record.check_in_time|time:"h:i A" }}
+                </span>
+              {% else %}
+                <span class="text-muted">—</span>
+              {% endif %}
+            </td>
+            <td class="py-3">
+              {% if row.record.check_out_time %}
+                <span class="fw-semibold text-danger">
+                  <i class="bi bi-box-arrow-right me-1"></i>{{ row.record.check_out_time|time:"h:i A" }}
+                </span>
+              {% else %}
+                {% if row.record.check_in_time %}
+                  <span class="text-warning small">Not yet checked out</span>
+                {% else %}
+                  <span class="text-muted">—</span>
+                {% endif %}
+              {% endif %}
+            </td>
+            <td class="py-3">
+              {% if row.record.total_hours %}
+                <span class="fw-bold">{{ row.record.total_hours }} hrs</span>
+              {% elif row.record.check_in_time and not row.record.check_out_time %}
+                <span class="text-warning small">In progress</span>
+              {% else %}
+                <span class="text-muted">—</span>
+              {% endif %}
+            </td>
+            <td class="py-3">
+              <span class="badge badge-{{ row.record.status }} px-3 py-2 rounded-pill">
+                {{ row.record.get_status_display }}
+              </span>
+            </td>
+            <td class="py-3 text-muted small">{{ row.record.notes|default:"—" }}</td>
+          {% else %}
+            <td class="py-3"><span class="text-muted">—</span></td>
+            <td class="py-3"><span class="text-muted">—</span></td>
+            <td class="py-3"><span class="text-muted">—</span></td>
+            <td class="py-3">
+              <span class="badge badge-absent px-3 py-2 rounded-pill">No Record</span>
+            </td>
+            <td class="py-3 text-muted">—</td>
+          {% endif %}
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="mt-3">
+  <a href="{% url 'reports' %}?month={{ month }}&year={{ year }}" class="btn btn-outline-secondary">
+    <i class="bi bi-arrow-left me-2"></i>Back to Reports
+  </a>
+</div>
+
+{% endblock %}

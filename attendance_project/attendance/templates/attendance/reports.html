@@ -1,0 +1,146 @@
+{% extends 'attendance/base.html' %}
+{% block title %}Reports - AttendTrack{% endblock %}
+{% block page_title %}Attendance Reports{% endblock %}
+
+{% block content %}
+
+<!-- Two Report Types -->
+<div class="row g-3 mb-4">
+  <div class="col-md-6">
+    <div class="stat-card h-100">
+      <div class="d-flex align-items-center gap-3 mb-2">
+        <div style="width:45px;height:45px;border-radius:10px;background:#e3f2fd;display:flex;align-items:center;justify-content:center;">
+          <i class="bi bi-people-fill" style="color:#1565c0;font-size:1.3rem;"></i>
+        </div>
+        <div>
+          <div class="fw-bold">Monthly Summary Report</div>
+          <small class="text-muted">All employees — present/absent/hours per month</small>
+        </div>
+      </div>
+      <small class="text-muted d-block mt-1">Select month & year below → click each employee for full day-by-day breakdown</small>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="stat-card h-100">
+      <div class="d-flex align-items-center gap-3 mb-2">
+        <div style="width:45px;height:45px;border-radius:10px;background:#e8f5e9;display:flex;align-items:center;justify-content:center;">
+          <i class="bi bi-calendar-day" style="color:#2e7d32;font-size:1.3rem;"></i>
+        </div>
+        <div>
+          <div class="fw-bold">Date-wise Report</div>
+          <small class="text-muted">Pick any single date → see all employees' check-in/out</small>
+        </div>
+      </div>
+      <a href="{% url 'date_wise_report' %}" class="btn btn-sm btn-success mt-2">
+        <i class="bi bi-arrow-right-circle me-1"></i>Open Date-wise Report
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- Monthly Filter -->
+<div class="card mb-4">
+  <div class="card-body">
+    <form method="GET" class="row g-3 align-items-end">
+      <div class="col-md-4">
+        <label class="form-label fw-semibold">Month</label>
+        <select name="month" class="form-select">
+          {% for m, mname in months %}
+            <option value="{{ m }}" {% if m == month %}selected{% endif %}>{{ mname }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label fw-semibold">Year</label>
+        <select name="year" class="form-select">
+          {% for y in years %}
+            <option value="{{ y }}" {% if y == year %}selected{% endif %}>{{ y }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-4">
+        <button type="submit" class="btn btn-primary w-100">
+          <i class="bi bi-search me-2"></i>Generate Report
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Report Header -->
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h5 class="fw-bold mb-0">
+    <i class="bi bi-calendar-range me-2 text-primary"></i>{{ month_name }} {{ year }}
+  </h5>
+  <span class="badge bg-primary px-3 py-2">{{ report_data|length }} Employees</span>
+</div>
+
+<!-- Report Table -->
+<div class="card">
+  <div class="card-body p-0">
+    <table class="table table-hover mb-0">
+      <thead style="background:#f8f9fa;">
+        <tr>
+          <th class="px-4 py-3">Employee</th>
+          <th class="py-3">ID</th>
+          <th class="py-3 text-center text-success">Present</th>
+          <th class="py-3 text-center text-danger">Absent</th>
+          <th class="py-3 text-center" style="color:#856404;">Leave</th>
+          <th class="py-3 text-center">Total Hours</th>
+          <th class="py-3">Attendance %</th>
+          <th class="py-3 text-center">Detail</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in report_data %}
+        {% with total=row.present|add:row.absent|add:row.leave %}
+        <tr>
+          <td class="px-4 py-3">
+            <div class="fw-semibold">{{ row.employee.user.get_full_name }}</div>
+            <small class="text-muted">{{ row.employee.designation }}</small>
+          </td>
+          <td class="py-3"><code>{{ row.employee.employee_id }}</code></td>
+          <td class="py-3 text-center">
+            <span class="badge badge-present px-3 py-2">{{ row.present }}</span>
+          </td>
+          <td class="py-3 text-center">
+            <span class="badge badge-absent px-3 py-2">{{ row.absent }}</span>
+          </td>
+          <td class="py-3 text-center">
+            <span class="badge badge-leave px-3 py-2">{{ row.leave }}</span>
+          </td>
+          <td class="py-3 text-center fw-semibold">{{ row.total_hours }} hrs</td>
+          <td class="py-3" style="min-width:150px;">
+            {% if total > 0 %}
+              {% widthratio row.present total 100 as pct %}
+              <div class="d-flex align-items-center gap-2">
+                <div class="progress flex-fill" style="height:8px;">
+                  <div class="progress-bar bg-success" style="width:{{ pct }}%"></div>
+                </div>
+                <small class="fw-bold">{{ pct }}%</small>
+              </div>
+            {% else %}
+              <span class="text-muted small">No records</span>
+            {% endif %}
+          </td>
+          <td class="py-3 text-center">
+            <a href="{% url 'employee_monthly_detail' row.employee.id %}?month={{ month }}&year={{ year }}"
+               class="btn btn-sm btn-outline-primary">
+              <i class="bi bi-clock-history me-1"></i>View Times
+            </a>
+          </td>
+        </tr>
+        {% endwith %}
+        {% empty %}
+        <tr>
+          <td colspan="8" class="text-center py-5 text-muted">
+            <i class="bi bi-bar-chart display-6 d-block mb-2"></i>
+            No data for this period
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

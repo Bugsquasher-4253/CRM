@@ -1,0 +1,116 @@
+{% extends 'attendance/base.html' %}
+{% block title %}Employees - AttendTrack{% endblock %}
+{% block page_title %}Manage Employees{% endblock %}
+
+{% block content %}
+<!-- Search & Filter -->
+<div class="card mb-4">
+  <div class="card-body">
+    <form method="GET" class="row g-3 align-items-end">
+      <div class="col-md-5">
+        <label class="form-label fw-semibold">Search</label>
+        <input type="text" name="search" class="form-control" placeholder="Name, ID, or designation..." value="{{ search }}">
+      </div>
+      <div class="col-md-4">
+        <label class="form-label fw-semibold">Department</label>
+        <select name="department" class="form-select">
+          <option value="">All Departments</option>
+          {% for dept in departments %}
+            <option value="{{ dept.id }}">{{ dept.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-3 d-flex gap-2">
+        <button type="submit" class="btn btn-primary flex-fill">
+          <i class="bi bi-search me-1"></i>Search
+        </button>
+        <a href="{% url 'add_employee' %}" class="btn btn-success flex-fill">
+          <i class="bi bi-plus me-1"></i>Add
+        </a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Employee Table -->
+<div class="card">
+  <div class="card-header py-3">
+    <i class="bi bi-people me-2"></i>All Employees ({{ employees.count }})
+  </div>
+  <div class="card-body p-0">
+    <table class="table table-hover mb-0">
+      <thead style="background:#f8f9fa;">
+        <tr>
+          <th class="px-4 py-3">Employee</th>
+          <th class="py-3">ID</th>
+          <th class="py-3">Department</th>
+          <th class="py-3">Designation</th>
+          <th class="py-3">Phone</th>
+          <th class="py-3">Docs</th>
+          <th class="py-3">Status</th>
+          <th class="py-3">Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for emp in employees %}
+        <tr>
+          <td class="px-4 py-3">
+            <div class="d-flex align-items-center gap-3">
+              <div style="width:40px;height:40px;border-radius:50%;background:#111827;display:flex;align-items:center;justify-content:center;color:white;font-weight:700;">
+                {{ emp.user.first_name|first|upper }}
+              </div>
+              <div>
+                <div class="fw-semibold">{{ emp.user.get_full_name }}</div>
+                <small class="text-muted">{{ emp.user.email }}</small>
+              </div>
+            </div>
+          </td>
+          <td class="py-3"><code>{{ emp.employee_id }}</code></td>
+          <td class="py-3">{{ emp.department.name|default:"-" }}</td>
+          <td class="py-3">{{ emp.designation }}</td>
+          <td class="py-3">{{ emp.phone|default:"-" }}</td>
+          <td class="py-3">
+            <div class="d-flex gap-1 flex-wrap">
+              {% if emp.aadhaar_card %}
+                <a href="{{ emp.aadhaar_card.url }}" target="_blank" class="badge bg-primary text-decoration-none">Aadhaar</a>
+              {% else %}
+                <span class="badge bg-light text-muted border">No Aadhaar</span>
+              {% endif %}
+              {% if emp.pan_card %}
+                <a href="{{ emp.pan_card.url }}" target="_blank" class="badge bg-success text-decoration-none">PAN</a>
+              {% else %}
+                <span class="badge bg-light text-muted border">No PAN</span>
+              {% endif %}
+            </div>
+          </td>
+          <td class="py-3">
+            {% if emp.is_active %}
+              <span class="badge bg-success rounded-pill px-3">Active</span>
+            {% else %}
+              <span class="badge bg-secondary rounded-pill px-3">Inactive</span>
+            {% endif %}
+          </td>
+          <td class="py-3">
+            <div class="d-flex gap-1">
+              <a href="{% url 'employee_detail' emp.id %}" class="btn btn-sm btn-outline-primary">
+                <i class="bi bi-eye"></i>
+              </a>
+              <a href="{% url 'edit_employee_admin' emp.id %}" class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-pencil"></i>
+              </a>
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="7" class="text-center py-5 text-muted">
+            <i class="bi bi-people display-6 d-block mb-2"></i>
+            No employees found. <a href="{% url 'add_employee' %}">Add one</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

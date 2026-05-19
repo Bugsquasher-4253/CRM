@@ -1,0 +1,92 @@
+{% extends 'attendance/base.html' %}
+{% block title %}My Leaves - AttendTrack{% endblock %}
+{% block page_title %}My Leave Requests{% endblock %}
+
+{% block content %}
+
+<!-- Stats -->
+<div class="row g-3 mb-4">
+  <div class="col-md-4">
+    <div class="stat-card text-center">
+      <div class="icon mx-auto" style="background:#fff3cd;">
+        <i class="bi bi-hourglass-split" style="color:#856404;"></i>
+      </div>
+      <div style="font-size:2rem; font-weight:700; color:#856404;">{{ pending }}</div>
+      <div class="text-muted">Pending</div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="stat-card text-center">
+      <div class="icon mx-auto" style="background:#d4edda;">
+        <i class="bi bi-check-circle-fill text-success"></i>
+      </div>
+      <div style="font-size:2rem; font-weight:700; color:#155724;">{{ approved }}</div>
+      <div class="text-muted">Approved</div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="stat-card text-center">
+      <div class="icon mx-auto" style="background:#f8d7da;">
+        <i class="bi bi-x-circle-fill text-danger"></i>
+      </div>
+      <div style="font-size:2rem; font-weight:700; color:#721c24;">{{ rejected }}</div>
+      <div class="text-muted">Rejected</div>
+    </div>
+  </div>
+</div>
+
+<!-- Apply Button -->
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h5 class="fw-bold mb-0">All Leave Requests</h5>
+  <a href="{% url 'apply_leave' %}" class="btn btn-primary">
+    <i class="bi bi-plus-circle me-2"></i>Apply New Leave
+  </a>
+</div>
+
+<!-- Leave List -->
+<div class="card">
+  <div class="card-body p-0">
+    {% for leave in leaves %}
+    <div class="p-4 border-bottom">
+      <div class="d-flex justify-content-between align-items-start">
+        <div>
+          <div class="d-flex align-items-center gap-2 mb-1">
+            <span class="fw-bold">{{ leave.get_leave_type_display }}</span>
+            {% if leave.status == 'pending' %}
+              <span class="badge" style="background:#fff3cd; color:#856404;">⏳ Pending</span>
+            {% elif leave.status == 'approved' %}
+              <span class="badge" style="background:#d4edda; color:#155724;">✅ Approved</span>
+            {% else %}
+              <span class="badge" style="background:#f8d7da; color:#721c24;">❌ Rejected</span>
+            {% endif %}
+          </div>
+          <div class="text-muted small mb-1">
+            <i class="bi bi-calendar3 me-1"></i>
+            {{ leave.from_date|date:"d M Y" }}
+            {% if leave.from_date != leave.to_date %}→ {{ leave.to_date|date:"d M Y" }}{% endif %}
+            &nbsp;·&nbsp; {{ leave.total_days }} day{{ leave.total_days|pluralize }}
+          </div>
+          <div class="mt-2" style="color:#555;">
+            <strong>Reason:</strong> {{ leave.reason }}
+          </div>
+          {% if leave.admin_note %}
+            <div class="mt-2 p-2 rounded-2" style="background:#f0f7ff; color:#1a5fa8; font-size:0.9rem;">
+              <i class="bi bi-chat-left-text me-1"></i><strong>Admin Note:</strong> {{ leave.admin_note }}
+            </div>
+          {% endif %}
+        </div>
+        <div class="text-muted small text-end">
+          Applied on<br>{{ leave.applied_on|date:"d M Y" }}
+        </div>
+      </div>
+    </div>
+    {% empty %}
+    <div class="text-center py-5 text-muted">
+      <i class="bi bi-calendar-x display-6 d-block mb-3"></i>
+      <p>No leave requests yet.</p>
+      <a href="{% url 'apply_leave' %}" class="btn btn-primary">Apply for Leave</a>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

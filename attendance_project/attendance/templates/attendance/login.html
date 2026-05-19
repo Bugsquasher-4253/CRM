@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login - AttendTrack</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      min-height: 100vh;
+      font-family: 'Poppins', sans-serif;
+      background: #F7F8FA;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    .login-wrap {
+      display: flex; width: 860px; min-height: 520px;
+      border-radius: 20px; overflow: hidden;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.12);
+    }
+
+    /* Left panel */
+    .login-left {
+      width: 340px; flex-shrink: 0;
+      background: #111827;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 48px 36px; text-align: center;
+    }
+    .login-left .brand-icon {
+      width: 64px; height: 64px; border-radius: 16px;
+      background: #BAF2BF;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.8rem; color: #111827; margin-bottom: 20px;
+    }
+    .login-left h1 {
+      font-size: 1.5rem; font-weight: 700; color: #fff;
+      letter-spacing: -0.3px; margin-bottom: 8px;
+    }
+    .login-left h1 span { color: #BAF2BF; }
+    .login-left p { color: rgba(255,255,255,0.45); font-size: 0.82rem; line-height: 1.6; }
+    .login-left .dots {
+      display: flex; gap: 8px; margin-top: 36px;
+    }
+    .login-left .dots span {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: rgba(255,255,255,0.15);
+    }
+    .login-left .dots span:first-child { background: #BAF2BF; width: 24px; border-radius: 4px; }
+
+    /* Right panel */
+    .login-right {
+      flex: 1; background: #fff;
+      display: flex; flex-direction: column;
+      justify-content: center; padding: 48px 44px;
+    }
+    .login-right h2 {
+      font-size: 1.3rem; font-weight: 700; color: #111827; margin-bottom: 4px;
+    }
+    .login-right .sub { color: #6B7280; font-size: 0.82rem; margin-bottom: 32px; }
+
+    .form-label { font-size: 0.8rem; font-weight: 600; color: #374151; margin-bottom: 5px; }
+    .form-control {
+      font-family: 'Poppins', sans-serif;
+      border-radius: 9px; padding: 10px 14px;
+      border: 1.5px solid #E5E7EB; font-size: 0.88rem;
+    }
+    .form-control:focus {
+      border-color: #BAF2BF;
+      box-shadow: 0 0 0 3px rgba(186,242,191,0.3);
+      outline: none;
+    }
+    .input-group-text {
+      font-family: 'Poppins', sans-serif;
+      background: #F7F8FA; border: 1.5px solid #E5E7EB;
+      border-right: none; border-radius: 9px 0 0 9px; color: #9CA3AF;
+    }
+    .input-group .form-control { border-left: none; border-radius: 0 9px 9px 0; }
+    .input-group .form-control:focus { border-color: #BAF2BF; box-shadow: none; }
+    .input-group:focus-within .input-group-text { border-color: #BAF2BF; }
+
+    .btn-login {
+      width: 100%; padding: 12px;
+      background: #111827; border: none; border-radius: 9px;
+      color: #fff; font-family: 'Poppins', sans-serif;
+      font-size: 0.9rem; font-weight: 600; cursor: pointer;
+      transition: background 0.2s;
+    }
+    .btn-login:hover { background: #1f2937; }
+
+    .alert { border-radius: 9px; font-size: 0.83rem; border: none; font-family: 'Poppins', sans-serif; }
+
+    @media (max-width: 700px) {
+      .login-wrap { flex-direction: column; width: 95%; }
+      .login-left { width: 100%; padding: 32px 24px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="login-wrap">
+
+    <!-- Left branding panel -->
+    <div class="login-left">
+      <div class="brand-icon"><i class="bi bi-people-fill"></i></div>
+      <h1>Attend<span>Track</span></h1>
+      <p>Employee Attendance &amp;<br>Management System</p>
+      <div class="dots">
+        <span></span><span></span><span></span>
+      </div>
+    </div>
+
+    <!-- Right form panel -->
+    <div class="login-right">
+      <h2>Welcome back</h2>
+      <p class="sub">Sign in to your account to continue</p>
+
+      {% for message in messages %}
+        <div class="alert alert-danger mb-3">
+          <i class="bi bi-exclamation-circle me-2"></i>{{ message }}
+        </div>
+      {% endfor %}
+
+      <form method="POST">
+        {% csrf_token %}
+        <div class="mb-3">
+          <label class="form-label">Username</label>
+          <div class="input-group">
+            <span class="input-group-text"><i class="bi bi-person"></i></span>
+            {{ form.username }}
+          </div>
+        </div>
+        <div class="mb-4">
+          <label class="form-label">Password</label>
+          <div class="input-group">
+            <span class="input-group-text"><i class="bi bi-lock"></i></span>
+            {{ form.password }}
+          </div>
+        </div>
+        <button type="submit" class="btn-login">
+          <i class="bi bi-box-arrow-in-right me-2"></i>Sign In
+        </button>
+      </form>
+
+      <p class="text-center mt-4" style="font-size:0.78rem;color:#9CA3AF;">
+        Forgot your password? Contact your administrator.
+      </p>
+    </div>
+
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

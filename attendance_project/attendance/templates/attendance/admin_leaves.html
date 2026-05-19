@@ -1,0 +1,97 @@
+{% extends 'attendance/base.html' %}
+{% block title %}Leave Requests - AttendTrack{% endblock %}
+{% block page_title %}Leave Requests{% endblock %}
+
+{% block content %}
+
+<!-- Filter Tabs -->
+<div class="card mb-4">
+  <div class="card-body py-2">
+    <div class="d-flex gap-2 flex-wrap">
+      <a href="?status=" class="btn btn-sm {% if not status_filter %}btn-primary{% else %}btn-outline-secondary{% endif %}">
+        All
+      </a>
+      <a href="?status=pending" class="btn btn-sm {% if status_filter == 'pending' %}btn-warning text-dark{% else %}btn-outline-secondary{% endif %}">
+        ⏳ Pending {% if pending_count %}<span class="ms-1 badge bg-danger">{{ pending_count }}</span>{% endif %}
+      </a>
+      <a href="?status=approved" class="btn btn-sm {% if status_filter == 'approved' %}btn-success{% else %}btn-outline-secondary{% endif %}">
+        ✅ Approved
+      </a>
+      <a href="?status=rejected" class="btn btn-sm {% if status_filter == 'rejected' %}btn-danger{% else %}btn-outline-secondary{% endif %}">
+        ❌ Rejected
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- Leave Requests List -->
+<div class="d-flex flex-column gap-3">
+  {% for leave in leaves %}
+  <div class="card">
+    <div class="card-body p-4">
+      <div class="d-flex justify-content-between align-items-start">
+
+        <!-- Employee Info + Leave Details -->
+        <div class="d-flex gap-3 flex-fill">
+          <div style="width:48px; height:48px; border-radius:50%; background:linear-gradient(135deg,#e94560,#0f3460); display:flex; align-items:center; justify-content:center; color:white; font-weight:700; font-size:1.1rem; flex-shrink:0;">
+            {{ leave.employee.user.first_name|first|upper }}
+          </div>
+          <div class="flex-fill">
+            <div class="d-flex align-items-center gap-2 mb-1">
+              <span class="fw-bold">{{ leave.employee.user.get_full_name }}</span>
+              <span class="text-muted small">{{ leave.employee.employee_id }}</span>
+              <span class="text-muted small">·</span>
+              <span class="text-muted small">{{ leave.employee.designation }}</span>
+            </div>
+
+            <div class="d-flex align-items-center gap-2 mb-2">
+              <span class="badge bg-secondary">{{ leave.get_leave_type_display }}</span>
+              {% if leave.status == 'pending' %}
+                <span class="badge" style="background:#fff3cd; color:#856404;">⏳ Pending</span>
+              {% elif leave.status == 'approved' %}
+                <span class="badge" style="background:#d4edda; color:#155724;">✅ Approved</span>
+              {% else %}
+                <span class="badge" style="background:#f8d7da; color:#721c24;">❌ Rejected</span>
+              {% endif %}
+              <span class="text-muted small">
+                {{ leave.from_date|date:"d M Y" }}
+                {% if leave.from_date != leave.to_date %}→ {{ leave.to_date|date:"d M Y" }}{% endif %}
+                ({{ leave.total_days }} day{{ leave.total_days|pluralize }})
+              </span>
+            </div>
+
+            <div style="color:#555; font-size:0.9rem;"><strong>Reason:</strong> {{ leave.reason }}</div>
+
+            {% if leave.admin_note %}
+              <div class="mt-2 text-muted small"><strong>Your note:</strong> {{ leave.admin_note }}</div>
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- Action -->
+        <div class="ms-3 text-end" style="flex-shrink:0;">
+          <div class="text-muted small mb-2">{{ leave.applied_on|date:"d M Y" }}</div>
+          {% if leave.status == 'pending' %}
+            <a href="{% url 'admin_leave_action' leave.id %}" class="btn btn-sm btn-primary">
+              <i class="bi bi-pencil-square me-1"></i>Review
+            </a>
+          {% else %}
+            <a href="{% url 'admin_leave_action' leave.id %}" class="btn btn-sm btn-outline-secondary">
+              <i class="bi bi-eye me-1"></i>View
+            </a>
+          {% endif %}
+        </div>
+
+      </div>
+    </div>
+  </div>
+  {% empty %}
+  <div class="card">
+    <div class="card-body text-center py-5 text-muted">
+      <i class="bi bi-calendar-x display-6 d-block mb-3"></i>
+      No leave requests found.
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

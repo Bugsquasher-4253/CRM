@@ -1,0 +1,113 @@
+{% extends 'attendance/base.html' %}
+{% block title %}Attendance Correction - AttendTrack{% endblock %}
+{% block page_title %}Request Attendance Correction{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+
+  <!-- Form -->
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-header py-3">
+        <i class="bi bi-clock-history me-2 text-warning"></i>Submit Correction Request
+      </div>
+      <div class="card-body">
+
+        <div class="d-flex gap-3 p-3 rounded mb-4" style="background:#e8f4fd;border-left:4px solid #1565c0;">
+          <i class="bi bi-info-circle text-primary fs-5 mt-1"></i>
+          <div style="font-size:0.88rem;color:#111827;">
+            <strong>When to use this:</strong> If you forgot to check in or check out, or if the system recorded the wrong time. Your admin will review and update your attendance record.
+          </div>
+        </div>
+
+        <form method="POST">
+          {% csrf_token %}
+
+          {% if form.non_field_errors %}
+            <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+          {% endif %}
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Date <span class="text-danger">*</span></label>
+            {{ form.date }}
+            {% if form.date.errors %}<div class="text-danger small mt-1">{{ form.date.errors.0 }}</div>{% endif %}
+          </div>
+
+          <div class="row g-3 mb-3">
+            <div class="col-6">
+              <label class="form-label fw-semibold">
+                <i class="bi bi-box-arrow-in-right text-success me-1"></i>Check-in Time
+              </label>
+              {{ form.requested_check_in }}
+              <div class="text-muted small mt-1">Leave blank if correct</div>
+            </div>
+            <div class="col-6">
+              <label class="form-label fw-semibold">
+                <i class="bi bi-box-arrow-right text-danger me-1"></i>Check-out Time
+              </label>
+              {{ form.requested_check_out }}
+              <div class="text-muted small mt-1">Leave blank if correct</div>
+            </div>
+          </div>
+
+          <div class="mb-4">
+            <label class="form-label fw-semibold">Reason <span class="text-danger">*</span></label>
+            {{ form.reason }}
+            {% if form.reason.errors %}<div class="text-danger small mt-1">{{ form.reason.errors.0 }}</div>{% endif %}
+          </div>
+
+          <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-warning px-4">
+              <i class="bi bi-send me-1"></i>Submit Request
+            </button>
+            <a href="{% url 'my_corrections' %}" class="btn btn-outline-secondary px-4">My Requests</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recent Requests -->
+  <div class="col-lg-6">
+    <div class="card">
+      <div class="card-header py-3">
+        <i class="bi bi-list-check me-2"></i>Recent Requests
+      </div>
+      <div class="card-body p-0">
+        {% if recent %}
+        {% for req in recent %}
+        <div class="px-4 py-3 border-bottom d-flex justify-content-between align-items-start">
+          <div>
+            <div class="fw-semibold small">{{ req.date|date:"d M Y" }}</div>
+            {% if req.requested_check_in %}
+              <span class="text-success small"><i class="bi bi-box-arrow-in-right me-1"></i>{{ req.requested_check_in|time:"h:i A" }}</span>
+            {% endif %}
+            {% if req.requested_check_out %}
+              <span class="text-danger small ms-2"><i class="bi bi-box-arrow-right me-1"></i>{{ req.requested_check_out|time:"h:i A" }}</span>
+            {% endif %}
+            <div class="text-muted small mt-1" style="max-width:220px;">{{ req.reason|truncatechars:60 }}</div>
+          </div>
+          <div class="text-end">
+            {% if req.status == 'pending' %}
+              <span class="badge bg-warning text-dark rounded-pill px-2">Pending</span>
+            {% elif req.status == 'approved' %}
+              <span class="badge bg-success rounded-pill px-2">Approved</span>
+            {% else %}
+              <span class="badge bg-danger rounded-pill px-2">Rejected</span>
+            {% endif %}
+            <div class="text-muted" style="font-size:0.7rem;margin-top:3px;">{{ req.created_at|date:"d M" }}</div>
+          </div>
+        </div>
+        {% endfor %}
+        {% else %}
+        <div class="text-center py-4 text-muted">
+          <i class="bi bi-inbox" style="font-size:2rem;opacity:0.3;"></i>
+          <p class="mt-2 small">No requests yet.</p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

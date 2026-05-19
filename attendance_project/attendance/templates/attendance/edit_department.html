@@ -1,0 +1,55 @@
+{% extends 'attendance/base.html' %}
+{% block title %}Edit Department - AttendTrack{% endblock %}
+{% block page_title %}Edit Department{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-6">
+
+    <div class="d-flex align-items-center gap-3 mb-4">
+      <a href="{% url 'manage_departments' %}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left me-1"></i>Back
+      </a>
+      <h6 class="mb-0 fw-bold">Editing: {{ department.name }}</h6>
+    </div>
+
+    <div class="card">
+      <div class="card-header py-3">
+        <i class="bi bi-pencil-square me-2 text-primary"></i>Department Details
+      </div>
+      <div class="card-body">
+        <form method="POST">
+          {% csrf_token %}
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Department Name <span class="text-danger">*</span></label>
+            {{ form.name }}
+            {% if form.name.errors %}
+              <div class="text-danger small mt-1">{{ form.name.errors.0 }}</div>
+            {% endif %}
+          </div>
+          <div class="mb-4">
+            <label class="form-label fw-semibold">Description</label>
+            {{ form.description }}
+          </div>
+          <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary px-4">
+              <i class="bi bi-check-lg me-1"></i>Save Changes
+            </button>
+            <a href="{% url 'manage_departments' %}" class="btn btn-outline-secondary px-4">Cancel</a>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    {% if employee_count > 0 %}
+    <div class="card mt-3 border-0" style="background:#fff3cd;">
+      <div class="card-body py-2 px-3" style="font-size:0.85rem;color:#856404;">
+        <i class="bi bi-people me-1"></i>
+        <strong>{{ employee_count }}</strong> employee{{ employee_count|pluralize }} currently in this department.
+      </div>
+    </div>
+    {% endif %}
+
+  </div>
+</div>
+{% endblock %}

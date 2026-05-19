@@ -1,0 +1,114 @@
+{% extends 'attendance/base.html' %}
+{% block title %}My Correction Requests - AttendTrack{% endblock %}
+{% block page_title %}My Correction Requests{% endblock %}
+
+{% block content %}
+
+<!-- Stats -->
+<div class="row g-3 mb-4">
+  <div class="col-md-4">
+    <div class="stat-card text-center py-3">
+      <div class="icon mx-auto mb-2" style="background:#fff3cd;">
+        <i class="bi bi-hourglass-split" style="color:#856404;"></i>
+      </div>
+      <div style="font-size:2rem;font-weight:700;color:#856404;">{{ pending_count }}</div>
+      <div class="text-muted">Pending</div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="stat-card text-center py-3">
+      <div class="icon mx-auto mb-2" style="background:#d4edda;">
+        <i class="bi bi-check-circle-fill" style="color:#155724;"></i>
+      </div>
+      <div style="font-size:2rem;font-weight:700;color:#155724;">{{ approved_count }}</div>
+      <div class="text-muted">Approved</div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="stat-card text-center py-3">
+      <div class="icon mx-auto mb-2" style="background:#f8d7da;">
+        <i class="bi bi-x-circle-fill" style="color:#721c24;"></i>
+      </div>
+      <div style="font-size:2rem;font-weight:700;color:#721c24;">{{ rejected_count }}</div>
+      <div class="text-muted">Rejected</div>
+    </div>
+  </div>
+</div>
+
+<!-- Table -->
+<div class="card">
+  <div class="card-header py-3 d-flex justify-content-between align-items-center">
+    <span><i class="bi bi-clock-history me-2 text-warning"></i>All Correction Requests</span>
+    <a href="{% url 'request_correction' %}" class="btn btn-sm btn-warning">
+      <i class="bi bi-plus me-1"></i>New Request
+    </a>
+  </div>
+  <div class="card-body p-0">
+    {% if corrections %}
+    <table class="table table-hover mb-0">
+      <thead style="background:#f8f9fa;">
+        <tr>
+          <th class="px-4 py-3">Date</th>
+          <th class="py-3">Requested Times</th>
+          <th class="py-3">Reason</th>
+          <th class="py-3 text-center">Status</th>
+          <th class="py-3">Admin Note</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for req in corrections %}
+        <tr>
+          <td class="px-4 py-3">
+            <div class="fw-semibold">{{ req.date|date:"d M Y" }}</div>
+            <div class="text-muted small">{{ req.date|date:"l" }}</div>
+          </td>
+          <td class="py-3">
+            {% if req.requested_check_in %}
+              <div class="text-success small fw-semibold">
+                <i class="bi bi-box-arrow-in-right me-1"></i>In: {{ req.requested_check_in|time:"h:i A" }}
+              </div>
+            {% endif %}
+            {% if req.requested_check_out %}
+              <div class="text-danger small fw-semibold">
+                <i class="bi bi-box-arrow-right me-1"></i>Out: {{ req.requested_check_out|time:"h:i A" }}
+              </div>
+            {% endif %}
+          </td>
+          <td class="py-3 text-muted" style="max-width:200px;font-size:0.88rem;">
+            {{ req.reason|truncatechars:80 }}
+          </td>
+          <td class="py-3 text-center">
+            {% if req.status == 'pending' %}
+              <span class="badge bg-warning text-dark px-3 py-2 rounded-pill">
+                <i class="bi bi-hourglass me-1"></i>Pending
+              </span>
+            {% elif req.status == 'approved' %}
+              <span class="badge bg-success px-3 py-2 rounded-pill">
+                <i class="bi bi-check-circle me-1"></i>Approved
+              </span>
+            {% else %}
+              <span class="badge bg-danger px-3 py-2 rounded-pill">
+                <i class="bi bi-x-circle me-1"></i>Rejected
+              </span>
+            {% endif %}
+            <div class="text-muted small mt-1">{{ req.updated_at|date:"d M Y" }}</div>
+          </td>
+          <td class="py-3 text-muted small">
+            {{ req.admin_note|default:"—" }}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="text-center py-5 text-muted">
+      <i class="bi bi-clock-history" style="font-size:3rem;opacity:0.3;"></i>
+      <p class="mt-3">No correction requests yet.</p>
+      <a href="{% url 'request_correction' %}" class="btn btn-warning btn-sm mt-1">
+        <i class="bi bi-plus me-1"></i>Submit a Request
+      </a>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

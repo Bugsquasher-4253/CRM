@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Employee Attendance{% endblock %}</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+  <style>
+    /* ── DESIGN TOKENS ───────────────────────────── */
+    :root {
+      --bg:      #F7F8FA;
+      --dark:    #111827;
+      --accent:  #BAF2BF;
+      --white:   #ffffff;
+      --text:    #374151;
+      --muted:   #6B7280;
+      --border:  #E5E7EB;
+      --radius:  12px;
+      --shadow:  0 1px 4px rgba(0,0,0,0.07);
+    }
+
+    /* ── BASE ────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; }
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 0.9rem;
+    }
+
+    /* ── SIDEBAR ─────────────────────────────────── */
+    .sidebar {
+      width: 250px; min-height: 100vh;
+      background: var(--dark);
+      position: fixed; top: 0; left: 0; z-index: 100;
+      padding-top: 0;
+      display: flex; flex-direction: column;
+    }
+    .sidebar .brand {
+      display: flex; align-items: center; gap: 10px;
+      padding: 22px 20px 18px;
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+      margin-bottom: 8px;
+    }
+    .sidebar .brand-icon {
+      width: 34px; height: 34px; border-radius: 9px;
+      background: var(--accent);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .sidebar .brand-icon i { color: var(--dark); font-size: 1rem; }
+    .sidebar .brand-text {
+      font-size: 1.05rem; font-weight: 700; color: #fff; letter-spacing: -0.3px;
+    }
+    .sidebar .brand-text span { color: var(--accent); }
+
+    .sidebar-section-label {
+      color: rgba(255,255,255,0.25);
+      font-size: 0.6rem; text-transform: uppercase;
+      letter-spacing: 1.8px; padding: 14px 20px 5px;
+      font-weight: 600;
+    }
+    .sidebar .nav-link {
+      color: rgba(255,255,255,0.58);
+      padding: 9px 14px;
+      border-radius: 8px; margin: 1px 10px;
+      transition: background 0.18s, color 0.18s;
+      display: flex; align-items: center;
+      font-size: 0.855rem; font-weight: 500;
+    }
+    .sidebar .nav-link i { margin-right: 10px; width: 18px; font-size: 0.95rem; flex-shrink: 0; }
+    .sidebar .nav-link:hover {
+      background: rgba(186,242,191,0.1);
+      color: rgba(255,255,255,0.9);
+    }
+    .sidebar .nav-link.active {
+      background: var(--accent);
+      color: var(--dark);
+      font-weight: 600;
+    }
+    .badge-notify {
+      background: var(--accent); color: var(--dark);
+      font-size: 0.6rem; padding: 2px 7px;
+      border-radius: 10px; margin-left: auto; font-weight: 700;
+    }
+
+    /* ── PANEL SWITCHER ──────────────────────────── */
+    .sidebar-bottom {
+      padding: 14px 10px;
+      border-top: 1px solid rgba(255,255,255,0.07);
+      margin-top: auto;
+    }
+    .panel-switcher {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 9px; padding: 9px 14px;
+      margin: 0 0 6px; cursor: pointer;
+      color: rgba(255,255,255,0.7); text-decoration: none;
+      display: flex; align-items: center; gap: 8px;
+      font-size: 0.82rem; font-weight: 500; transition: all 0.18s;
+    }
+    .panel-switcher:hover { background: rgba(186,242,191,0.1); color: #fff; }
+    .panel-switcher.employee-mode { border-color: rgba(186,242,191,0.45); color: var(--accent); }
+    .panel-switcher.employee-mode:hover { background: rgba(186,242,191,0.12); }
+    .mode-badge {
+      font-size: 0.58rem; padding: 2px 8px; border-radius: 20px;
+      margin-left: auto; font-weight: 700; letter-spacing: 0.4px;
+      text-transform: uppercase;
+    }
+
+    /* ── MAIN CONTENT ────────────────────────────── */
+    .main-content { margin-left: 250px; padding: 24px 28px; }
+
+    .top-bar {
+      background: var(--white); border-radius: var(--radius);
+      padding: 13px 22px; margin-bottom: 24px;
+      display: flex; justify-content: space-between; align-items: center;
+      box-shadow: var(--shadow);
+    }
+    .top-bar h5 { color: var(--dark); font-weight: 700; font-size: 0.95rem; margin: 0; }
+    .top-bar small { color: var(--muted); font-size: 0.78rem; }
+
+    /* ── CARDS ───────────────────────────────────── */
+    .card {
+      border: none; border-radius: var(--radius);
+      box-shadow: var(--shadow); background: var(--white);
+    }
+    .card-header {
+      background: var(--white);
+      border-bottom: 1px solid var(--border);
+      font-weight: 600; font-size: 0.88rem;
+      color: var(--dark); border-radius: var(--radius) var(--radius) 0 0 !important;
+    }
+
+    /* ── STAT CARDS ──────────────────────────────── */
+    .stat-card {
+      background: var(--white); border-radius: var(--radius);
+      padding: 22px; box-shadow: var(--shadow);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .stat-card:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.09); }
+    .stat-card .icon {
+      width: 48px; height: 48px; border-radius: 11px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.35rem; margin-bottom: 14px;
+    }
+
+    /* ── BUTTONS ─────────────────────────────────── */
+    .btn { font-family: 'Poppins', sans-serif; font-weight: 500; border-radius: 8px; }
+    .btn-primary {
+      --bs-btn-bg: #111827; --bs-btn-border-color: #111827;
+      --bs-btn-hover-bg: #1f2937; --bs-btn-hover-border-color: #1f2937;
+      --bs-btn-active-bg: #374151; --bs-btn-active-border-color: #374151;
+      --bs-btn-color: #fff; --bs-btn-hover-color: #fff; --bs-btn-active-color: #fff;
+      --bs-btn-focus-shadow-rgb: 17,24,39;
+    }
+    .btn-success {
+      --bs-btn-bg: #BAF2BF; --bs-btn-border-color: #BAF2BF;
+      --bs-btn-hover-bg: #a3e8a9; --bs-btn-hover-border-color: #a3e8a9;
+      --bs-btn-active-bg: #8fdc96;
+      --bs-btn-color: #111827; --bs-btn-hover-color: #111827; --bs-btn-active-color: #111827;
+    }
+    .btn-outline-primary {
+      --bs-btn-color: #111827; --bs-btn-border-color: #111827;
+      --bs-btn-hover-bg: #111827; --bs-btn-hover-color: #fff;
+      --bs-btn-hover-border-color: #111827;
+    }
+    .btn-outline-success {
+      --bs-btn-color: #166534; --bs-btn-border-color: #BAF2BF;
+      --bs-btn-hover-bg: #BAF2BF; --bs-btn-hover-color: #111827;
+      --bs-btn-hover-border-color: #BAF2BF;
+    }
+    .btn-checkin {
+      background: var(--accent); border: none;
+      color: var(--dark); font-weight: 600;
+    }
+    .btn-checkin:hover { background: #a3e8a9; color: var(--dark); }
+    .btn-checkout {
+      background: #ef4444; border: none; color: #fff; font-weight: 600;
+    }
+    .btn-checkout:hover { background: #dc2626; color: #fff; }
+
+    /* ── TABLE ───────────────────────────────────── */
+    .table { font-size: 0.855rem; color: var(--text); }
+    .table thead th {
+      font-weight: 600; font-size: 0.72rem;
+      text-transform: uppercase; letter-spacing: 0.6px;
+      color: var(--muted); border-bottom-width: 1px;
+    }
+    .table-hover > tbody > tr:hover > * { background-color: #f9fafb; }
+
+    /* ── BADGES ──────────────────────────────────── */
+    .badge-present  { background: #dcfce7; color: #166534; }
+    .badge-absent   { background: #fee2e2; color: #991b1b; }
+    .badge-leave    { background: #fef9c3; color: #854d0e; }
+    .badge-half_day { background: #dbeafe; color: #1e40af; }
+
+    /* ── FORMS ───────────────────────────────────── */
+    .form-label { font-size: 0.82rem; font-weight: 600; color: var(--dark); margin-bottom: 5px; }
+    .form-control, .form-select {
+      font-family: 'Poppins', sans-serif;
+      font-size: 0.875rem; border-radius: 8px;
+      border-color: var(--border);
+    }
+    .form-control:focus, .form-select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(186,242,191,0.3);
+    }
+    .input-group-text {
+      font-family: 'Poppins', sans-serif;
+      background: #f9fafb; border-color: var(--border);
+      font-size: 0.875rem;
+    }
+
+    /* ── ALERTS ──────────────────────────────────── */
+    .alert { border-radius: 10px; font-size: 0.855rem; border: none; }
+
+    /* ── TOP-BAR PANEL BADGE ─────────────────────── */
+    .panel-badge-admin    { background: var(--dark) !important; color: #fff; }
+    .panel-badge-employee { background: var(--accent) !important; color: var(--dark); }
+
+    /* ── AVATAR ──────────────────────────────────── */
+    .emp-avatar {
+      background: var(--dark); color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; flex-shrink: 0; border-radius: 50%;
+    }
+  </style>
+</head>
+<body>
+
+<div class="sidebar">
+  <div class="brand">
+    <div class="brand-icon"><i class="bi bi-people-fill"></i></div>
+    <div class="brand-text">Attend<span>Track</span></div>
+  </div>
+
+  <nav class="nav flex-column mt-1 flex-fill overflow-auto pb-2">
+    {% if request.user.is_staff and panel_mode == 'admin' %}
+      <!-- ── ADMIN SIDEBAR ── -->
+      <div class="sidebar-section-label">Overview</div>
+      <a href="{% url 'admin_dashboard' %}" class="nav-link {% if request.resolver_match.url_name == 'admin_dashboard' %}active{% endif %}">
+        <i class="bi bi-speedometer2"></i> Dashboard
+      </a>
+
+      <div class="sidebar-section-label">Employees</div>
+      <a href="{% url 'manage_employees' %}" class="nav-link {% if request.resolver_match.url_name == 'manage_employees' or request.resolver_match.url_name == 'employee_detail' or request.resolver_match.url_name == 'edit_employee_admin' %}active{% endif %}">
+        <i class="bi bi-people"></i> All Employees
+      </a>
+      <a href="{% url 'add_employee' %}" class="nav-link {% if request.resolver_match.url_name == 'add_employee' %}active{% endif %}">
+        <i class="bi bi-person-plus"></i> Add Employee
+      </a>
+      <a href="{% url 'manage_departments' %}" class="nav-link {% if request.resolver_match.url_name == 'manage_departments' or request.resolver_match.url_name == 'edit_department' %}active{% endif %}">
+        <i class="bi bi-diagram-3"></i> Departments
+      </a>
+
+      <div class="sidebar-section-label">Attendance</div>
+      <a href="{% url 'admin_attendance_records' %}" class="nav-link {% if request.resolver_match.url_name == 'admin_attendance_records' or request.resolver_match.url_name == 'add_attendance_record' or request.resolver_match.url_name == 'edit_attendance_record' %}active{% endif %}">
+        <i class="bi bi-calendar2-week"></i> Attendance Records
+      </a>
+
+      <div class="sidebar-section-label">Requests</div>
+      <a href="{% url 'admin_corrections' %}" class="nav-link {% if request.resolver_match.url_name == 'admin_corrections' or request.resolver_match.url_name == 'admin_correction_action' %}active{% endif %}">
+        <i class="bi bi-clock-history"></i> Correction Requests
+        {% if pending_corrections_count %}<span class="badge-notify">{{ pending_corrections_count }}</span>{% endif %}
+      </a>
+      <a href="{% url 'admin_leaves' %}" class="nav-link {% if request.resolver_match.url_name == 'admin_leaves' or request.resolver_match.url_name == 'admin_leave_action' %}active{% endif %}">
+        <i class="bi bi-calendar2-check"></i> Leave Requests
+        {% if pending_leaves_count %}<span class="badge-notify">{{ pending_leaves_count }}</span>{% endif %}
+      </a>
+      <a href="{% url 'admin_tickets' %}" class="nav-link {% if request.resolver_match.url_name == 'admin_tickets' or request.resolver_match.url_name == 'admin_ticket_action' %}active{% endif %}">
+        <i class="bi bi-ticket-perforated"></i> Support Tickets
+        {% if open_tickets_count %}<span class="badge-notify">{{ open_tickets_count }}</span>{% endif %}
+      </a>
+
+      <div class="sidebar-section-label">Salary</div>
+      <a href="{% url 'admin_salary' %}" class="nav-link {% if request.resolver_match.url_name == 'admin_salary' or request.resolver_match.url_name == 'update_salary' %}active{% endif %}">
+        <i class="bi bi-cash-coin"></i> Manage Salary
+      </a>
+
+      <div class="sidebar-section-label">Reports</div>
+      <a href="{% url 'reports' %}" class="nav-link {% if request.resolver_match.url_name == 'reports' or request.resolver_match.url_name == 'employee_monthly_detail' %}active{% endif %}">
+        <i class="bi bi-bar-chart-line"></i> Monthly Report
+      </a>
+      <a href="{% url 'date_wise_report' %}" class="nav-link {% if request.resolver_match.url_name == 'date_wise_report' %}active{% endif %}">
+        <i class="bi bi-calendar-day"></i> Date-wise Report
+      </a>
+
+    {% else %}
+      <!-- ── EMPLOYEE SIDEBAR ── -->
+      <div class="sidebar-section-label">Attendance</div>
+      <a href="{% url 'dashboard' %}" class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+        <i class="bi bi-house"></i> My Dashboard
+      </a>
+      <a href="{% url 'my_attendance' %}" class="nav-link {% if request.resolver_match.url_name == 'my_attendance' %}active{% endif %}">
+        <i class="bi bi-calendar-check"></i> My Attendance
+      </a>
+      <a href="{% url 'request_correction' %}" class="nav-link {% if request.resolver_match.url_name == 'request_correction' or request.resolver_match.url_name == 'my_corrections' %}active{% endif %}">
+        <i class="bi bi-clock-history"></i> Correction Request
+      </a>
+
+      <div class="sidebar-section-label">Requests</div>
+      <a href="{% url 'apply_leave' %}" class="nav-link {% if request.resolver_match.url_name == 'apply_leave' %}active{% endif %}">
+        <i class="bi bi-calendar2-plus"></i> Apply for Leave
+      </a>
+      <a href="{% url 'my_leaves' %}" class="nav-link {% if request.resolver_match.url_name == 'my_leaves' %}active{% endif %}">
+        <i class="bi bi-calendar2-check"></i> My Leaves
+      </a>
+
+      <div class="sidebar-section-label">Support</div>
+      <a href="{% url 'raise_ticket' %}" class="nav-link {% if request.resolver_match.url_name == 'raise_ticket' %}active{% endif %}">
+        <i class="bi bi-plus-circle"></i> Raise a Ticket
+      </a>
+      <a href="{% url 'my_tickets' %}" class="nav-link {% if request.resolver_match.url_name == 'my_tickets' %}active{% endif %}">
+        <i class="bi bi-ticket-perforated"></i> My Tickets
+      </a>
+
+      <div class="sidebar-section-label">Payroll</div>
+      <a href="{% url 'my_salary' %}" class="nav-link {% if request.resolver_match.url_name == 'my_salary' %}active{% endif %}">
+        <i class="bi bi-cash-coin"></i> My Salary
+      </a>
+
+      <div class="sidebar-section-label">Account</div>
+      <a href="{% url 'edit_profile' %}" class="nav-link {% if request.resolver_match.url_name == 'edit_profile' %}active{% endif %}">
+        <i class="bi bi-person-gear"></i> Edit Profile
+      </a>
+    {% endif %}
+  </nav>
+
+  <div class="sidebar-bottom">
+    {% if request.user.is_staff %}
+      {% if panel_mode == 'admin' %}
+        <a href="{% url 'switch_panel' %}" class="panel-switcher">
+          <i class="bi bi-person-badge"></i> Switch Panel
+          <span class="mode-badge" style="background:var(--accent);color:var(--dark);">Admin</span>
+        </a>
+      {% else %}
+        <a href="{% url 'switch_panel' %}" class="panel-switcher employee-mode">
+          <i class="bi bi-shield-check"></i> Switch Panel
+          <span class="mode-badge" style="background:rgba(186,242,191,0.2);color:var(--accent);">Employee</span>
+        </a>
+      {% endif %}
+    {% endif %}
+    <a href="{% url 'logout' %}" class="nav-link" style="color:rgba(255,255,255,0.45);margin-top:2px;">
+      <i class="bi bi-box-arrow-left"></i> Logout
+    </a>
+  </div>
+</div>
+
+<div class="main-content">
+  <div class="top-bar">
+    <div>
+      <h5>{% block page_title %}Dashboard{% endblock %}</h5>
+      <small>{{ today|date:"l, d F Y" }}</small>
+    </div>
+    <div class="d-flex align-items-center gap-3">
+      <span class="text-muted" style="font-size:0.82rem;">{{ request.user.get_full_name|default:request.user.username }}</span>
+      {% if request.user.is_staff %}
+        {% if panel_mode == 'admin' %}
+          <span class="badge panel-badge-admin px-3 py-2 rounded-pill" style="font-size:0.72rem;">Admin Panel</span>
+        {% else %}
+          <span class="badge panel-badge-employee px-3 py-2 rounded-pill" style="font-size:0.72rem;">Employee Panel</span>
+        {% endif %}
+      {% else %}
+        <span class="badge px-3 py-2 rounded-pill" style="background:var(--accent);color:var(--dark);font-size:0.72rem;">Employee</span>
+      {% endif %}
+    </div>
+  </div>
+
+  {% for message in messages %}
+    <div class="alert alert-{% if message.tags == 'error' %}danger{% elif message.tags == 'warning' %}warning{% elif message.tags == 'success' %}success{% else %}info{% endif %} alert-dismissible fade show" role="alert">
+      {{ message }}
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+  {% endfor %}
+
+  {% block content %}{% endblock %}
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

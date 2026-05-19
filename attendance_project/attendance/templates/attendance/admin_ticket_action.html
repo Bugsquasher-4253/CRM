@@ -1,0 +1,93 @@
+{% extends 'attendance/base.html' %}
+{% block title %}Respond to Ticket - AttendTrack{% endblock %}
+{% block page_title %}Respond to Ticket{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-7">
+
+    <!-- Ticket Details -->
+    <div class="card mb-4">
+      <div class="card-body p-4">
+        <div class="d-flex gap-3 align-items-center mb-3">
+          <div style="width:55px; height:55px; border-radius:50%; background:linear-gradient(135deg,#e94560,#0f3460); display:flex; align-items:center; justify-content:center; color:white; font-weight:700; font-size:1.3rem;">
+            {{ ticket.employee.user.first_name|first|upper }}
+          </div>
+          <div>
+            <div class="fw-bold fs-5">{{ ticket.employee.user.get_full_name }}</div>
+            <div class="text-muted">{{ ticket.employee.employee_id }} · {{ ticket.employee.designation }}</div>
+          </div>
+        </div>
+        <hr>
+        <div class="row g-3 mt-1">
+          <div class="col-md-6">
+            <small class="text-muted d-block">Ticket ID</small>
+            <span class="fw-semibold">#{{ ticket.id }}</span>
+          </div>
+          <div class="col-md-6">
+            <small class="text-muted d-block">Priority</small>
+            {% if ticket.priority == 'high' %}
+              <span class="badge bg-danger">🔴 High</span>
+            {% elif ticket.priority == 'medium' %}
+              <span class="badge bg-warning text-dark">🟡 Medium</span>
+            {% else %}
+              <span class="badge bg-success">🟢 Low</span>
+            {% endif %}
+          </div>
+          <div class="col-12">
+            <small class="text-muted d-block">Subject</small>
+            <span class="fw-semibold">{{ ticket.subject }}</span>
+          </div>
+          <div class="col-12">
+            <small class="text-muted d-block">Description</small>
+            <p style="white-space:pre-wrap; color:#333;">{{ ticket.description }}</p>
+          </div>
+          <div class="col-md-6">
+            <small class="text-muted d-block">Submitted On</small>
+            <span>{{ ticket.created_at|date:"d M Y, h:i A" }}</span>
+          </div>
+          <div class="col-md-6">
+            <small class="text-muted d-block">Current Status</small>
+            {% if ticket.status == 'open' %}
+              <span class="badge" style="background:#fff3cd; color:#856404;">Open</span>
+            {% elif ticket.status == 'in_progress' %}
+              <span class="badge bg-primary">In Progress</span>
+            {% elif ticket.status == 'resolved' %}
+              <span class="badge" style="background:#d4edda; color:#155724;">Resolved</span>
+            {% else %}
+              <span class="badge bg-secondary">Closed</span>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Admin Response Form -->
+    <div class="card">
+      <div class="card-header py-3">
+        <i class="bi bi-reply me-2"></i>Your Response
+      </div>
+      <div class="card-body p-4">
+        <form method="POST">
+          {% csrf_token %}
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Update Status <span class="text-danger">*</span></label>
+            {{ form.status }}
+          </div>
+          <div class="mb-4">
+            <label class="form-label fw-semibold">Response to Employee</label>
+            {{ form.admin_response }}
+          </div>
+          <div class="d-flex gap-3">
+            <button type="submit" class="btn btn-primary px-5">
+              <i class="bi bi-send me-2"></i>Send Response
+            </button>
+            <a href="{% url 'admin_tickets' %}" class="btn btn-outline-secondary px-4">Cancel</a>
+          </div>
+        </form>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

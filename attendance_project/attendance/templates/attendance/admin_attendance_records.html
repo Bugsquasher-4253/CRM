@@ -1,0 +1,141 @@
+{% extends 'attendance/base.html' %}
+{% block title %}Attendance Records - AttendTrack{% endblock %}
+{% block page_title %}Attendance Records{% endblock %}
+
+{% block content %}
+
+<!-- Filters -->
+<div class="card mb-4">
+  <div class="card-body">
+    <form method="GET" class="row g-3 align-items-end">
+      <div class="col-md-3">
+        <label class="form-label fw-semibold">Employee</label>
+        <select name="employee" class="form-select">
+          <option value="">All Employees</option>
+          {% for emp in employees %}
+            <option value="{{ emp.id }}" {% if emp_filter == emp.id|stringformat:"s" %}selected{% endif %}>
+              {{ emp.user.get_full_name }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label fw-semibold">Date</label>
+        <input type="date" name="date" class="form-control" value="{{ date_filter }}">
+      </div>
+      <div class="col-md-2">
+        <label class="form-label fw-semibold">Status</label>
+        <select name="status" class="form-select">
+          <option value="">All</option>
+          {% for val, label in status_choices %}
+            <option value="{{ val }}" {% if status_filter == val %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-4 d-flex gap-2">
+        <button type="submit" class="btn btn-primary flex-fill">
+          <i class="bi bi-search me-1"></i>Filter
+        </button>
+        <a href="{% url 'admin_attendance_records' %}" class="btn btn-outline-secondary">
+          <i class="bi bi-x-lg"></i>
+        </a>
+        <a href="{% url 'add_attendance_record' %}" class="btn btn-success flex-fill">
+          <i class="bi bi-plus me-1"></i>Add Record
+        </a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Records Table -->
+<div class="card">
+  <div class="card-header py-3 d-flex justify-content-between align-items-center">
+    <span><i class="bi bi-calendar2-week me-2 text-primary"></i>Records</span>
+    <span class="badge bg-light text-dark border">{{ total }} record{{ total|pluralize }}</span>
+  </div>
+  <div class="card-body p-0">
+    <table class="table table-hover mb-0">
+      <thead style="background:#f8f9fa;">
+        <tr>
+          <th class="px-4 py-3">Employee</th>
+          <th class="py-3">Date</th>
+          <th class="py-3">Check In</th>
+          <th class="py-3">Check Out</th>
+          <th class="py-3 text-center">Hours</th>
+          <th class="py-3 text-center">Status</th>
+          <th class="py-3 text-center">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for record in records %}
+        <tr>
+          <td class="px-4 py-3">
+            <div class="fw-semibold">{{ record.employee.user.get_full_name }}</div>
+            <small class="text-muted">{{ record.employee.employee_id }}</small>
+          </td>
+          <td class="py-3">{{ record.date|date:"d M Y" }}
+            <div class="text-muted" style="font-size:0.75rem;">{{ record.date|date:"l" }}</div>
+          </td>
+          <td class="py-3 text-success fw-semibold">
+            {{ record.check_in_time|time:"h:i A"|default:"—" }}
+          </td>
+          <td class="py-3 text-danger fw-semibold">
+            {{ record.check_out_time|time:"h:i A"|default:"—" }}
+          </td>
+          <td class="py-3 text-center">
+            {{ record.total_hours|default:"—" }}
+          </td>
+          <td class="py-3 text-center">
+            <span class="badge badge-{{ record.status }} px-3 py-2 rounded-pill">
+              {{ record.get_status_display }}
+            </span>
+          </td>
+          <td class="py-3 text-center">
+            <div class="d-flex gap-1 justify-content-center">
+              <a href="{% url 'edit_attendance_record' record.id %}"
+                 class="btn btn-sm btn-outline-primary">
+                <i class="bi bi-pencil"></i>
+              </a>
+              <button type="button" class="btn btn-sm btn-outline-danger"
+                      data-bs-toggle="modal" data-bs-target="#del{{ record.id }}">
+                <i class="bi bi-trash"></i>
+              </button>
+            </div>
+            <!-- Delete Modal -->
+            <div class="modal fade" id="del{{ record.id }}" tabindex="-1">
+              <div class="modal-dialog modal-sm">
+                <div class="modal-content">
+                  <div class="modal-header border-0">
+                    <h6 class="modal-title text-danger fw-bold">
+                      <i class="bi bi-exclamation-triangle me-1"></i>Delete Record?
+                    </h6>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                  </div>
+                  <div class="modal-body pt-0 text-muted small">
+                    {{ record.employee.user.get_full_name }} · {{ record.date|date:"d M Y" }}
+                  </div>
+                  <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <form method="POST" action="{% url 'delete_attendance_record' record.id %}" style="display:inline;">
+                      {% csrf_token %}
+                      <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+                    </form>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="7" class="text-center py-5 text-muted">
+            <i class="bi bi-calendar2-x" style="font-size:2.5rem;opacity:0.3;"></i>
+            <p class="mt-3">No records found.</p>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

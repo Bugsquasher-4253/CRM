@@ -1,0 +1,230 @@
+{% extends 'attendance/base.html' %}
+{% block title %}Update Salary - AttendTrack{% endblock %}
+{% block page_title %}Update Salary{% endblock %}
+
+{% block content %}
+
+<!-- Back + Month Switcher -->
+<div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
+  <a href="{% url 'admin_salary' %}?month={{ month }}&year={{ year }}"
+     class="btn btn-outline-secondary">
+    <i class="bi bi-arrow-left me-1"></i>Back to Salary List
+  </a>
+
+  <form method="GET" class="d-flex gap-2 align-items-center">
+    <select name="month" class="form-select form-select-sm" style="width:140px;">
+      {% for m, mname in months %}
+        <option value="{{ m }}" {% if m == month %}selected{% endif %}>{{ mname }}</option>
+      {% endfor %}
+    </select>
+    <select name="year" class="form-select form-select-sm" style="width:100px;">
+      {% for y in years %}
+        <option value="{{ y }}" {% if y == year %}selected{% endif %}>{{ y }}</option>
+      {% endfor %}
+    </select>
+    <button type="submit" class="btn btn-sm btn-primary">Go</button>
+  </form>
+</div>
+
+<!-- Employee Banner -->
+<div class="card mb-4" style="border-left: 4px solid #BAF2BF;">
+  <div class="card-body py-3">
+    <div class="d-flex align-items-center gap-3">
+      <div style="width:55px;height:55px;border-radius:50%;background:linear-gradient(135deg,#e94560,#0f3460);
+                  display:flex;align-items:center;justify-content:center;color:white;font-size:1.4rem;font-weight:700;">
+        {{ employee.user.first_name|first|upper }}
+      </div>
+      <div>
+        <h5 class="mb-0 fw-bold">{{ employee.user.get_full_name }}</h5>
+        <span class="text-muted small">{{ employee.employee_id }} &middot; {{ employee.designation }}</span>
+        {% if employee.department %}
+          <span class="badge bg-light text-dark ms-2 border">{{ employee.department }}</span>
+        {% endif %}
+      </div>
+      <div class="ms-auto text-end">
+        <div class="fw-semibold text-muted" style="font-size:0.8rem;">PERIOD</div>
+        <div class="fw-bold fs-5" style="color:#111827;">{{ month_name }} {{ year }}</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Salary Form -->
+<div class="row g-4">
+  <div class="col-lg-7">
+    <div class="card">
+      <div class="card-header py-3">
+        <i class="bi bi-pencil-square me-2 text-primary"></i>Salary Details
+      </div>
+      <div class="card-body">
+        <form method="POST" id="salaryForm">
+          {% csrf_token %}
+
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Basic Salary <span class="text-danger">*</span></label>
+              <div class="input-group">
+                <span class="input-group-text">₹</span>
+                {{ form.basic_salary }}
+              </div>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold text-success">Allowances</label>
+              <div class="input-group">
+                <span class="input-group-text text-success">+₹</span>
+                {{ form.allowances }}
+              </div>
+            </div>
+          </div>
+
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <label class="form-label fw-semibold text-danger">Deductions</label>
+              <div class="input-group">
+                <span class="input-group-text text-danger">-₹</span>
+                {{ form.deductions }}
+              </div>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Net Salary (Auto)</label>
+              <div class="input-group">
+                <span class="input-group-text">₹</span>
+                <input type="text" id="netDisplay" class="form-control fw-bold text-primary" readonly
+                       placeholder="Calculated automatically">
+              </div>
+            </div>
+          </div>
+
+          <hr class="my-3">
+
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <div class="form-check form-switch mt-4">
+                {{ form.is_paid }}
+                <label class="form-check-label fw-semibold ms-2" for="{{ form.is_paid.id_for_label }}">
+                  Mark as Paid
+                </label>
+              </div>
+            </div>
+            <div class="col-md-6" id="paidDateWrapper" style="display:none;">
+              <label class="form-label fw-semibold">Payment Date</label>
+              {{ form.paid_date }}
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Notes <span class="text-muted fw-normal">(optional)</span></label>
+            {{ form.notes }}
+          </div>
+
+          <div class="d-flex gap-2 mt-4">
+            <button type="submit" class="btn btn-primary px-4">
+              <i class="bi bi-check-lg me-1"></i>Save Salary
+            </button>
+            <a href="{% url 'admin_salary' %}?month={{ month }}&year={{ year }}"
+               class="btn btn-outline-secondary px-4">Cancel</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Live Preview -->
+  <div class="col-lg-5">
+    <div class="card" style="background:linear-gradient(135deg,#111827,#1f2937);color:white;">
+      <div class="card-body p-4">
+        <div class="d-flex justify-content-between align-items-start mb-3">
+          <div>
+            <div style="font-size:0.7rem;letter-spacing:2px;opacity:0.6;">SALARY SLIP PREVIEW</div>
+            <div class="fw-bold mt-1" id="previewPeriod">{{ month_name }} {{ year }}</div>
+          </div>
+          <div>
+            <i class="bi bi-receipt" style="font-size:2rem;opacity:0.3;"></i>
+          </div>
+        </div>
+
+        <div class="mb-3 pb-3" style="border-bottom:1px solid rgba(255,255,255,0.15);">
+          <div class="fw-bold fs-6">{{ employee.user.get_full_name }}</div>
+          <div style="opacity:0.6;font-size:0.85rem;">{{ employee.designation }}{% if employee.department %} &middot; {{ employee.department }}{% endif %}</div>
+        </div>
+
+        <div class="d-flex justify-content-between mb-2">
+          <span style="opacity:0.7;">Basic Salary</span>
+          <span class="fw-semibold" id="previewBasic">₹0</span>
+        </div>
+        <div class="d-flex justify-content-between mb-2 text-success">
+          <span>+ Allowances</span>
+          <span class="fw-semibold" id="previewAllowances">₹0</span>
+        </div>
+        <div class="d-flex justify-content-between mb-3 text-danger">
+          <span>- Deductions</span>
+          <span class="fw-semibold" id="previewDeductions">₹0</span>
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center p-3 rounded"
+             style="background:rgba(255,255,255,0.1);">
+          <span class="fw-bold">Net Salary</span>
+          <span class="fw-bold fs-4" id="previewNet">₹0</span>
+        </div>
+
+        <div class="mt-3 text-center" id="previewStatus">
+          <span class="badge bg-warning text-dark px-3 py-2 rounded-pill">
+            <i class="bi bi-hourglass me-1"></i>Pending
+          </span>
+        </div>
+      </div>
+    </div>
+
+    {% if salary.basic_salary %}
+    <div class="card mt-3">
+      <div class="card-body py-2 px-3 text-muted" style="font-size:0.8rem;">
+        <i class="bi bi-clock-history me-1"></i>
+        Last saved: ₹{{ salary.net_salary|floatformat:0 }} net
+        {% if salary.is_paid %}· <span class="text-success">Paid</span>{% if salary.paid_date %} on {{ salary.paid_date|date:"d M Y" }}{% endif %}{% endif %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<script>
+  const basicInput    = document.getElementById('{{ form.basic_salary.id_for_label }}');
+  const allowInput    = document.getElementById('{{ form.allowances.id_for_label }}');
+  const deductInput   = document.getElementById('{{ form.deductions.id_for_label }}');
+  const isPaidCheck   = document.getElementById('{{ form.is_paid.id_for_label }}');
+  const paidDateWrap  = document.getElementById('paidDateWrapper');
+  const netDisplay    = document.getElementById('netDisplay');
+
+  function fmt(n) { return '₹' + Math.max(0, n).toLocaleString('en-IN'); }
+
+  function recalc() {
+    const b = parseFloat(basicInput.value)  || 0;
+    const a = parseFloat(allowInput.value)  || 0;
+    const d = parseFloat(deductInput.value) || 0;
+    const net = b + a - d;
+
+    netDisplay.value = net >= 0 ? '₹' + net.toLocaleString('en-IN') : '—';
+    document.getElementById('previewBasic').textContent      = fmt(b);
+    document.getElementById('previewAllowances').textContent = fmt(a);
+    document.getElementById('previewDeductions').textContent = fmt(d);
+    document.getElementById('previewNet').textContent        = fmt(net);
+  }
+
+  function togglePaidDate() {
+    paidDateWrap.style.display = isPaidCheck.checked ? 'block' : 'none';
+    const statusEl = document.getElementById('previewStatus');
+    statusEl.innerHTML = isPaidCheck.checked
+      ? '<span class="badge bg-success px-3 py-2 rounded-pill"><i class="bi bi-check-circle me-1"></i>Paid</span>'
+      : '<span class="badge bg-warning text-dark px-3 py-2 rounded-pill"><i class="bi bi-hourglass me-1"></i>Pending</span>';
+  }
+
+  basicInput.addEventListener('input', recalc);
+  allowInput.addEventListener('input', recalc);
+  deductInput.addEventListener('input', recalc);
+  isPaidCheck.addEventListener('change', togglePaidDate);
+
+  // Init
+  recalc();
+  togglePaidDate();
+</script>
+{% endblock %}
