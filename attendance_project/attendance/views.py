@@ -53,17 +53,20 @@ def login_view(request):
     if request.method == 'POST':
         form = LoginForm(request.POST)
         if form.is_valid():
-            email    = form.cleaned_data['email'].strip().lower()
-            password = form.cleaned_data['password']
+            login_input = form.cleaned_data['email'].strip()
+            password    = form.cleaned_data['password']
             user = None
+            # Try email first
             try:
-                user_obj = User.objects.get(email__iexact=email)
+                user_obj = User.objects.get(email__iexact=login_input)
                 user = authenticate(request, username=user_obj.username, password=password)
             except User.DoesNotExist:
                 pass
             except User.MultipleObjectsReturned:
-                messages.error(request, 'Multiple accounts found with this email. Contact admin.')
-                user = None
+                messages.error(request, 'Multiple accounts share this email. Contact admin.')
+            # Fall back to username (e.g. admin account without email set)
+            if user is None:
+                user = authenticate(request, username=login_input, password=password)
             if user is not None:
                 login(request, user)
                 if user.is_staff:
