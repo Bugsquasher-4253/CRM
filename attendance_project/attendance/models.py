@@ -172,6 +172,7 @@ class SalaryRecord(models.Model):
     deductions = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     net_salary = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     is_paid = models.BooleanField(default=False)
+    absent_days = models.IntegerField(default=0)
     paid_date = models.DateField(null=True, blank=True)
     notes = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -186,5 +187,8 @@ class SalaryRecord(models.Model):
         return f"{self.employee.user.get_full_name()} - {calendar.month_name[self.month]} {self.year}"
 
     def save(self, *args, **kwargs):
-        self.net_salary = self.basic_salary + self.allowances - self.deductions
+        import decimal
+        daily_rate = float(self.basic_salary) / 30.4 if self.basic_salary else 0
+        self.deductions = round(self.absent_days * daily_rate, 2)
+        self.net_salary = round(float(self.basic_salary) + float(self.allowances) - float(self.deductions), 2)
         super().save(*args, **kwargs)

@@ -243,7 +243,7 @@ class DepartmentForm(forms.ModelForm):
 class SalaryForm(forms.ModelForm):
     class Meta:
         model = SalaryRecord
-        fields = ['basic_salary', 'allowances', 'deductions', 'is_paid', 'paid_date', 'notes']
+        fields = ['basic_salary', 'allowances', 'is_paid', 'paid_date', 'notes']
         widgets = {
             'basic_salary': forms.NumberInput(attrs={
                 'class': 'form-control', 'placeholder': '0.00', 'step': '0.01',
@@ -251,13 +251,10 @@ class SalaryForm(forms.ModelForm):
             'allowances': forms.NumberInput(attrs={
                 'class': 'form-control', 'placeholder': '0.00', 'step': '0.01',
             }),
-            'deductions': forms.NumberInput(attrs={
-                'class': 'form-control', 'placeholder': '0.00', 'step': '0.01',
-            }),
             'is_paid': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
             'paid_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
             'notes': forms.Textarea(attrs={
                 'class': 'form-control', 'rows': 2,
-                'placeholder': 'Any note (e.g. Bonus included, LOP applied...)',
+                'placeholder': 'Any note (e.g. Bonus included)',
             }),
         }

@@ -157,10 +157,17 @@
           {% endif %}
 
           <td class="py-3 text-center">
-            <a href="{% url 'update_salary' row.employee.id %}?month={{ month }}&year={{ year }}"
-               class="btn btn-sm {% if row.salary %}btn-outline-primary{% else %}btn-primary{% endif %}">
-              <i class="bi bi-pencil me-1"></i>{% if row.salary %}Edit{% else %}Set{% endif %}
-            </a>
+            <div class="d-flex gap-1 justify-content-center flex-wrap">
+              <a href="{% url 'update_salary' row.employee.id %}?month={{ month }}&year={{ year }}"
+                 class="btn btn-sm {% if row.salary %}btn-outline-primary{% else %}btn-primary{% endif %}">
+                <i class="bi bi-pencil me-1"></i>{% if row.salary %}Edit{% else %}Set{% endif %}
+              </a>
+              {% if row.salary %}
+              <a href="{% url 'salary_slip' row.salary.id %}" class="btn btn-sm btn-outline-success" target="_blank">
+                <i class="bi bi-file-earmark-text me-1"></i>Slip
+              </a>
+              {% endif %}
+            </div>
           </td>
         </tr>
         {% empty %}

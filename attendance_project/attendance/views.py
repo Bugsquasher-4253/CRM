@@ -1162,7 +1162,6 @@ def admin_salary(request):
 @login_required
 @user_passes_test(is_admin)
 def update_salary(request, emp_id):
-    """Admin adds or edits a salary record for a specific employee + month."""
     import calendar
     employee = get_object_or_404(Employee, id=emp_id)
     month = int(request.GET.get('month', timezone.now().month))
@@ -1170,29 +1169,43 @@ def update_salary(request, emp_id):
 
     salary, _ = SalaryRecord.objects.get_or_create(
         employee=employee, month=month, year=year,
-        defaults={'basic_salary': 0, 'allowances': 0, 'deductions': 0, 'net_salary': 0}
+        defaults={'basic_salary': 0, 'allowances': 0, 'absent_days': 0}
     )
+
+    # Auto-calculate absent days from attendance (exclude Sundays)
+    absent_records = AttendanceRecord.objects.filter(
+        employee=employee, date__month=month, date__year=year, status='absent'
+    )
+    absent_days = sum(1 for r in absent_records if r.date.weekday() != 6)
+    salary.absent_days = absent_days
+    salary.save()
+
+    daily_rate = round(float(salary.basic_salary) / 30.4, 2) if salary.basic_salary else 0
 
     if request.method == 'POST':
         form = SalaryForm(request.POST, instance=salary)
         if form.is_valid():
-            form.save()
+            obj = form.save(commit=False)
+            obj.absent_days = absent_days
+            obj.save()
             messages.success(
                 request,
                 f'Salary for {employee.user.get_full_name()} '
-                f'({calendar.month_name[month]} {year}) updated successfully!'
+                f'({calendar.month_name[month]} {year}) saved successfully!'
             )
             return redirect(f"{request.path_info}?month={month}&year={year}&saved=1")
     else:
         form = SalaryForm(instance=salary)
 
     return render(request, 'attendance/update_salary.html', {
-        'form':       form,
-        'employee':   employee,
-        'salary':     salary,
-        'month':      month,
-        'year':       year,
-        'month_name': calendar.month_name[month],
+        'form':        form,
+        'employee':    employee,
+        'salary':      salary,
+        'month':       month,
+        'year':        year,
+        'month_name':  calendar.month_name[month],
+        'absent_days': absent_days,
+        'daily_rate':  daily_rate,
         'months': [(i, calendar.month_name[i]) for i in range(1, 13)],
         'years':  range(2023, timezone.now().year + 1),
         'saved':  request.GET.get('saved'),
@@ -1221,4 +1234,27 @@ def my_salary(request):
         'current_salary': current_salary,
         'current_month':  calendar.month_name[current_month],
         'current_year':   current_year,
+    })
+
+
+@login_required
+def salary_slip(request, salary_id):
+    import calendar
+    slip = get_object_or_404(SalaryRecord, id=salary_id)
+    # Access control: admin can view any, employee only their own
+    if not request.user.is_staff:
+        try:
+            if slip.employee != request.user.employee:
+                messages.error(request, 'Access denied.')
+                return redirect('my_salary')
+        except Employee.DoesNotExist:
+            return redirect('my_salary')
+    daily_rate = round(float(slip.basic_salary) / 30.4, 2) if slip.basic_salary else 0
+    total_earnings = float(slip.basic_salary) + float(slip.allowances)
+    return render(request, 'attendance/salary_slip.html', {
+        'slip':           slip,
+        'employee':       slip.employee,
+        'month_name':     calendar.month_name[slip.month],
+        'daily_rate':     daily_rate,
+        'total_earnings': round(total_earnings, 2),
     })

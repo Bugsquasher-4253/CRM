@@ -79,6 +79,7 @@
           <th class="py-3 text-end">Deductions</th>
           <th class="py-3 text-end fw-bold">Net Salary</th>
           <th class="py-3 text-center">Status</th>
+          <th class="py-3 text-center">Slip</th>
         </tr>
       </thead>
       <tbody>
@@ -115,6 +116,11 @@
                 <i class="bi bi-hourglass me-1"></i>Pending
               </span>
             {% endif %}
+          </td>
+          <td class="py-3 text-center">
+            <a href="{% url 'salary_slip' slip.id %}" class="btn btn-sm btn-outline-primary" target="_blank">
+              <i class="bi bi-file-earmark-text me-1"></i>View
+            </a>
           </td>
         </tr>
         {% endfor %}
