@@ -1,6 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required, user_passes_test
+from django.contrib.auth.models import User
 from django.contrib import messages
 from django.utils import timezone
 from django.db import transaction, IntegrityError
@@ -52,9 +53,17 @@ def login_view(request):
     if request.method == 'POST':
         form = LoginForm(request.POST)
         if form.is_valid():
-            username = form.cleaned_data['username']
+            email    = form.cleaned_data['email'].strip().lower()
             password = form.cleaned_data['password']
-            user = authenticate(request, username=username, password=password)
+            user = None
+            try:
+                user_obj = User.objects.get(email__iexact=email)
+                user = authenticate(request, username=user_obj.username, password=password)
+            except User.DoesNotExist:
+                pass
+            except User.MultipleObjectsReturned:
+                messages.error(request, 'Multiple accounts found with this email. Contact admin.')
+                user = None
             if user is not None:
                 login(request, user)
                 if user.is_staff:
@@ -62,7 +71,7 @@ def login_view(request):
                     return redirect('admin_dashboard')
                 return redirect('dashboard')
             else:
-                messages.error(request, 'Invalid username or password.')
+                messages.error(request, 'Invalid email or password.')
     else:
         form = LoginForm()
 
@@ -493,6 +502,25 @@ def toggle_employee_active(request, emp_id):
         employee.save()
         status = 'activated' if employee.is_active else 'deactivated'
         messages.success(request, f'{employee.user.get_full_name()} has been {status}.')
+    return redirect('employee_detail', emp_id=emp_id)
+
+
+@login_required
+@user_passes_test(is_admin)
+def toggle_employee_admin(request, emp_id):
+    employee = get_object_or_404(Employee, id=emp_id)
+    if request.method == 'POST':
+        user = employee.user
+        if user == request.user:
+            messages.error(request, 'You cannot change your own admin status.')
+            return redirect('employee_detail', emp_id=emp_id)
+        if not user.email:
+            messages.error(request, f'Set an email for {user.get_full_name()} first — they need it to log in.')
+            return redirect('edit_employee_admin', emp_id=emp_id)
+        user.is_staff = not user.is_staff
+        user.save()
+        action = 'granted admin access' if user.is_staff else 'revoked admin access'
+        messages.success(request, f'{user.get_full_name()} has been {action}.')
     return redirect('employee_detail', emp_id=emp_id)
 
 

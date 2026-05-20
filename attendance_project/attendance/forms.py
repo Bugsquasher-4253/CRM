@@ -4,9 +4,10 @@ from .models import Employee, LeaveRequest, SupportTicket, SalaryRecord, Departm
 
 
 class LoginForm(forms.Form):
-    username = forms.CharField(widget=forms.TextInput(attrs={
+    email = forms.EmailField(widget=forms.EmailInput(attrs={
         'class': 'form-control form-control-lg',
-        'placeholder': 'Enter your username',
+        'placeholder': 'Enter your email address',
+        'autocomplete': 'email',
     }))
     password = forms.CharField(widget=forms.PasswordInput(attrs={
         'class': 'form-control form-control-lg',
