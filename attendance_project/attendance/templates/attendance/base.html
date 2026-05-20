@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{% block title %}Employee Attendance{% endblock %}</title>
+  <title>{% block title %}Crefio{% endblock %}</title>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
@@ -44,17 +44,14 @@
       border-bottom: 1px solid rgba(255,255,255,0.07);
       margin-bottom: 8px;
     }
-    .sidebar .brand-icon {
-      width: 34px; height: 34px; border-radius: 9px;
-      background: var(--accent);
-      display: flex; align-items: center; justify-content: center;
-      flex-shrink: 0;
+    .sidebar .crefio-logo {
+      font-size: 1.35rem; font-weight: 700; color: var(--accent);
+      letter-spacing: -0.5px; line-height: 1;
     }
-    .sidebar .brand-icon i { color: var(--dark); font-size: 1rem; }
-    .sidebar .brand-text {
-      font-size: 1.05rem; font-weight: 700; color: #fff; letter-spacing: -0.3px;
+    .sidebar .brand-sub {
+      font-size: 0.6rem; color: rgba(255,255,255,0.3);
+      text-transform: uppercase; letter-spacing: 0.8px; margin-top: 2px;
     }
-    .sidebar .brand-text span { color: var(--accent); }
 
     .sidebar-section-label {
       color: rgba(255,255,255,0.25);
@@ -233,8 +230,10 @@
 
 <div class="sidebar">
   <div class="brand">
-    <div class="brand-icon"><i class="bi bi-people-fill"></i></div>
-    <div class="brand-text">Attend<span>Track</span></div>
+    <div>
+      <div class="crefio-logo">Crefio</div>
+      <div class="brand-sub">Attendance &amp; HR</div>
+    </div>
   </div>
 
   <nav class="nav flex-column mt-1 flex-fill overflow-auto pb-2">
