@@ -143,4 +143,116 @@ function updateClock() {
 updateClock();
 setInterval(updateClock, 1000);
 </script>
+
+{% if show_doc_reminder %}
+<!-- One-time document reminder popup -->
+<div class="modal fade" id="docReminderModal" tabindex="-1"
+     data-bs-backdrop="static" data-bs-keyboard="false" aria-labelledby="docReminderLabel">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content" style="border:none; border-radius:18px; overflow:hidden;">
+
+      <!-- Header -->
+      <div style="background:#111827; padding:28px 28px 20px; text-align:center;">
+        <div style="width:56px;height:56px;border-radius:14px;background:#BAF2BF;
+                    display:flex;align-items:center;justify-content:center;
+                    margin:0 auto 14px; font-size:1.6rem;">
+          📄
+        </div>
+        <h5 id="docReminderLabel" style="color:#fff; font-weight:700; margin:0; font-size:1.1rem;">
+          Complete Your Profile
+        </h5>
+        <p style="color:rgba(255,255,255,0.5); font-size:0.8rem; margin:6px 0 0;">
+          Please upload your documents
+        </p>
+      </div>
+
+      <!-- Body -->
+      <div class="modal-body" style="padding:24px 28px;">
+        <p style="color:#374151; font-size:0.88rem; margin-bottom:18px;">
+          To complete your employee profile, please upload the following documents:
+        </p>
+        <div style="display:flex; flex-direction:column; gap:10px; margin-bottom:20px;">
+          <div style="display:flex;align-items:center;gap:12px;padding:12px 14px;
+                      background:#F7F8FA;border-radius:10px;">
+            <div style="width:34px;height:34px;border-radius:8px;background:#dbeafe;
+                        display:flex;align-items:center;justify-content:center;font-size:1rem;">
+              🪪
+            </div>
+            <div>
+              <div style="font-weight:600;font-size:0.85rem;color:#111827;">Aadhaar Card</div>
+              <div style="font-size:0.75rem;color:#6B7280;">Government ID proof</div>
+            </div>
+            {% if employee.aadhaar_card %}
+              <span style="margin-left:auto;background:#dcfce7;color:#166534;
+                           font-size:0.7rem;padding:3px 10px;border-radius:20px;font-weight:600;">
+                ✓ Uploaded
+              </span>
+            {% else %}
+              <span style="margin-left:auto;background:#fee2e2;color:#991b1b;
+                           font-size:0.7rem;padding:3px 10px;border-radius:20px;font-weight:600;">
+                Missing
+              </span>
+            {% endif %}
+          </div>
+
+          <div style="display:flex;align-items:center;gap:12px;padding:12px 14px;
+                      background:#F7F8FA;border-radius:10px;">
+            <div style="width:34px;height:34px;border-radius:8px;background:#fef9c3;
+                        display:flex;align-items:center;justify-content:center;font-size:1rem;">
+              💳
+            </div>
+            <div>
+              <div style="font-weight:600;font-size:0.85rem;color:#111827;">PAN Card</div>
+              <div style="font-size:0.75rem;color:#6B7280;">Tax identification</div>
+            </div>
+            {% if employee.pan_card %}
+              <span style="margin-left:auto;background:#dcfce7;color:#166534;
+                           font-size:0.7rem;padding:3px 10px;border-radius:20px;font-weight:600;">
+                ✓ Uploaded
+              </span>
+            {% else %}
+              <span style="margin-left:auto;background:#fee2e2;color:#991b1b;
+                           font-size:0.7rem;padding:3px 10px;border-radius:20px;font-weight:600;">
+                Missing
+              </span>
+            {% endif %}
+          </div>
+        </div>
+
+        <div style="display:flex;gap:10px;">
+          <a href="{% url 'edit_profile' %}" onclick="dismissReminder()"
+             style="flex:1;background:#111827;color:#fff;border:none;border-radius:9px;
+                    padding:11px;font-family:'Poppins',sans-serif;font-weight:600;
+                    font-size:0.88rem;text-align:center;text-decoration:none;display:block;">
+            Upload Now
+          </a>
+          <button onclick="dismissReminder()"
+                  style="flex:1;background:#F7F8FA;color:#374151;border:1.5px solid #E5E7EB;
+                         border-radius:9px;padding:11px;font-family:'Poppins',sans-serif;
+                         font-weight:500;font-size:0.88rem;cursor:pointer;">
+            Remind Me Later
+          </button>
+        </div>
+        <p style="text-align:center;font-size:0.72rem;color:#9CA3AF;margin-top:12px;margin-bottom:0;">
+          This message will not appear again.
+        </p>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+  var docModal = new bootstrap.Modal(document.getElementById('docReminderModal'));
+  docModal.show();
+
+  function dismissReminder() {
+    fetch("{% url 'dismiss_document_reminder' %}", {
+      method: 'POST',
+      headers: { 'X-CSRFToken': '{{ csrf_token }}' }
+    });
+    docModal.hide();
+  }
+</script>
+{% endif %}
 {% endblock %}

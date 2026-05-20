@@ -24,6 +24,7 @@ class Employee(models.Model):
     aadhaar_card = models.FileField(upload_to='documents/aadhaar/', blank=True, null=True)
     pan_card = models.FileField(upload_to='documents/pan/', blank=True, null=True)
     is_active = models.BooleanField(default=True)
+    has_seen_document_reminder = models.BooleanField(default=False)
 
     def __str__(self):
         return f"{self.employee_id} - {self.user.get_full_name()}"

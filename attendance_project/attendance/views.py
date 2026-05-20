@@ -127,6 +127,8 @@ def dashboard(request):
         date__year=today.year
     )
 
+    show_doc_reminder = not employee.has_seen_document_reminder
+
     context = {
         'employee': employee,
         'today': today,
@@ -135,8 +137,23 @@ def dashboard(request):
         'present_days': monthly_records.filter(status='present').count(),
         'absent_days': monthly_records.filter(status='absent').count(),
         'leave_days': monthly_records.filter(status='leave').count(),
+        'show_doc_reminder': show_doc_reminder,
     }
     return render(request, 'attendance/dashboard.html', context)
+
+
+# ─── DISMISS DOCUMENT REMINDER ───────────────────────────────────────────────
+
+@login_required
+def dismiss_document_reminder(request):
+    from django.http import JsonResponse
+    if request.method == 'POST':
+        try:
+            request.user.employee.has_seen_document_reminder = True
+            request.user.employee.save(update_fields=['has_seen_document_reminder'])
+        except Employee.DoesNotExist:
+            pass
+    return JsonResponse({'ok': True})
 
 
 # ─── ATTENDANCE ──────────────────────────────────────────────────────────────

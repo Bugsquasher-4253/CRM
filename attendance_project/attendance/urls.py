@@ -9,6 +9,7 @@ urlpatterns = [
 
     # Employee pages
     path('dashboard/', views.dashboard, name='dashboard'),
+    path('dismiss-doc-reminder/', views.dismiss_document_reminder, name='dismiss_document_reminder'),
     path('checkin/', views.check_in, name='check_in'),
     path('checkout/', views.check_out, name='check_out'),
     path('my-attendance/', views.my_attendance, name='my_attendance'),
