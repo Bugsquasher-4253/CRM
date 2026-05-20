@@ -31,9 +31,8 @@ class UserForm(forms.ModelForm):
 class EmployeeForm(forms.ModelForm):
     class Meta:
         model = Employee
-        fields = ['employee_id', 'department', 'phone', 'designation', 'date_joined', 'profile_photo']
+        fields = ['department', 'phone', 'designation', 'date_joined', 'profile_photo']
         widgets = {
-            'employee_id': forms.TextInput(attrs={'class': 'form-control'}),
             'department': forms.Select(attrs={'class': 'form-select'}),
             'phone': forms.TextInput(attrs={'class': 'form-control'}),
             'designation': forms.TextInput(attrs={'class': 'form-control'}),

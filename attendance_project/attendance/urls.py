@@ -42,6 +42,7 @@ urlpatterns = [
     path('admin-panel/departments/<int:dept_id>/edit/', views.edit_department, name='edit_department'),
     path('admin-panel/departments/<int:dept_id>/delete/', views.delete_department, name='delete_department'),
     path('reports/', views.reports, name='reports'),
+    path('reports/export/excel/', views.export_monthly_report_excel, name='export_monthly_report_excel'),
     path('reports/employee/<int:emp_id>/', views.employee_monthly_detail, name='employee_monthly_detail'),
     path('reports/date/', views.date_wise_report, name='date_wise_report'),
 

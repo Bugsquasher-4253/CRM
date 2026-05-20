@@ -20,6 +20,17 @@ def is_admin(user):
     return user.is_staff or user.is_superuser
 
 
+def generate_employee_id():
+    import re
+    last = Employee.objects.order_by('id').last()
+    if last:
+        match = re.search(r'\d+$', last.employee_id)
+        num = int(match.group()) + 1 if match else Employee.objects.count() + 1
+    else:
+        num = 1
+    return f"CRF{num:03d}"
+
+
 def get_panel_mode(request):
     """Returns current panel mode for a staff user."""
     if request.user.is_staff:
@@ -341,6 +352,7 @@ def view_employee_detail(request, emp_id):
 @login_required
 @user_passes_test(is_admin)
 def add_employee(request):
+    next_id = generate_employee_id()
     if request.method == 'POST':
         user_form = UserForm(request.POST)
         emp_form = EmployeeForm(request.POST, request.FILES)
@@ -350,8 +362,9 @@ def add_employee(request):
             user.save()
             employee = emp_form.save(commit=False)
             employee.user = user
+            employee.employee_id = next_id
             employee.save()
-            messages.success(request, f'Employee {user.get_full_name()} added successfully!')
+            messages.success(request, f'Employee {user.get_full_name()} added! Employee ID: {next_id}')
             return redirect('manage_employees')
         else:
             messages.error(request, 'Please fix the errors below.')
@@ -362,6 +375,7 @@ def add_employee(request):
     return render(request, 'attendance/add_employee.html', {
         'user_form': user_form,
         'emp_form': emp_form,
+        'next_employee_id': next_id,
     })
 
 
@@ -627,6 +641,83 @@ def reports(request):
         'months': [(i, calendar.month_name[i]) for i in range(1, 13)],
         'years': range(2023, timezone.now().year + 1),
     })
+
+
+# ─── EXCEL EXPORT ────────────────────────────────────────────────────────────
+
+@login_required
+@user_passes_test(is_admin)
+def export_monthly_report_excel(request):
+    import calendar
+    import openpyxl
+    from openpyxl.styles import Font, PatternFill, Alignment
+    from openpyxl.utils import get_column_letter
+    from django.http import HttpResponse
+
+    month = int(request.GET.get('month', timezone.now().month))
+    year  = int(request.GET.get('year',  timezone.now().year))
+    month_name_str = calendar.month_name[month]
+
+    employees = Employee.objects.filter(is_active=True).select_related('user', 'department')
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = f"{month_name_str[:3]} {year}"
+
+    # Title row
+    ws.merge_cells('A1:J1')
+    ws['A1'] = f"Crefio — Monthly Attendance Report: {month_name_str} {year}"
+    ws['A1'].font = Font(bold=True, size=13, color='FFFFFF')
+    ws['A1'].fill = PatternFill(start_color='111827', end_color='111827', fill_type='solid')
+    ws['A1'].alignment = Alignment(horizontal='center', vertical='center')
+    ws.row_dimensions[1].height = 32
+
+    # Header row
+    headers = ['Emp ID', 'Full Name', 'Department', 'Designation',
+               'Present', 'Absent', 'Leave', 'Half Day', 'Total Hours', 'Attendance %']
+    for col, h in enumerate(headers, 1):
+        cell = ws.cell(row=2, column=col, value=h)
+        cell.font = Font(bold=True, color='111827', size=10)
+        cell.fill = PatternFill(start_color='BAF2BF', end_color='BAF2BF', fill_type='solid')
+        cell.alignment = Alignment(horizontal='center', vertical='center')
+    ws.row_dimensions[2].height = 22
+
+    # Data rows
+    for row_idx, emp in enumerate(employees, 3):
+        records  = AttendanceRecord.objects.filter(employee=emp, date__month=month, date__year=year)
+        present  = records.filter(status='present').count()
+        absent   = records.filter(status='absent').count()
+        leave    = records.filter(status='leave').count()
+        half_day = records.filter(status='half_day').count()
+        total_hrs = round(sum(float(r.total_hours or 0) for r in records), 2)
+        total    = present + absent + leave + half_day
+        pct      = f"{round(present / total * 100, 1)}%" if total > 0 else "N/A"
+
+        row_data = [
+            emp.employee_id,
+            emp.user.get_full_name() or emp.user.username,
+            emp.department.name if emp.department else '-',
+            emp.designation,
+            present, absent, leave, half_day, total_hrs, pct,
+        ]
+        fill_color = 'FFFFFF' if row_idx % 2 == 0 else 'F7F8FA'
+        for col, val in enumerate(row_data, 1):
+            cell = ws.cell(row=row_idx, column=col, value=val)
+            cell.fill = PatternFill(start_color=fill_color, end_color=fill_color, fill_type='solid')
+            cell.alignment = Alignment(horizontal='center' if col > 4 else 'left', vertical='center')
+
+    # Column widths
+    for col, width in enumerate([13, 24, 18, 18, 10, 10, 10, 10, 14, 14], 1):
+        ws.column_dimensions[get_column_letter(col)].width = width
+
+    response = HttpResponse(
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
+    response['Content-Disposition'] = (
+        f'attachment; filename="Crefio_Attendance_{month_name_str}_{year}.xlsx"'
+    )
+    wb.save(response)
+    return response
 
 
 # ─── DETAILED REPORT VIEWS ───────────────────────────────────────────────────

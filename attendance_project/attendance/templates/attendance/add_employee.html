@@ -46,7 +46,11 @@
           <div class="row g-3">
             <div class="col-md-6">
               <label class="form-label fw-semibold">Employee ID</label>
-              {{ emp_form.employee_id }}
+              <div class="form-control d-flex align-items-center justify-content-between"
+                   style="background:#f3f4f6; cursor:default;">
+                <span class="fw-bold" style="color:#111827; letter-spacing:0.5px;">{{ next_employee_id }}</span>
+                <span class="badge" style="background:#BAF2BF; color:#111827; font-size:0.68rem;">Auto-generated</span>
+              </div>
             </div>
             <div class="col-md-6">
               <label class="form-label fw-semibold">Designation</label>
