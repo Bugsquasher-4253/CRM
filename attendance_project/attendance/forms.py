@@ -246,10 +246,10 @@ class SalaryForm(forms.ModelForm):
         fields = ['basic_salary', 'allowances', 'is_paid', 'paid_date', 'notes']
         widgets = {
             'basic_salary': forms.NumberInput(attrs={
-                'class': 'form-control', 'placeholder': '0.00', 'step': '0.01',
+                'class': 'form-control', 'placeholder': 'e.g. 25000', 'step': '0.01',
             }),
             'allowances': forms.NumberInput(attrs={
-                'class': 'form-control', 'placeholder': '0.00', 'step': '0.01',
+                'class': 'form-control', 'placeholder': 'e.g. 5000', 'step': '0.01',
             }),
             'is_paid': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
             'paid_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
@@ -258,3 +258,9 @@ class SalaryForm(forms.ModelForm):
                 'placeholder': 'Any note (e.g. Bonus included)',
             }),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for fname in ('basic_salary', 'allowances'):
+            if float(self.initial.get(fname) or 0) == 0:
+                self.initial[fname] = ''

@@ -35,7 +35,12 @@
             </div>
             <div class="col-md-6">
               <label class="form-label fw-semibold">Password</label>
-              {{ user_form.password }}
+              <div class="input-group">
+                {{ user_form.password }}
+                <button class="btn btn-outline-secondary" type="button" id="toggleEmpPassword" tabindex="-1">
+                  <i class="bi bi-eye" id="empEyeIcon"></i>
+                </button>
+              </div>
             </div>
           </div>
 
@@ -85,4 +90,14 @@
     </div>
   </div>
 </div>
+<script>
+  const toggleBtn = document.getElementById('toggleEmpPassword');
+  const pwdInput  = document.getElementById('{{ user_form.password.id_for_label }}');
+  const eyeIcon   = document.getElementById('empEyeIcon');
+  toggleBtn.addEventListener('click', function () {
+    const show = pwdInput.type === 'password';
+    pwdInput.type = show ? 'text' : 'password';
+    eyeIcon.className = show ? 'bi bi-eye-slash' : 'bi bi-eye';
+  });
+</script>
 {% endblock %}

@@ -6,40 +6,48 @@
 <!-- Stats Cards -->
 <div class="row g-3 mb-4">
   <div class="col-6 col-md-3">
-    <div class="stat-card dash-stat">
-      <div class="dash-stat-icon" style="background:#e3f2fd;">
-        <i class="bi bi-people-fill" style="color:#1565c0;"></i>
+    <a href="{% url 'manage_employees' %}" class="text-decoration-none">
+      <div class="stat-card dash-stat" style="cursor:pointer;transition:box-shadow .18s,transform .18s;" onmouseover="this.style.transform='translateY(-3px)';this.style.boxShadow='0 6px 20px rgba(0,0,0,.10)'" onmouseout="this.style.transform='';this.style.boxShadow=''">
+        <div class="dash-stat-icon" style="background:#e3f2fd;">
+          <i class="bi bi-people-fill" style="color:#1565c0;"></i>
+        </div>
+        <div class="dash-stat-num">{{ total_employees }}</div>
+        <div class="dash-stat-label">Total Employees</div>
       </div>
-      <div class="dash-stat-num">{{ total_employees }}</div>
-      <div class="dash-stat-label">Total Employees</div>
-    </div>
+    </a>
   </div>
   <div class="col-6 col-md-3">
-    <div class="stat-card dash-stat">
-      <div class="dash-stat-icon" style="background:#e8f5e9;">
-        <i class="bi bi-person-check-fill" style="color:#2e7d32;"></i>
+    <a href="{% url 'admin_attendance_records' %}?date={{ today|date:'Y-m-d' }}" class="text-decoration-none">
+      <div class="stat-card dash-stat" style="cursor:pointer;transition:box-shadow .18s,transform .18s;" onmouseover="this.style.transform='translateY(-3px)';this.style.boxShadow='0 6px 20px rgba(0,0,0,.10)'" onmouseout="this.style.transform='';this.style.boxShadow=''">
+        <div class="dash-stat-icon" style="background:#e8f5e9;">
+          <i class="bi bi-person-check-fill" style="color:#2e7d32;"></i>
+        </div>
+        <div class="dash-stat-num" style="color:#2e7d32;">{{ today_present }}</div>
+        <div class="dash-stat-label">Present Today</div>
       </div>
-      <div class="dash-stat-num" style="color:#2e7d32;">{{ today_present }}</div>
-      <div class="dash-stat-label">Present Today</div>
-    </div>
+    </a>
   </div>
   <div class="col-6 col-md-3">
-    <div class="stat-card dash-stat">
-      <div class="dash-stat-icon" style="background:#fce4ec;">
-        <i class="bi bi-person-x-fill" style="color:#c62828;"></i>
+    <a href="{% url 'admin_attendance_records' %}?date={{ today|date:'Y-m-d' }}" class="text-decoration-none">
+      <div class="stat-card dash-stat" style="cursor:pointer;transition:box-shadow .18s,transform .18s;" onmouseover="this.style.transform='translateY(-3px)';this.style.boxShadow='0 6px 20px rgba(0,0,0,.10)'" onmouseout="this.style.transform='';this.style.boxShadow=''">
+        <div class="dash-stat-icon" style="background:#fce4ec;">
+          <i class="bi bi-person-x-fill" style="color:#c62828;"></i>
+        </div>
+        <div class="dash-stat-num" style="color:#c62828;">{{ today_absent }}</div>
+        <div class="dash-stat-label">Absent Today</div>
       </div>
-      <div class="dash-stat-num" style="color:#c62828;">{{ today_absent }}</div>
-      <div class="dash-stat-label">Absent Today</div>
-    </div>
+    </a>
   </div>
   <div class="col-6 col-md-3">
-    <div class="stat-card dash-stat">
-      <div class="dash-stat-icon" style="background:#f3e5f5;">
-        <i class="bi bi-person-workspace" style="color:#6a1b9a;"></i>
+    <a href="{% url 'admin_attendance_records' %}?date={{ today|date:'Y-m-d' }}" class="text-decoration-none">
+      <div class="stat-card dash-stat" style="cursor:pointer;transition:box-shadow .18s,transform .18s;" onmouseover="this.style.transform='translateY(-3px)';this.style.boxShadow='0 6px 20px rgba(0,0,0,.10)'" onmouseout="this.style.transform='';this.style.boxShadow=''">
+        <div class="dash-stat-icon" style="background:#f3e5f5;">
+          <i class="bi bi-person-workspace" style="color:#6a1b9a;"></i>
+        </div>
+        <div class="dash-stat-num" style="color:#6a1b9a;">{{ checked_in_now.count }}</div>
+        <div class="dash-stat-label">In Office Now</div>
       </div>
-      <div class="dash-stat-num" style="color:#6a1b9a;">{{ checked_in_now.count }}</div>
-      <div class="dash-stat-label">In Office Now</div>
-    </div>
+    </a>
   </div>
 </div>
 
