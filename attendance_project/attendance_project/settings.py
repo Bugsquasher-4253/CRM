@@ -58,7 +58,7 @@ WSGI_APPLICATION = "attendance_project.wsgi.application"
 DATABASES = {
     "default": dj_database_url.config(
         default=f'sqlite:///{BASE_DIR / "db.sqlite3"}',
-        conn_max_age=600,
+        conn_max_age=0,
         ssl_require=False,
     )
 }
@@ -83,7 +83,14 @@ USE_TZ        = True
 # ── STATIC FILES ──────────────────────────────────────────────────────────────
 STATIC_URL  = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
-STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedStaticFilesStorage",
+    },
+}
 
 # ── MEDIA FILES ───────────────────────────────────────────────────────────────
 MEDIA_URL  = "/media/"
