@@ -3,6 +3,7 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib import messages
 from django.utils import timezone
+from django.db import transaction, IntegrityError
 from django.db.models import Q, Count
 from .models import Employee, AttendanceRecord, Department, LeaveRequest, SupportTicket, SalaryRecord, AttendanceCorrectionRequest
 from .forms import (
@@ -22,13 +23,15 @@ def is_admin(user):
 
 def generate_employee_id():
     import re
-    last = Employee.objects.order_by('id').last()
-    if last:
-        match = re.search(r'\d+$', last.employee_id)
-        num = int(match.group()) + 1 if match else Employee.objects.count() + 1
-    else:
-        num = 1
-    return f"CRF{num:03d}"
+    # select_for_update locks the last row so two concurrent adds get different IDs
+    with transaction.atomic():
+        last = Employee.objects.select_for_update().order_by('id').last()
+        if last:
+            match = re.search(r'\d+$', last.employee_id)
+            num = int(match.group()) + 1 if match else Employee.objects.count() + 1
+        else:
+            num = 1
+        return f"CRF{num:03d}"
 
 
 def get_panel_mode(request):
@@ -168,18 +171,25 @@ def check_in(request):
     today = timezone.now().date()
     now_time = timezone.localtime(timezone.now()).time()
 
-    attendance, created = AttendanceRecord.objects.get_or_create(
-        employee=employee,
-        date=today,
-        defaults={'check_in_time': now_time, 'status': 'present'}
-    )
+    try:
+        with transaction.atomic():
+            attendance, created = AttendanceRecord.objects.get_or_create(
+                employee=employee,
+                date=today,
+                defaults={'check_in_time': now_time, 'status': 'present'}
+            )
+    except IntegrityError:
+        # Two simultaneous requests — fetch what was just created
+        attendance = AttendanceRecord.objects.get(employee=employee, date=today)
+        created = False
 
     if not created and attendance.check_in_time:
         messages.warning(request, f'Already checked in at {attendance.check_in_time.strftime("%I:%M %p")}')
     elif not created and not attendance.check_in_time:
-        attendance.check_in_time = now_time
-        attendance.status = 'present'
-        attendance.save()
+        with transaction.atomic():
+            attendance.check_in_time = now_time
+            attendance.status = 'present'
+            attendance.save()
         messages.success(request, f'Check-in successful at {now_time.strftime("%I:%M %p")}')
     else:
         messages.success(request, f'Check-in successful at {now_time.strftime("%I:%M %p")}')
@@ -198,19 +208,22 @@ def check_out(request):
     now_time = timezone.localtime(timezone.now()).time()
 
     try:
-        attendance = AttendanceRecord.objects.get(employee=employee, date=today)
-        if not attendance.check_in_time:
-            messages.error(request, 'You have not checked in today.')
-        elif attendance.check_out_time:
-            messages.warning(request, f'Already checked out at {attendance.check_out_time.strftime("%I:%M %p")}')
-        else:
-            attendance.check_out_time = now_time
-            attendance.save()
-            attendance.calculate_hours()
-            messages.success(
-                request,
-                f'Check-out at {now_time.strftime("%I:%M %p")}. Total: {attendance.total_hours} hrs'
+        with transaction.atomic():
+            attendance = AttendanceRecord.objects.select_for_update().get(
+                employee=employee, date=today
             )
+            if not attendance.check_in_time:
+                messages.error(request, 'You have not checked in today.')
+            elif attendance.check_out_time:
+                messages.warning(request, f'Already checked out at {attendance.check_out_time.strftime("%I:%M %p")}')
+            else:
+                attendance.check_out_time = now_time
+                attendance.save()
+                attendance.calculate_hours()
+                messages.success(
+                    request,
+                    f'Check-out at {now_time.strftime("%I:%M %p")}. Total: {attendance.total_hours} hrs'
+                )
     except AttendanceRecord.DoesNotExist:
         messages.error(request, 'No check-in found for today. Please check in first.')
 
@@ -374,13 +387,18 @@ def add_employee(request):
         user_form = UserForm(request.POST)
         emp_form = EmployeeForm(request.POST, request.FILES)
         if user_form.is_valid() and emp_form.is_valid():
-            user = user_form.save(commit=False)
-            user.set_password(user_form.cleaned_data['password'])
-            user.save()
-            employee = emp_form.save(commit=False)
-            employee.user = user
-            employee.employee_id = next_id
-            employee.save()
+            try:
+                with transaction.atomic():
+                    user = user_form.save(commit=False)
+                    user.set_password(user_form.cleaned_data['password'])
+                    user.save()
+                    employee = emp_form.save(commit=False)
+                    employee.user = user
+                    employee.employee_id = next_id
+                    employee.save()
+            except IntegrityError:
+                messages.error(request, 'A duplicate was detected. Please try again.')
+                return redirect('add_employee')
             messages.success(request, f'Employee {user.get_full_name()} added! Employee ID: {next_id}')
             return redirect('manage_employees')
         else:
@@ -1167,10 +1185,11 @@ def update_salary(request, emp_id):
     month = int(request.GET.get('month', timezone.now().month))
     year  = int(request.GET.get('year',  timezone.now().year))
 
-    salary, _ = SalaryRecord.objects.get_or_create(
-        employee=employee, month=month, year=year,
-        defaults={'basic_salary': 0, 'allowances': 0, 'absent_days': 0}
-    )
+    with transaction.atomic():
+        salary, _ = SalaryRecord.objects.get_or_create(
+            employee=employee, month=month, year=year,
+            defaults={'basic_salary': 0, 'allowances': 0, 'absent_days': 0}
+        )
 
     # Auto-calculate absent+leave days from attendance (exclude Sundays)
     absent_records = AttendanceRecord.objects.filter(

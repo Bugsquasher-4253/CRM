@@ -9,7 +9,7 @@ SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-6z^hccjv#h0^uxvw9grxs
 
 DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost 127.0.0.1').split()
+ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost 127.0.0.1').split() + ['.vercel.app']
 
 # ── APPS ──────────────────────────────────────────────────────────────────────
 INSTALLED_APPS = [
@@ -55,8 +55,6 @@ TEMPLATES = [
 WSGI_APPLICATION = "attendance_project.wsgi.application"
 
 # ── DATABASE ──────────────────────────────────────────────────────────────────
-# Uses DATABASE_URL env var on Vercel (set this to your Neon/Supabase PostgreSQL URL)
-# Falls back to SQLite for local development
 DATABASES = {
     "default": dj_database_url.config(
         default=f'sqlite:///{BASE_DIR / "db.sqlite3"}',
@@ -64,6 +62,9 @@ DATABASES = {
         ssl_require=False,
     )
 }
+# SQLite: increase lock timeout so concurrent writes queue instead of crashing
+if DATABASES['default']['ENGINE'] == 'django.db.backends.sqlite3':
+    DATABASES['default'].setdefault('OPTIONS', {})['timeout'] = 30
 
 # ── PASSWORD VALIDATION ───────────────────────────────────────────────────────
 AUTH_PASSWORD_VALIDATORS = [
@@ -93,3 +94,22 @@ LOGIN_URL            = "/"
 LOGIN_REDIRECT_URL   = "/dashboard/"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# ── SESSIONS ──────────────────────────────────────────────────────────────────
+# Store sessions in DB so all server instances share the same sessions
+SESSION_ENGINE   = 'django.contrib.sessions.backends.db'
+SESSION_COOKIE_AGE      = 43200   # 12 hours
+SESSION_COOKIE_HTTPONLY = True
+SESSION_SAVE_EVERY_REQUEST = False
+
+# ── SECURITY HEADERS ──────────────────────────────────────────────────────────
+SECURE_CONTENT_TYPE_NOSNIFF = True
+X_FRAME_OPTIONS             = 'DENY'
+CSRF_COOKIE_HTTPONLY        = True
+
+# On Vercel (HTTPS), enforce secure cookies and trust the proxy header
+if not DEBUG:
+    SESSION_COOKIE_SECURE       = True
+    CSRF_COOKIE_SECURE          = True
+    SECURE_PROXY_SSL_HEADER     = ('HTTP_X_FORWARDED_PROTO', 'https')
+    SECURE_BROWSER_XSS_FILTER   = True
