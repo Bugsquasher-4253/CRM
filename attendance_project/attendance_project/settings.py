@@ -94,7 +94,8 @@ STORAGES = {
 
 # ── MEDIA FILES ───────────────────────────────────────────────────────────────
 MEDIA_URL  = "/media/"
-MEDIA_ROOT = BASE_DIR / "media"
+# Vercel's filesystem is read-only; /tmp is the only writable dir on serverless
+MEDIA_ROOT = Path('/tmp/media') if not DEBUG else BASE_DIR / "media"
 
 # ── AUTH ──────────────────────────────────────────────────────────────────────
 LOGIN_URL            = "/"

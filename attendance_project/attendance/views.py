@@ -286,7 +286,13 @@ def edit_profile(request):
                 employee.aadhaar_card = form.cleaned_data['aadhaar_card']
             if form.cleaned_data.get('pan_card'):
                 employee.pan_card = form.cleaned_data['pan_card']
-            employee.save()
+            try:
+                employee.save()
+            except OSError:
+                employee.profile_photo = None
+                employee.aadhaar_card  = None
+                employee.pan_card      = None
+                employee.save()
 
             messages.success(request, 'Profile updated successfully!')
             return redirect('edit_profile')
@@ -395,7 +401,12 @@ def add_employee(request):
                     employee = emp_form.save(commit=False)
                     employee.user = user
                     employee.employee_id = next_id
-                    employee.save()
+                    try:
+                        employee.save()
+                    except OSError:
+                        # File system not writable (e.g. Vercel) — save without photo
+                        employee.profile_photo = None
+                        employee.save()
             except IntegrityError:
                 messages.error(request, 'A duplicate was detected. Please try again.')
                 return redirect('add_employee')
@@ -443,7 +454,13 @@ def edit_employee_admin(request, emp_id):
                 employee.aadhaar_card = form.cleaned_data['aadhaar_card']
             if form.cleaned_data.get('pan_card'):
                 employee.pan_card = form.cleaned_data['pan_card']
-            employee.save()
+            try:
+                employee.save()
+            except OSError:
+                employee.profile_photo = None
+                employee.aadhaar_card  = None
+                employee.pan_card      = None
+                employee.save()
 
             messages.success(request, f'Employee {user.get_full_name()} updated successfully!')
             return redirect('employee_detail', emp_id=emp_id)
