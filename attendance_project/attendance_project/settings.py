@@ -11,6 +11,9 @@ DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 
 ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost 127.0.0.1').split() + ['.vercel.app']
 
+# Required for HTTPS form/login POSTs on a custom domain (Django 4+).
+CSRF_TRUSTED_ORIGINS = os.environ.get('CSRF_TRUSTED_ORIGINS', 'https://*.vercel.app').split()
+
 # ── APPS ──────────────────────────────────────────────────────────────────────
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -94,8 +97,9 @@ STORAGES = {
 
 # ── MEDIA FILES ───────────────────────────────────────────────────────────────
 MEDIA_URL  = "/media/"
-# Vercel's filesystem is read-only; /tmp is the only writable dir on serverless
-MEDIA_ROOT = Path('/tmp/media') if not DEBUG else BASE_DIR / "media"
+# In production, set MEDIA_ROOT to a persistent path (e.g. /var/www/hrms/media on EC2).
+# Falls back to /tmp/media (Vercel's only writable dir) when the env var is unset.
+MEDIA_ROOT = Path(os.environ.get('MEDIA_ROOT', '/tmp/media')) if not DEBUG else BASE_DIR / "media"
 
 # ── AUTH ──────────────────────────────────────────────────────────────────────
 LOGIN_URL            = "/"
