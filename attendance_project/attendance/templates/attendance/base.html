@@ -224,11 +224,63 @@
       display: flex; align-items: center; justify-content: center;
       font-weight: 700; flex-shrink: 0; border-radius: 50%;
     }
+
+    /* ── HAMBURGER + OVERLAY ─────────────────────── */
+    .hamburger-btn {
+      display: none;
+      background: none; border: none;
+      color: var(--dark); font-size: 1.4rem;
+      cursor: pointer; padding: 4px 6px;
+      border-radius: 8px; line-height: 1;
+      transition: background 0.15s;
+    }
+    .hamburger-btn:hover { background: var(--border); }
+    .sidebar-overlay {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.45);
+      z-index: 99;
+    }
+    .sidebar-overlay.open { display: block; }
+
+    /* ── RESPONSIVE ──────────────────────────────── */
+    @media (max-width: 900px) {
+      .sidebar {
+        transform: translateX(-100%);
+        transition: transform 0.26s cubic-bezier(.4,0,.2,1);
+        z-index: 200;
+      }
+      .sidebar.open { transform: translateX(0); }
+      .main-content { margin-left: 0; }
+      .hamburger-btn { display: inline-flex; align-items: center; }
+    }
+
+    @media (max-width: 900px) {
+      .main-content { padding: 16px 14px; }
+      .top-bar { padding: 11px 14px; }
+    }
+
+    @media (max-width: 576px) {
+      .main-content { padding: 12px 10px; }
+      .top-bar { padding: 10px 12px; flex-wrap: wrap; gap: 8px; }
+      .top-bar h5 { font-size: 0.88rem; }
+      .stat-card { padding: 16px; }
+      .stat-card .icon { width: 40px; height: 40px; font-size: 1.1rem; margin-bottom: 10px; }
+      .top-bar .d-flex.align-items-center.gap-3 { gap: 8px !important; }
+      .top-bar .badge { display: none; }
+      .top-bar small { font-size: 0.72rem; }
+    }
+
+    /* Make all tables inside cards scroll on small screens */
+    @media (max-width: 900px) {
+      .card-body { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    }
   </style>
 </head>
 <body>
 
-<div class="sidebar">
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+<div class="sidebar" id="sidebar">
   <div class="brand">
     <div>
       <div class="crefio-logo">Crefio</div>
@@ -350,9 +402,14 @@
 
 <div class="main-content">
   <div class="top-bar">
-    <div>
-      <h5>{% block page_title %}Dashboard{% endblock %}</h5>
-      <small>{{ today|date:"l, d F Y" }}</small>
+    <div class="d-flex align-items-center gap-2">
+      <button class="hamburger-btn" id="hamburgerBtn" aria-label="Open menu">
+        <i class="bi bi-list"></i>
+      </button>
+      <div>
+        <h5>{% block page_title %}Dashboard{% endblock %}</h5>
+        <small>{{ today|date:"l, d F Y" }}</small>
+      </div>
     </div>
     <div class="d-flex align-items-center gap-3">
       <span class="text-muted" style="font-size:0.82rem;">{{ request.user.get_full_name|default:request.user.username }}</span>
@@ -379,5 +436,23 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  (function() {
+    var btn     = document.getElementById('hamburgerBtn');
+    var sidebar = document.getElementById('sidebar');
+    var overlay = document.getElementById('sidebarOverlay');
+
+    function open()  { sidebar.classList.add('open'); overlay.classList.add('open'); document.body.style.overflow = 'hidden'; }
+    function close() { sidebar.classList.remove('open'); overlay.classList.remove('open'); document.body.style.overflow = ''; }
+
+    if (btn)     btn.addEventListener('click', open);
+    if (overlay) overlay.addEventListener('click', close);
+
+    // Close sidebar when a nav link is tapped on mobile
+    document.querySelectorAll('.sidebar .nav-link, .sidebar .panel-switcher').forEach(function(el) {
+      el.addEventListener('click', function() { if (window.innerWidth <= 900) close(); });
+    });
+  })();
+</script>
 </body>
 </html>
