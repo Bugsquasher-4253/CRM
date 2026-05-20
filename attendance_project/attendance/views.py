@@ -1172,9 +1172,10 @@ def update_salary(request, emp_id):
         defaults={'basic_salary': 0, 'allowances': 0, 'absent_days': 0}
     )
 
-    # Auto-calculate absent days from attendance (exclude Sundays)
+    # Auto-calculate absent+leave days from attendance (exclude Sundays)
     absent_records = AttendanceRecord.objects.filter(
-        employee=employee, date__month=month, date__year=year, status='absent'
+        employee=employee, date__month=month, date__year=year,
+        status__in=['absent', 'leave']
     )
     absent_days = sum(1 for r in absent_records if r.date.weekday() != 6)
     salary.absent_days = absent_days

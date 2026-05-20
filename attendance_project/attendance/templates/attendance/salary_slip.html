@@ -96,11 +96,11 @@
       <span>&#8377;{{ daily_rate|floatformat:2 }}</span>
     </div>
     <div class="slip-row">
-      <span class="text-muted">Absent Days <small class="text-muted">(Sundays excluded)</small></span>
+      <span class="text-muted">Absent + Leave Days <small class="text-muted">(Sundays excluded)</small></span>
       <span class="fw-semibold text-danger">{{ slip.absent_days }} day{{ slip.absent_days|pluralize }}</span>
     </div>
     <div class="slip-row">
-      <span style="color:#dc2626;">&minus; Absence Deduction ({{ slip.absent_days }} &times; &#8377;{{ daily_rate|floatformat:2 }})</span>
+      <span style="color:#dc2626;">&minus; Deduction ({{ slip.absent_days }} &times; &#8377;{{ daily_rate|floatformat:2 }})</span>
       <span class="fw-semibold" style="color:#dc2626;">&minus;&#8377;{{ slip.deductions|floatformat:2 }}</span>
     </div>
     <div class="slip-total">
