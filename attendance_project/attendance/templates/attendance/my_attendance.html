@@ -6,8 +6,8 @@
 <!-- Filter Bar -->
 <div class="card mb-4">
   <div class="card-body">
-    <form method="GET" class="row g-3 align-items-end">
-      <div class="col-md-4">
+    <form method="GET" class="row g-3 align-items-end filter-form">
+      <div class="col-7 col-md-4">
         <label class="form-label fw-semibold">Month</label>
         <select name="month" class="form-select">
           {% for m, mname in months %}
@@ -15,7 +15,7 @@
           {% endfor %}
         </select>
       </div>
-      <div class="col-md-4">
+      <div class="col-5 col-md-4">
         <label class="form-label fw-semibold">Year</label>
         <select name="year" class="form-select">
           {% for y in years %}
@@ -23,7 +23,7 @@
           {% endfor %}
         </select>
       </div>
-      <div class="col-md-4">
+      <div class="col-12 col-md-4">
         <button type="submit" class="btn btn-primary w-100">
           <i class="bi bi-search me-2"></i>Filter
         </button>
@@ -34,31 +34,31 @@
 
 <!-- Stats Row -->
 <div class="row g-3 mb-4">
-  <div class="col-md-4">
-    <div class="stat-card text-center">
-      <div class="icon mx-auto" style="background:#d4edda;">
+  <div class="col-4">
+    <div class="stat-card dash-stat text-center">
+      <div class="dash-stat-icon mx-auto" style="background:#d4edda;">
         <i class="bi bi-check-circle-fill text-success"></i>
       </div>
-      <div style="font-size:2rem; font-weight:700; color:#155724;">{{ present }}</div>
-      <div class="text-muted">Present Days</div>
+      <div class="dash-stat-num" style="color:#155724;">{{ present }}</div>
+      <div class="dash-stat-label">Present</div>
     </div>
   </div>
-  <div class="col-md-4">
-    <div class="stat-card text-center">
-      <div class="icon mx-auto" style="background:#f8d7da;">
+  <div class="col-4">
+    <div class="stat-card dash-stat text-center">
+      <div class="dash-stat-icon mx-auto" style="background:#f8d7da;">
         <i class="bi bi-x-circle-fill text-danger"></i>
       </div>
-      <div style="font-size:2rem; font-weight:700; color:#721c24;">{{ absent }}</div>
-      <div class="text-muted">Absent Days</div>
+      <div class="dash-stat-num" style="color:#721c24;">{{ absent }}</div>
+      <div class="dash-stat-label">Absent</div>
     </div>
   </div>
-  <div class="col-md-4">
-    <div class="stat-card text-center">
-      <div class="icon mx-auto" style="background:#fff3cd;">
+  <div class="col-4">
+    <div class="stat-card dash-stat text-center">
+      <div class="dash-stat-icon mx-auto" style="background:#fff3cd;">
         <i class="bi bi-calendar-x-fill" style="color:#856404;"></i>
       </div>
-      <div style="font-size:2rem; font-weight:700; color:#856404;">{{ leave }}</div>
-      <div class="text-muted">Leave Days</div>
+      <div class="dash-stat-num" style="color:#856404;">{{ leave }}</div>
+      <div class="dash-stat-label">Leave</div>
     </div>
   </div>
 </div>

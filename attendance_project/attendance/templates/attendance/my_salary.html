@@ -8,8 +8,8 @@
 {% if current_salary %}
 <div class="card mb-4" style="background:linear-gradient(135deg,#111827,#1f2937);color:white;border:none;">
   <div class="card-body p-4">
-    <div class="row align-items-center">
-      <div class="col-md-8">
+    <div class="row align-items-center g-3">
+      <div class="col-12 col-md-8">
         <div style="font-size:0.7rem;letter-spacing:2px;opacity:0.6;margin-bottom:4px;">CURRENT MONTH · {{ current_month }} {{ current_year }}</div>
         <div class="fw-bold mb-3" style="font-size:1.1rem;">{{ employee.user.get_full_name }}</div>
 
@@ -28,9 +28,9 @@
           </div>
         </div>
       </div>
-      <div class="col-md-4 text-md-end mt-3 mt-md-0">
+      <div class="col-12 col-md-4 text-md-end">
         <div style="opacity:0.6;font-size:0.75rem;letter-spacing:1px;">NET SALARY</div>
-        <div style="font-size:2.5rem;font-weight:800;line-height:1.1;">
+        <div class="fs-resp-lg" style="line-height:1.1;">
           ₹{{ current_salary.net_salary|floatformat:0 }}
         </div>
         {% if current_salary.is_paid %}

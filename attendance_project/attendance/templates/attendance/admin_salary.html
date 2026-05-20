@@ -7,8 +7,8 @@
 <!-- Month Filter -->
 <div class="card mb-4">
   <div class="card-body">
-    <form method="GET" class="row g-3 align-items-end">
-      <div class="col-md-4">
+    <form method="GET" class="row g-3 align-items-end filter-form">
+      <div class="col-7 col-md-4">
         <label class="form-label fw-semibold">Month</label>
         <select name="month" class="form-select">
           {% for m, mname in months %}
@@ -16,7 +16,7 @@
           {% endfor %}
         </select>
       </div>
-      <div class="col-md-3">
+      <div class="col-5 col-md-3">
         <label class="form-label fw-semibold">Year</label>
         <select name="year" class="form-select">
           {% for y in years %}
@@ -24,7 +24,7 @@
           {% endfor %}
         </select>
       </div>
-      <div class="col-md-3">
+      <div class="col-12 col-md-3">
         <button type="submit" class="btn btn-primary w-100">
           <i class="bi bi-search me-2"></i>View Salaries
         </button>
@@ -35,7 +35,7 @@
 
 <!-- Summary Cards -->
 <div class="row g-3 mb-4">
-  <div class="col-md-4">
+  <div class="col-4 col-md-4">
     <a href="?month={{ month }}&year={{ year }}&filter=total"
        class="text-decoration-none">
       <div class="stat-card text-center py-3 {% if status_filter == 'total' %}active-filter-card{% endif %}"
@@ -43,12 +43,12 @@
         <div class="icon mx-auto mb-2" style="background:#e3f2fd;">
           <i class="bi bi-people-fill" style="color:#1565c0;"></i>
         </div>
-        <div style="font-size:2rem;font-weight:700;color:#111827;">{{ total }}</div>
-        <div class="text-muted">Total Employees</div>
+        <div class="fs-resp-num" style="color:#111827;">{{ total }}</div>
+        <div class="text-muted small">Total</div>
       </div>
     </a>
   </div>
-  <div class="col-md-4">
+  <div class="col-4 col-md-4">
     <a href="?month={{ month }}&year={{ year }}&filter=paid"
        class="text-decoration-none">
       <div class="stat-card text-center py-3"
@@ -56,12 +56,12 @@
         <div class="icon mx-auto mb-2" style="background:#d4edda;">
           <i class="bi bi-check-circle-fill" style="color:#155724;"></i>
         </div>
-        <div style="font-size:2rem;font-weight:700;color:#155724;">{{ paid_count }}</div>
-        <div class="text-muted">Salary Paid</div>
+        <div class="fs-resp-num" style="color:#155724;">{{ paid_count }}</div>
+        <div class="text-muted small">Paid</div>
       </div>
     </a>
   </div>
-  <div class="col-md-4">
+  <div class="col-4 col-md-4">
     <a href="?month={{ month }}&year={{ year }}&filter=pending"
        class="text-decoration-none">
       <div class="stat-card text-center py-3"
@@ -69,8 +69,8 @@
         <div class="icon mx-auto mb-2" style="background:#fff3cd;">
           <i class="bi bi-hourglass-split" style="color:#856404;"></i>
         </div>
-        <div style="font-size:2rem;font-weight:700;color:#856404;">{{ unpaid_count }}</div>
-        <div class="text-muted">Salary Pending</div>
+        <div class="fs-resp-num" style="color:#856404;">{{ unpaid_count }}</div>
+        <div class="text-muted small">Pending</div>
       </div>
     </a>
   </div>
@@ -78,9 +78,9 @@
 
 <!-- Salary Table -->
 <div class="card">
-  <div class="card-header py-3 d-flex justify-content-between align-items-center">
+  <div class="card-header py-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
     <span><i class="bi bi-cash-coin me-2 text-success"></i>Salary — {{ month_name }} {{ year }}</span>
-    <div class="d-flex gap-2">
+    <div class="d-flex gap-2 flex-wrap">
       <a href="?month={{ month }}&year={{ year }}&filter=total"
          class="btn btn-sm {% if status_filter == 'total' %}btn-primary{% else %}btn-outline-secondary{% endif %}">
         All ({{ total }})

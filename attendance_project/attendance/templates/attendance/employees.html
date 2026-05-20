@@ -6,12 +6,12 @@
 <!-- Search & Filter -->
 <div class="card mb-4">
   <div class="card-body">
-    <form method="GET" class="row g-3 align-items-end">
-      <div class="col-md-5">
+    <form method="GET" class="row g-3 align-items-end filter-form">
+      <div class="col-12 col-md-5">
         <label class="form-label fw-semibold">Search</label>
         <input type="text" name="search" class="form-control" placeholder="Name, ID, or designation..." value="{{ search }}">
       </div>
-      <div class="col-md-4">
+      <div class="col-8 col-md-4">
         <label class="form-label fw-semibold">Department</label>
         <select name="department" class="form-select">
           <option value="">All Departments</option>
@@ -20,9 +20,9 @@
           {% endfor %}
         </select>
       </div>
-      <div class="col-md-3 d-flex gap-2">
+      <div class="col-4 col-md-3 d-flex gap-2">
         <button type="submit" class="btn btn-primary flex-fill">
-          <i class="bi bi-search me-1"></i>Search
+          <i class="bi bi-search"></i><span class="d-none d-sm-inline ms-1">Search</span>
         </button>
         <a href="{% url 'add_employee' %}" class="btn btn-success flex-fill">
           <i class="bi bi-plus me-1"></i>Add

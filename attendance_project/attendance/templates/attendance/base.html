@@ -288,9 +288,36 @@
       .top-bar small { font-size: 0.72rem; }
     }
 
-    /* Make all tables inside cards scroll on small screens */
-    @media (max-width: 900px) {
-      .card-body { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    /* ── TABLES: always scrollable ──────────────────── */
+    .card-body { overflow-x: auto; -webkit-overflow-scrolling: touch; min-width: 0; }
+    .table { min-width: 520px; }     /* prevents columns from squishing */
+    .table-sm-no-minw { min-width: 0; }   /* opt-out for simple tables */
+
+    /* ── RESPONSIVE UTILITIES ────────────────────────── */
+    .fs-resp-lg { font-size: clamp(1.4rem, 4vw, 2.5rem); font-weight: 800; }
+    .fs-resp-xl { font-size: clamp(1.6rem, 5vw, 3rem); font-weight: 700; }
+    .fs-resp-num { font-size: clamp(1.3rem, 3.5vw, 2rem); font-weight: 700; }
+
+    /* ── FILTER FORMS ────────────────────────────────── */
+    @media (max-width: 576px) {
+      .filter-form .btn { width: 100%; }
+    }
+
+    @media (max-width: 576px) {
+      /* Stack card headers on mobile */
+      .card-header.flex-mobile-wrap {
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        gap: 8px;
+      }
+      .card-header.flex-mobile-wrap .d-flex { flex-wrap: wrap; }
+    }
+
+    @media (max-width: 576px) {
+      .hide-xs { display: none !important; }
+    }
+    @media (max-width: 768px) {
+      .hide-sm { display: none !important; }
     }
   </style>
 </head>
