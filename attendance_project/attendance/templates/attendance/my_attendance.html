@@ -1,5 +1,5 @@
 {% extends 'attendance/base.html' %}
-{% block title %}My Attendance - AttendTrack{% endblock %}
+{% block title %}My Attendance – Crefio{% endblock %}
 {% block page_title %}My Attendance History{% endblock %}
 
 {% block content %}
@@ -63,12 +63,16 @@
   </div>
 </div>
 
-<!-- Attendance Table -->
+<!-- Attendance List -->
 <div class="card">
   <div class="card-header py-3">
     <i class="bi bi-table me-2"></i>Attendance for {{ month_name }} {{ year }}
   </div>
-  <div class="card-body p-0">
+
+  {% if records %}
+
+  <!-- Desktop table -->
+  <div class="card-body p-0 d-none d-md-block">
     <table class="table table-hover mb-0">
       <thead style="background:#f8f9fa;">
         <tr>
@@ -88,30 +92,66 @@
           <td class="py-3">
             {% if record.check_in_time %}
               <span class="text-success">{{ record.check_in_time|time:"h:i A" }}</span>
-            {% else %}<span class="text-muted">-</span>{% endif %}
+            {% else %}<span class="text-muted">—</span>{% endif %}
           </td>
           <td class="py-3">
             {% if record.check_out_time %}
               <span class="text-danger">{{ record.check_out_time|time:"h:i A" }}</span>
-            {% else %}<span class="text-muted">-</span>{% endif %}
+            {% else %}<span class="text-muted">—</span>{% endif %}
           </td>
-          <td class="py-3">{{ record.total_hours|default:"-" }} {% if record.total_hours %}hrs{% endif %}</td>
+          <td class="py-3">{{ record.total_hours|default:"—" }} {% if record.total_hours %}hrs{% endif %}</td>
           <td class="py-3">
             <span class="badge badge-{{ record.status }} px-3 py-2 rounded-pill">
               {{ record.get_status_display }}
             </span>
           </td>
         </tr>
-        {% empty %}
-        <tr>
-          <td colspan="6" class="text-center py-5 text-muted">
-            <i class="bi bi-calendar-x display-6 d-block mb-2"></i>
-            No attendance records for this month
-          </td>
-        </tr>
         {% endfor %}
       </tbody>
     </table>
   </div>
+
+  <!-- Mobile card layout -->
+  <div class="d-block d-md-none p-3">
+    {% for record in records %}
+    <div class="card mb-2 border" style="border-radius:10px;">
+      <div class="d-flex align-items-center justify-content-between px-3 py-2" style="background:#f8f9fa;border-bottom:1px solid #E5E7EB;border-radius:10px 10px 0 0;">
+        <div>
+          <div class="fw-semibold" style="font-size:0.88rem;">{{ record.date|date:"d M Y" }}</div>
+          <small class="text-muted">{{ record.date|date:"l" }}</small>
+        </div>
+        <span class="badge badge-{{ record.status }} px-2 py-1 rounded-pill">{{ record.get_status_display }}</span>
+      </div>
+      <div class="px-3 py-2">
+        <div class="row g-2">
+          <div class="col-4">
+            <div class="text-muted" style="font-size:0.7rem;">Check In</div>
+            <div style="font-size:0.82rem;" class="{% if record.check_in_time %}text-success{% endif %}">
+              {% if record.check_in_time %}{{ record.check_in_time|time:"h:i A" }}{% else %}—{% endif %}
+            </div>
+          </div>
+          <div class="col-4">
+            <div class="text-muted" style="font-size:0.7rem;">Check Out</div>
+            <div style="font-size:0.82rem;" class="{% if record.check_out_time %}text-danger{% endif %}">
+              {% if record.check_out_time %}{{ record.check_out_time|time:"h:i A" }}{% else %}—{% endif %}
+            </div>
+          </div>
+          <div class="col-4">
+            <div class="text-muted" style="font-size:0.7rem;">Hours</div>
+            <div style="font-size:0.82rem;">{{ record.total_hours|default:"—" }}{% if record.total_hours %} h{% endif %}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  {% else %}
+  <div class="card-body text-center py-5 text-muted">
+    <i class="bi bi-calendar-x display-6 d-block mb-2"></i>
+    No attendance records for this month
+  </div>
+  {% endif %}
+
 </div>
 {% endblock %}

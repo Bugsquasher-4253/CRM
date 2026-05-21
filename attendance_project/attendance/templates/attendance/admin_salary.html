@@ -1,5 +1,5 @@
 {% extends 'attendance/base.html' %}
-{% block title %}Salary Management - AttendTrack{% endblock %}
+{% block title %}Salary Management – Crefio{% endblock %}
 {% block page_title %}Salary Management{% endblock %}
 
 {% block content %}
@@ -7,26 +7,26 @@
 <!-- Month Filter -->
 <div class="card mb-4">
   <div class="card-body">
-    <form method="GET" class="row g-3 align-items-end filter-form">
-      <div class="col-7 col-md-4">
-        <label class="form-label fw-semibold">Month</label>
-        <select name="month" class="form-select">
+    <form method="GET" class="row g-2 align-items-end">
+      <div class="col-6 col-sm-4 col-md-3">
+        <label class="form-label fw-semibold" style="font-size:0.8rem;">Month</label>
+        <select name="month" class="form-select form-select-sm">
           {% for m, mname in months %}
             <option value="{{ m }}" {% if m == month %}selected{% endif %}>{{ mname }}</option>
           {% endfor %}
         </select>
       </div>
-      <div class="col-5 col-md-3">
-        <label class="form-label fw-semibold">Year</label>
-        <select name="year" class="form-select">
+      <div class="col-4 col-sm-3 col-md-2">
+        <label class="form-label fw-semibold" style="font-size:0.8rem;">Year</label>
+        <select name="year" class="form-select form-select-sm">
           {% for y in years %}
             <option value="{{ y }}" {% if y == year %}selected{% endif %}>{{ y }}</option>
           {% endfor %}
         </select>
       </div>
-      <div class="col-12 col-md-3">
-        <button type="submit" class="btn btn-primary w-100">
-          <i class="bi bi-search me-2"></i>View Salaries
+      <div class="col-12 col-sm-auto">
+        <button type="submit" class="btn btn-primary btn-sm w-100">
+          <i class="bi bi-search me-1"></i>View
         </button>
       </div>
     </form>
@@ -35,40 +35,30 @@
 
 <!-- Summary Cards -->
 <div class="row g-3 mb-4">
-  <div class="col-4 col-md-4">
-    <a href="?month={{ month }}&year={{ year }}&filter=total"
-       class="text-decoration-none">
-      <div class="stat-card text-center py-3 {% if status_filter == 'total' %}active-filter-card{% endif %}"
-           style="{% if status_filter == 'total' %}border:2px solid #1565c0;{% else %}border:2px solid transparent;{% endif %}cursor:pointer;">
-        <div class="icon mx-auto mb-2" style="background:#e3f2fd;">
-          <i class="bi bi-people-fill" style="color:#1565c0;"></i>
-        </div>
+  {% for href_filter, icon, icon_bg, icon_color, count, label in summary_cards %}
+  {% endfor %}
+  <div class="col-4">
+    <a href="?month={{ month }}&year={{ year }}&filter=total" class="text-decoration-none">
+      <div class="stat-card text-center py-3" style="{% if status_filter == 'total' %}border:2px solid #1565c0;{% else %}border:2px solid transparent;{% endif %}cursor:pointer;">
+        <div class="icon mx-auto mb-2" style="background:#e3f2fd;"><i class="bi bi-people-fill" style="color:#1565c0;"></i></div>
         <div class="fs-resp-num" style="color:#111827;">{{ total }}</div>
         <div class="text-muted small">Total</div>
       </div>
     </a>
   </div>
-  <div class="col-4 col-md-4">
-    <a href="?month={{ month }}&year={{ year }}&filter=paid"
-       class="text-decoration-none">
-      <div class="stat-card text-center py-3"
-           style="{% if status_filter == 'paid' %}border:2px solid #155724;{% else %}border:2px solid transparent;{% endif %}cursor:pointer;">
-        <div class="icon mx-auto mb-2" style="background:#d4edda;">
-          <i class="bi bi-check-circle-fill" style="color:#155724;"></i>
-        </div>
+  <div class="col-4">
+    <a href="?month={{ month }}&year={{ year }}&filter=paid" class="text-decoration-none">
+      <div class="stat-card text-center py-3" style="{% if status_filter == 'paid' %}border:2px solid #155724;{% else %}border:2px solid transparent;{% endif %}cursor:pointer;">
+        <div class="icon mx-auto mb-2" style="background:#d4edda;"><i class="bi bi-check-circle-fill" style="color:#155724;"></i></div>
         <div class="fs-resp-num" style="color:#155724;">{{ paid_count }}</div>
         <div class="text-muted small">Paid</div>
       </div>
     </a>
   </div>
-  <div class="col-4 col-md-4">
-    <a href="?month={{ month }}&year={{ year }}&filter=pending"
-       class="text-decoration-none">
-      <div class="stat-card text-center py-3"
-           style="{% if status_filter == 'pending' %}border:2px solid #856404;{% else %}border:2px solid transparent;{% endif %}cursor:pointer;">
-        <div class="icon mx-auto mb-2" style="background:#fff3cd;">
-          <i class="bi bi-hourglass-split" style="color:#856404;"></i>
-        </div>
+  <div class="col-4">
+    <a href="?month={{ month }}&year={{ year }}&filter=pending" class="text-decoration-none">
+      <div class="stat-card text-center py-3" style="{% if status_filter == 'pending' %}border:2px solid #856404;{% else %}border:2px solid transparent;{% endif %}cursor:pointer;">
+        <div class="icon mx-auto mb-2" style="background:#fff3cd;"><i class="bi bi-hourglass-split" style="color:#856404;"></i></div>
         <div class="fs-resp-num" style="color:#856404;">{{ unpaid_count }}</div>
         <div class="text-muted small">Pending</div>
       </div>
@@ -76,33 +66,30 @@
   </div>
 </div>
 
-<!-- Salary Table -->
+<!-- Salary List -->
 <div class="card">
   <div class="card-header py-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
-    <span><i class="bi bi-cash-coin me-2 text-success"></i>Salary — {{ month_name }} {{ year }}</span>
-    <div class="d-flex gap-2 flex-wrap">
+    <span><i class="bi bi-cash-coin me-2 text-success"></i>{{ month_name }} {{ year }}</span>
+    <div class="d-flex gap-1 flex-wrap">
       <a href="?month={{ month }}&year={{ year }}&filter=total"
-         class="btn btn-sm {% if status_filter == 'total' %}btn-primary{% else %}btn-outline-secondary{% endif %}">
-        All ({{ total }})
-      </a>
+         class="btn btn-sm {% if status_filter == 'total' %}btn-primary{% else %}btn-outline-secondary{% endif %}">All ({{ total }})</a>
       <a href="?month={{ month }}&year={{ year }}&filter=paid"
-         class="btn btn-sm {% if status_filter == 'paid' %}btn-success{% else %}btn-outline-secondary{% endif %}">
-        Paid ({{ paid_count }})
-      </a>
+         class="btn btn-sm {% if status_filter == 'paid' %}btn-success{% else %}btn-outline-secondary{% endif %}">Paid ({{ paid_count }})</a>
       <a href="?month={{ month }}&year={{ year }}&filter=pending"
-         class="btn btn-sm {% if status_filter == 'pending' %}btn-warning{% else %}btn-outline-secondary{% endif %}">
-        Pending ({{ unpaid_count }})
-      </a>
+         class="btn btn-sm {% if status_filter == 'pending' %}btn-warning{% else %}btn-outline-secondary{% endif %}">Pending ({{ unpaid_count }})</a>
     </div>
   </div>
-  <div class="card-body p-0">
-    <table class="table table-hover mb-0">
+
+  <!-- Desktop table -->
+  <div class="card-body p-0 d-none d-md-block">
+    <table class="table table-hover mb-0" style="min-width:0;">
       <thead style="background:#f8f9fa;">
         <tr>
           <th class="px-4 py-3">Employee</th>
           <th class="py-3">Department</th>
+          <th class="py-3 text-center">Absent</th>
+          <th class="py-3 text-center" style="color:#1e40af;">Half Days</th>
           <th class="py-3 text-end">Basic</th>
-          <th class="py-3 text-end">Allowances</th>
           <th class="py-3 text-end">Deductions</th>
           <th class="py-3 text-end fw-bold">Net Salary</th>
           <th class="py-3 text-center">Status</th>
@@ -113,70 +100,137 @@
         {% for row in rows %}
         <tr>
           <td class="px-4 py-3">
-            <div class="d-flex align-items-center gap-3">
-              <div style="width:40px;height:40px;border-radius:50%;background:#111827;display:flex;align-items:center;justify-content:center;color:white;font-weight:700;">
+            <div class="d-flex align-items-center gap-2">
+              <div style="width:36px;height:36px;border-radius:50%;background:#111827;display:flex;align-items:center;justify-content:center;color:white;font-weight:700;flex-shrink:0;font-size:0.85rem;">
                 {{ row.employee.user.first_name|first|upper }}
               </div>
               <div>
-                <div class="fw-semibold">{{ row.employee.user.get_full_name }}</div>
-                <small class="text-muted">{{ row.employee.employee_id }} · {{ row.employee.designation }}</small>
+                <div class="fw-semibold" style="font-size:0.88rem;">{{ row.employee.user.get_full_name }}</div>
+                <small class="text-muted">{{ row.employee.employee_id }}</small>
               </div>
             </div>
           </td>
-          <td class="py-3 text-muted">{{ row.employee.department|default:"—" }}</td>
-
+          <td class="py-3 text-muted small">{{ row.employee.department|default:"—" }}</td>
           {% if row.salary %}
-            <td class="py-3 text-end">₹{{ row.salary.basic_salary|floatformat:0 }}</td>
-            <td class="py-3 text-end text-success">+₹{{ row.salary.allowances|floatformat:0 }}</td>
-            <td class="py-3 text-end text-danger">-₹{{ row.salary.deductions|floatformat:0 }}</td>
-            <td class="py-3 text-end">
-              <span class="fw-bold fs-6">₹{{ row.salary.net_salary|floatformat:0 }}</span>
+            <td class="py-3 text-center">
+              {% if row.salary.absent_days > 0 %}
+                <span class="badge" style="background:#fee2e2;color:#991b1b;">{{ row.salary.absent_days }}d</span>
+              {% else %}<span class="text-muted">—</span>{% endif %}
             </td>
             <td class="py-3 text-center">
+              {% if row.salary.half_days > 0 %}
+                <span class="badge" style="background:#dbeafe;color:#1e40af;">{{ row.salary.half_days }}d</span>
+              {% else %}<span class="text-muted">—</span>{% endif %}
+            </td>
+            <td class="py-3 text-end small">₹{{ row.salary.basic_salary|floatformat:0 }}</td>
+            <td class="py-3 text-end text-danger small">−₹{{ row.salary.deductions|floatformat:0 }}</td>
+            <td class="py-3 text-end"><span class="fw-bold">₹{{ row.salary.net_salary|floatformat:0 }}</span></td>
+            <td class="py-3 text-center">
               {% if row.salary.is_paid %}
-                <span class="badge bg-success px-3 py-2 rounded-pill">
+                <span class="badge bg-success px-2 py-1 rounded-pill" style="font-size:0.72rem;">
                   <i class="bi bi-check-circle me-1"></i>Paid
                 </span>
-                {% if row.salary.paid_date %}
-                  <div class="text-muted" style="font-size:0.7rem;">{{ row.salary.paid_date|date:"d M Y" }}</div>
-                {% endif %}
               {% else %}
-                <span class="badge bg-warning text-dark px-3 py-2 rounded-pill">
-                  <i class="bi bi-hourglass me-1"></i>Pending
-                </span>
+                <span class="badge bg-warning text-dark px-2 py-1 rounded-pill" style="font-size:0.72rem;">Pending</span>
               {% endif %}
             </td>
           {% else %}
+            <td class="py-3 text-muted text-center">—</td>
+            <td class="py-3 text-muted text-center">—</td>
             <td class="py-3 text-muted text-end">—</td>
             <td class="py-3 text-muted text-end">—</td>
             <td class="py-3 text-muted text-end">—</td>
-            <td class="py-3 text-muted text-end">—</td>
-            <td class="py-3 text-center">
-              <span class="badge bg-secondary px-3 py-2 rounded-pill">Not Set</span>
-            </td>
+            <td class="py-3 text-center"><span class="badge bg-secondary" style="font-size:0.72rem;">Not Set</span></td>
           {% endif %}
-
           <td class="py-3 text-center">
-            <div class="d-flex gap-1 justify-content-center flex-wrap">
+            <div class="d-flex gap-1 justify-content-center">
               <a href="{% url 'update_salary' row.employee.id %}?month={{ month }}&year={{ year }}"
-                 class="btn btn-sm {% if row.salary %}btn-outline-primary{% else %}btn-primary{% endif %}">
+                 class="btn btn-sm {% if row.salary %}btn-outline-primary{% else %}btn-primary{% endif %}" style="font-size:0.75rem;">
                 <i class="bi bi-pencil me-1"></i>{% if row.salary %}Edit{% else %}Set{% endif %}
               </a>
               {% if row.salary %}
-              <a href="{% url 'salary_slip' row.salary.id %}" class="btn btn-sm btn-outline-success" target="_blank">
-                <i class="bi bi-file-earmark-text me-1"></i>Slip
+              <a href="{% url 'salary_slip' row.salary.id %}" class="btn btn-sm btn-outline-success" target="_blank" style="font-size:0.75rem;">
+                <i class="bi bi-file-earmark-text"></i>
               </a>
               {% endif %}
             </div>
           </td>
         </tr>
         {% empty %}
-        <tr>
-          <td colspan="8" class="text-center py-5 text-muted">No employees found.</td>
-        </tr>
+        <tr><td colspan="9" class="text-center py-5 text-muted">No employees found.</td></tr>
         {% endfor %}
       </tbody>
     </table>
+  </div>
+
+  <!-- Mobile card layout -->
+  <div class="d-block d-md-none p-3">
+    {% for row in rows %}
+    <div class="card mb-3 border" style="border-radius:12px;overflow:hidden;">
+      <div class="d-flex align-items-center gap-3 p-3" style="background:#f8f9fa;border-bottom:1px solid #E5E7EB;">
+        <div style="width:40px;height:40px;border-radius:50%;background:#111827;display:flex;align-items:center;justify-content:center;color:white;font-weight:700;flex-shrink:0;">
+          {{ row.employee.user.first_name|first|upper }}
+        </div>
+        <div class="flex-grow-1 min-w-0">
+          <div class="fw-bold" style="font-size:0.9rem;">{{ row.employee.user.get_full_name }}</div>
+          <small class="text-muted">{{ row.employee.employee_id }} · {{ row.employee.department|default:"—" }}</small>
+        </div>
+        {% if row.salary %}
+          {% if row.salary.is_paid %}
+            <span class="badge bg-success rounded-pill">Paid</span>
+          {% else %}
+            <span class="badge bg-warning text-dark rounded-pill">Pending</span>
+          {% endif %}
+        {% else %}
+          <span class="badge bg-secondary rounded-pill">Not Set</span>
+        {% endif %}
+      </div>
+
+      {% if row.salary %}
+      <div class="p-3">
+        <div class="row g-2 mb-3">
+          <div class="col-6">
+            <div class="text-muted" style="font-size:0.72rem;">Basic Salary</div>
+            <div class="fw-semibold">₹{{ row.salary.basic_salary|floatformat:0 }}</div>
+          </div>
+          <div class="col-6">
+            <div class="text-muted" style="font-size:0.72rem;">Net Salary</div>
+            <div class="fw-bold text-success">₹{{ row.salary.net_salary|floatformat:0 }}</div>
+          </div>
+          {% if row.salary.absent_days > 0 or row.salary.half_days > 0 %}
+          <div class="col-6">
+            <div class="text-muted" style="font-size:0.72rem;">Absent Days</div>
+            <div class="fw-semibold text-danger">{{ row.salary.absent_days }}d</div>
+          </div>
+          <div class="col-6">
+            <div class="text-muted" style="font-size:0.72rem;">Half Days</div>
+            <div class="fw-semibold" style="color:#1e40af;">{{ row.salary.half_days }}d</div>
+          </div>
+          {% endif %}
+          <div class="col-12">
+            <div class="text-muted" style="font-size:0.72rem;">Deductions</div>
+            <div class="fw-semibold text-danger">−₹{{ row.salary.deductions|floatformat:0 }}</div>
+          </div>
+        </div>
+        <div class="d-flex gap-2">
+          <a href="{% url 'update_salary' row.employee.id %}?month={{ month }}&year={{ year }}"
+             class="btn btn-sm btn-outline-primary flex-grow-1"><i class="bi bi-pencil me-1"></i>Edit</a>
+          <a href="{% url 'salary_slip' row.salary.id %}" class="btn btn-sm btn-outline-success flex-grow-1" target="_blank">
+            <i class="bi bi-file-earmark-text me-1"></i>Slip
+          </a>
+        </div>
+      </div>
+      {% else %}
+      <div class="p-3 text-center">
+        <p class="text-muted small mb-2">Salary not set for this month</p>
+        <a href="{% url 'update_salary' row.employee.id %}?month={{ month }}&year={{ year }}"
+           class="btn btn-sm btn-primary w-100"><i class="bi bi-plus me-1"></i>Set Salary</a>
+      </div>
+      {% endif %}
+    </div>
+    {% empty %}
+    <p class="text-muted text-center py-4">No employees found.</p>
+    {% endfor %}
   </div>
 </div>
 {% endblock %}

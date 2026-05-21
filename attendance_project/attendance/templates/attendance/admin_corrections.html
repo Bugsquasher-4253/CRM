@@ -1,28 +1,22 @@
 {% extends 'attendance/base.html' %}
-{% block title %}Correction Requests - AttendTrack{% endblock %}
+{% block title %}Correction Requests – Crefio{% endblock %}
 {% block page_title %}Correction Requests{% endblock %}
 
 {% block content %}
 
 <!-- Filter Tabs -->
 <div class="d-flex gap-2 mb-4 flex-wrap">
-  <a href="?status=pending"
-     class="btn {% if status_filter == 'pending' %}btn-warning{% else %}btn-outline-secondary{% endif %}">
+  <a href="?status=pending" class="btn {% if status_filter == 'pending' %}btn-warning{% else %}btn-outline-secondary{% endif %}">
     <i class="bi bi-hourglass me-1"></i>Pending
     {% if pending_count %}<span class="badge bg-dark ms-1">{{ pending_count }}</span>{% endif %}
   </a>
-  <a href="?status=approved"
-     class="btn {% if status_filter == 'approved' %}btn-success{% else %}btn-outline-secondary{% endif %}">
+  <a href="?status=approved" class="btn {% if status_filter == 'approved' %}btn-success{% else %}btn-outline-secondary{% endif %}">
     <i class="bi bi-check-circle me-1"></i>Approved
   </a>
-  <a href="?status=rejected"
-     class="btn {% if status_filter == 'rejected' %}btn-danger{% else %}btn-outline-secondary{% endif %}">
+  <a href="?status=rejected" class="btn {% if status_filter == 'rejected' %}btn-danger{% else %}btn-outline-secondary{% endif %}">
     <i class="bi bi-x-circle me-1"></i>Rejected
   </a>
-  <a href="?status="
-     class="btn {% if not status_filter %}btn-primary{% else %}btn-outline-secondary{% endif %}">
-    All
-  </a>
+  <a href="?status=" class="btn {% if not status_filter %}btn-primary{% else %}btn-outline-secondary{% endif %}">All</a>
 </div>
 
 <div class="card">
@@ -32,8 +26,11 @@
     </span>
     <span class="badge bg-light text-dark border">{{ corrections.count }} request{{ corrections.count|pluralize }}</span>
   </div>
-  <div class="card-body p-0">
-    {% if corrections %}
+
+  {% if corrections %}
+
+  <!-- Desktop table -->
+  <div class="card-body p-0 d-none d-md-block">
     <table class="table table-hover mb-0">
       <thead style="background:#f8f9fa;">
         <tr>
@@ -50,8 +47,7 @@
         <tr>
           <td class="px-4 py-3">
             <div class="d-flex align-items-center gap-2">
-              <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#e94560,#0f3460);
-                          display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:0.9rem;">
+              <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,#e94560,#0f3460);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:0.9rem;flex-shrink:0;">
                 {{ req.employee.user.first_name|first|upper }}
               </div>
               <div>
@@ -65,24 +61,10 @@
             <div class="text-muted" style="font-size:0.72rem;">{{ req.date|date:"l" }}</div>
           </td>
           <td class="py-3">
-            {% if req.requested_check_in %}
-              <div class="text-success small fw-semibold">
-                <i class="bi bi-box-arrow-in-right me-1"></i>{{ req.requested_check_in|time:"h:i A" }}
-              </div>
-            {% else %}
-              <div class="text-muted small"><i class="bi bi-box-arrow-in-right me-1"></i>—</div>
-            {% endif %}
-            {% if req.requested_check_out %}
-              <div class="text-danger small fw-semibold">
-                <i class="bi bi-box-arrow-right me-1"></i>{{ req.requested_check_out|time:"h:i A" }}
-              </div>
-            {% else %}
-              <div class="text-muted small"><i class="bi bi-box-arrow-right me-1"></i>—</div>
-            {% endif %}
+            <div class="text-success small fw-semibold"><i class="bi bi-box-arrow-in-right me-1"></i>{% if req.requested_check_in %}{{ req.requested_check_in|time:"h:i A" }}{% else %}—{% endif %}</div>
+            <div class="text-danger small fw-semibold"><i class="bi bi-box-arrow-right me-1"></i>{% if req.requested_check_out %}{{ req.requested_check_out|time:"h:i A" }}{% else %}—{% endif %}</div>
           </td>
-          <td class="py-3 text-muted" style="max-width:180px;font-size:0.85rem;">
-            {{ req.reason|truncatechars:70 }}
-          </td>
+          <td class="py-3 text-muted" style="max-width:180px;font-size:0.85rem;">{{ req.reason|truncatechars:70 }}</td>
           <td class="py-3 text-center">
             {% if req.status == 'pending' %}
               <span class="badge bg-warning text-dark px-3 py-2 rounded-pill">Pending</span>
@@ -95,23 +77,65 @@
           <td class="py-3 text-center">
             <a href="{% url 'admin_correction_action' req.id %}"
                class="btn btn-sm {% if req.status == 'pending' %}btn-primary{% else %}btn-outline-secondary{% endif %}">
-              {% if req.status == 'pending' %}
-                <i class="bi bi-check2-square me-1"></i>Review
-              {% else %}
-                <i class="bi bi-eye me-1"></i>View
-              {% endif %}
+              {% if req.status == 'pending' %}<i class="bi bi-check2-square me-1"></i>Review{% else %}<i class="bi bi-eye me-1"></i>View{% endif %}
             </a>
           </td>
         </tr>
         {% endfor %}
       </tbody>
     </table>
-    {% else %}
-    <div class="text-center py-5 text-muted">
-      <i class="bi bi-clock-history" style="font-size:3rem;opacity:0.3;"></i>
-      <p class="mt-3">No {{ status_filter }} correction requests.</p>
-    </div>
-    {% endif %}
   </div>
+
+  <!-- Mobile card layout -->
+  <div class="d-block d-md-none p-3">
+    {% for req in corrections %}
+    <div class="card mb-3 border" style="border-radius:10px;">
+      <div class="d-flex align-items-center justify-content-between px-3 py-2" style="background:#f8f9fa;border-bottom:1px solid #E5E7EB;border-radius:10px 10px 0 0;">
+        <div>
+          <div class="fw-semibold" style="font-size:0.88rem;">{{ req.employee.user.get_full_name }}</div>
+          <small class="text-muted">{{ req.employee.employee_id }} · {{ req.date|date:"d M Y" }}</small>
+        </div>
+        {% if req.status == 'pending' %}
+          <span class="badge bg-warning text-dark rounded-pill">Pending</span>
+        {% elif req.status == 'approved' %}
+          <span class="badge bg-success rounded-pill">Approved</span>
+        {% else %}
+          <span class="badge bg-danger rounded-pill">Rejected</span>
+        {% endif %}
+      </div>
+      <div class="p-3">
+        <div class="row g-2 mb-2">
+          <div class="col-6">
+            <div class="text-muted" style="font-size:0.7rem;">Check In</div>
+            <div class="text-success fw-semibold" style="font-size:0.82rem;">
+              {% if req.requested_check_in %}{{ req.requested_check_in|time:"h:i A" }}{% else %}—{% endif %}
+            </div>
+          </div>
+          <div class="col-6">
+            <div class="text-muted" style="font-size:0.7rem;">Check Out</div>
+            <div class="text-danger fw-semibold" style="font-size:0.82rem;">
+              {% if req.requested_check_out %}{{ req.requested_check_out|time:"h:i A" }}{% else %}—{% endif %}
+            </div>
+          </div>
+          <div class="col-12">
+            <div class="text-muted" style="font-size:0.7rem;">Reason</div>
+            <div style="font-size:0.82rem;">{{ req.reason|truncatechars:100 }}</div>
+          </div>
+        </div>
+        <a href="{% url 'admin_correction_action' req.id %}"
+           class="btn btn-sm w-100 {% if req.status == 'pending' %}btn-primary{% else %}btn-outline-secondary{% endif %}">
+          {% if req.status == 'pending' %}<i class="bi bi-check2-square me-1"></i>Review{% else %}<i class="bi bi-eye me-1"></i>View{% endif %}
+        </a>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  {% else %}
+  <div class="card-body text-center py-5 text-muted">
+    <i class="bi bi-clock-history" style="font-size:3rem;opacity:0.3;"></i>
+    <p class="mt-3">No {% if status_filter %}{{ status_filter }}{% endif %} correction requests.</p>
+  </div>
+  {% endif %}
 </div>
 {% endblock %}

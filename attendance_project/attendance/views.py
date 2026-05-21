@@ -16,6 +16,7 @@ from .forms import (
     AttendanceCorrectionForm, AdminCorrectionResponseForm,
 )
 import datetime
+from . import emails as email_service
 
 
 def is_admin(user):
@@ -95,21 +96,10 @@ def switch_panel(request):
     current = get_panel_mode(request)
 
     if current == 'admin':
-        try:
-            request.user.employee
-            request.session['panel_mode'] = 'employee'
-            messages.info(request, 'Switched to Employee View.')
-            return redirect('dashboard')
-        except Employee.DoesNotExist:
-            messages.warning(
-                request,
-                'You need an Employee Profile to use the Employee Panel. '
-                'Go to Django Admin (/admin/) and create an Employee entry linked to your user account.'
-            )
-            return redirect('admin_dashboard')
+        request.session['panel_mode'] = 'employee'
+        return redirect('dashboard')
     else:
         request.session['panel_mode'] = 'admin'
-        messages.info(request, 'Switched to Admin Panel.')
         return redirect('admin_dashboard')
 
 
@@ -124,6 +114,11 @@ def dashboard(request):
     try:
         employee = request.user.employee
     except Employee.DoesNotExist:
+        if request.user.is_staff:
+            # Admin switched to employee panel but hasn't created their own profile yet
+            return render(request, 'attendance/no_employee_profile.html', {
+                'today': timezone.now().date(),
+            })
         messages.error(request, 'Employee profile not found. Contact admin.')
         logout(request)
         return redirect('login')
@@ -942,6 +937,7 @@ def apply_leave(request):
             leave = form.save(commit=False)
             leave.employee = employee
             leave.save()
+            email_service.notify_admin_leave_applied(leave)
             messages.success(request, 'Leave request submitted! Admin will review it soon.')
             return redirect('my_leaves')
     else:
@@ -982,6 +978,7 @@ def raise_ticket(request):
             ticket = form.save(commit=False)
             ticket.employee = employee
             ticket.save()
+            email_service.notify_admin_ticket_raised(ticket)
             messages.success(request, f'Ticket #{ticket.id} raised successfully! Admin will respond soon.')
             return redirect('my_tickets')
     else:
@@ -1075,8 +1072,11 @@ def admin_leave_action(request, leave_id):
     if request.method == 'POST':
         form = AdminLeaveResponseForm(request.POST, instance=leave)
         if form.is_valid():
-            form.save()
-            messages.success(request, f'Leave request {leave.get_status_display()} successfully.')
+            prev_status = leave.status
+            updated_leave = form.save()
+            if updated_leave.status != prev_status and updated_leave.status in ('approved', 'rejected'):
+                email_service.notify_employee_leave_decision(updated_leave)
+            messages.success(request, f'Leave request {updated_leave.get_status_display()} successfully.')
             return redirect('admin_leaves')
     else:
         form = AdminLeaveResponseForm(instance=leave)
@@ -1106,8 +1106,11 @@ def admin_ticket_action(request, ticket_id):
     if request.method == 'POST':
         form = AdminTicketResponseForm(request.POST, instance=ticket)
         if form.is_valid():
-            form.save()
-            messages.success(request, f'Ticket #{ticket.id} updated successfully.')
+            prev_status = ticket.status
+            updated_ticket = form.save()
+            if updated_ticket.status != prev_status or updated_ticket.admin_response:
+                email_service.notify_employee_ticket_updated(updated_ticket)
+            messages.success(request, f'Ticket #{updated_ticket.id} updated successfully.')
             return redirect('admin_tickets')
     else:
         form = AdminTicketResponseForm(instance=ticket)
@@ -1239,22 +1242,34 @@ def update_salary(request, emp_id):
             defaults={'basic_salary': 0, 'allowances': 0, 'absent_days': 0}
         )
 
-    # Auto-calculate absent+leave days from attendance (exclude Sundays)
-    absent_records = AttendanceRecord.objects.filter(
-        employee=employee, date__month=month, date__year=year,
-        status__in=['absent', 'leave']
+    # Auto-calculate absent, half-day, and leave days from attendance (exclude Sundays)
+    month_records = AttendanceRecord.objects.filter(
+        employee=employee, date__month=month, date__year=year
     )
-    absent_days = sum(1 for r in absent_records if r.date.weekday() != 6)
+    absent_days = sum(
+        1 for r in month_records
+        if r.status in ('absent', 'leave') and r.date.weekday() != 6
+    )
+    half_days = sum(
+        1 for r in month_records
+        if r.status == 'half_day' and r.date.weekday() != 6
+    )
+    present_days = sum(
+        1 for r in month_records
+        if r.status == 'present' and r.date.weekday() != 6
+    )
     salary.absent_days = absent_days
+    salary.half_days   = half_days
     salary.save()
 
-    daily_rate = round(float(salary.basic_salary) / 30.4, 2) if salary.basic_salary else 0
+    daily_rate = round(salary.daily_rate, 2)
 
     if request.method == 'POST':
         form = SalaryForm(request.POST, instance=salary)
         if form.is_valid():
             obj = form.save(commit=False)
             obj.absent_days = absent_days
+            obj.half_days   = half_days
             obj.save()
             messages.success(
                 request,
@@ -1266,14 +1281,16 @@ def update_salary(request, emp_id):
         form = SalaryForm(instance=salary)
 
     return render(request, 'attendance/update_salary.html', {
-        'form':        form,
-        'employee':    employee,
-        'salary':      salary,
-        'month':       month,
-        'year':        year,
-        'month_name':  calendar.month_name[month],
-        'absent_days': absent_days,
-        'daily_rate':  daily_rate,
+        'form':         form,
+        'employee':     employee,
+        'salary':       salary,
+        'month':        month,
+        'year':         year,
+        'month_name':   calendar.month_name[month],
+        'absent_days':  absent_days,
+        'half_days':    half_days,
+        'present_days': present_days,
+        'daily_rate':   daily_rate,
         'months': [(i, calendar.month_name[i]) for i in range(1, 13)],
         'years':  range(2023, timezone.now().year + 1),
         'saved':  request.GET.get('saved'),
@@ -1317,12 +1334,16 @@ def salary_slip(request, salary_id):
                 return redirect('my_salary')
         except Employee.DoesNotExist:
             return redirect('my_salary')
-    daily_rate = round(float(slip.basic_salary) / 30.4, 2) if slip.basic_salary else 0
-    total_earnings = float(slip.basic_salary) + float(slip.allowances)
+    daily_rate     = round(slip.daily_rate, 2)
+    total_earnings = round(float(slip.basic_salary) + float(slip.allowances), 2)
+    absent_deduction   = round(slip.absent_days * slip.daily_rate, 2)
+    half_day_deduction = round(slip.half_days * (slip.daily_rate / 2), 2)
     return render(request, 'attendance/salary_slip.html', {
-        'slip':           slip,
-        'employee':       slip.employee,
-        'month_name':     calendar.month_name[slip.month],
-        'daily_rate':     daily_rate,
-        'total_earnings': round(total_earnings, 2),
+        'slip':               slip,
+        'employee':           slip.employee,
+        'month_name':         calendar.month_name[slip.month],
+        'daily_rate':         daily_rate,
+        'total_earnings':     total_earnings,
+        'absent_deduction':   absent_deduction,
+        'half_day_deduction': half_day_deduction,
     })

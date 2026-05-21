@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Leave Request Update – Crefio</title>
+</head>
+<body style="margin:0;padding:0;background:#F7F8FA;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#F7F8FA;padding:32px 0;">
+    <tr>
+      <td align="center">
+        <table width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%;background:#ffffff;border-radius:14px;overflow:hidden;box-shadow:0 2px 16px rgba(0,0,0,0.08);">
+
+          <!-- Header -->
+          <tr>
+            <td style="background:#111827;padding:28px 36px;">
+              <table width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td>
+                    <span style="font-size:1.5rem;font-weight:700;color:#BAF2BF;letter-spacing:-0.5px;">Crefio</span><br>
+                    <span style="font-size:0.7rem;color:rgba(255,255,255,0.35);text-transform:uppercase;letter-spacing:1px;">Attendance &amp; HR</span>
+                  </td>
+                  <td align="right">
+                    {% if approved %}
+                    <span style="background:rgba(186,242,191,0.2);color:#BAF2BF;font-size:0.72rem;font-weight:600;padding:5px 14px;border-radius:20px;border:1px solid rgba(186,242,191,0.4);">✓ Approved</span>
+                    {% else %}
+                    <span style="background:rgba(239,68,68,0.15);color:#FCA5A5;font-size:0.72rem;font-weight:600;padding:5px 14px;border-radius:20px;border:1px solid rgba(239,68,68,0.3);">✕ Rejected</span>
+                    {% endif %}
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Status banner -->
+          {% if approved %}
+          <tr>
+            <td style="background:#D1FAE5;padding:16px 36px;">
+              <p style="margin:0;font-size:0.88rem;font-weight:600;color:#065F46;">
+                🎉 Your leave request has been <strong>approved</strong>.
+              </p>
+            </td>
+          </tr>
+          {% else %}
+          <tr>
+            <td style="background:#FEE2E2;padding:16px 36px;">
+              <p style="margin:0;font-size:0.88rem;font-weight:600;color:#991B1B;">
+                Your leave request has been <strong>rejected</strong>.
+              </p>
+            </td>
+          </tr>
+          {% endif %}
+
+          <!-- Body -->
+          <tr>
+            <td style="padding:28px 36px 24px;">
+              <p style="margin:0 0 24px;font-size:0.875rem;color:#374151;line-height:1.6;">
+                Hi <strong>{{ employee.user.first_name }}</strong>, here is the update on your leave application:
+              </p>
+
+              <!-- Leave summary -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="background:#F7F8FA;border-radius:10px;margin-bottom:20px;">
+                <tr>
+                  <td style="padding:20px 22px;">
+                    <table width="100%" cellpadding="0" cellspacing="0">
+                      <tr>
+                        <td style="font-size:0.72rem;font-weight:700;color:#9CA3AF;text-transform:uppercase;letter-spacing:0.8px;padding-bottom:12px;" colspan="2">
+                          Your Leave Request
+                        </td>
+                      </tr>
+                      <tr>
+                        <td style="font-size:0.82rem;color:#6B7280;padding:5px 0;width:40%;">Leave Type</td>
+                        <td style="font-size:0.82rem;font-weight:600;color:#111827;padding:5px 0;">{{ leave.get_leave_type_display }}</td>
+                      </tr>
+                      <tr>
+                        <td style="font-size:0.82rem;color:#6B7280;padding:5px 0;">From</td>
+                        <td style="font-size:0.82rem;font-weight:600;color:#111827;padding:5px 0;">{{ leave.from_date|date:"d M Y" }}</td>
+                      </tr>
+                      <tr>
+                        <td style="font-size:0.82rem;color:#6B7280;padding:5px 0;">To</td>
+                        <td style="font-size:0.82rem;font-weight:600;color:#111827;padding:5px 0;">{{ leave.to_date|date:"d M Y" }}</td>
+                      </tr>
+                      <tr>
+                        <td style="font-size:0.82rem;color:#6B7280;padding:5px 0;">Status</td>
+                        <td style="padding:5px 0;">
+                          {% if approved %}
+                          <span style="background:#D1FAE5;color:#065F46;font-size:0.78rem;font-weight:700;padding:3px 10px;border-radius:20px;">Approved</span>
+                          {% else %}
+                          <span style="background:#FEE2E2;color:#991B1B;font-size:0.78rem;font-weight:700;padding:3px 10px;border-radius:20px;">Rejected</span>
+                          {% endif %}
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Admin note -->
+              {% if leave.admin_note %}
+              <table width="100%" cellpadding="0" cellspacing="0" style="border-left:3px solid #BAF2BF;background:#F7F8FA;border-radius:0 8px 8px 0;margin-bottom:20px;">
+                <tr>
+                  <td style="padding:14px 18px;">
+                    <p style="margin:0 0 4px;font-size:0.72rem;font-weight:700;color:#374151;text-transform:uppercase;letter-spacing:0.8px;">Admin Note</p>
+                    <p style="margin:0;font-size:0.875rem;color:#374151;line-height:1.6;">{{ leave.admin_note }}</p>
+                  </td>
+                </tr>
+              </table>
+              {% endif %}
+
+              <p style="margin:0;font-size:0.82rem;color:#6B7280;line-height:1.6;">
+                Log in to your account to view all your leave requests and their statuses.
+              </p>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="background:#F7F8FA;padding:18px 36px;border-top:1px solid #E5E7EB;">
+              <p style="margin:0;font-size:0.75rem;color:#9CA3AF;text-align:center;">
+                This is an automated notification from <strong>{{ app_name }}</strong>. Please do not reply to this email.
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

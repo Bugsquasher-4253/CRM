@@ -6,13 +6,13 @@
 
 <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
   <a href="{% url 'admin_salary' %}?month={{ month }}&year={{ year }}" class="btn btn-outline-secondary">
-    <i class="bi bi-arrow-left me-1"></i>Back to Salary List
+    <i class="bi bi-arrow-left me-1"></i>Back
   </a>
-  <form method="GET" class="d-flex gap-2 align-items-center">
-    <select name="month" class="form-select form-select-sm" style="width:140px;">
+  <form method="GET" class="d-flex gap-2 align-items-center flex-wrap">
+    <select name="month" class="form-select form-select-sm" style="width:130px;">
       {% for m, mname in months %}<option value="{{ m }}" {% if m == month %}selected{% endif %}>{{ mname }}</option>{% endfor %}
     </select>
-    <select name="year" class="form-select form-select-sm" style="width:100px;">
+    <select name="year" class="form-select form-select-sm" style="width:90px;">
       {% for y in years %}<option value="{{ y }}" {% if y == year %}selected{% endif %}>{{ y }}</option>{% endfor %}
     </select>
     <button type="submit" class="btn btn-sm btn-primary">Go</button>
@@ -21,8 +21,8 @@
 
 {% if saved %}
 <div class="alert alert-success mb-4">
-  <i class="bi bi-check-circle me-2"></i>Salary saved successfully!
-  {% if salary.id %}<a href="{% url 'salary_slip' salary.id %}" class="alert-link ms-2">View Salary Slip &rarr;</a>{% endif %}
+  <i class="bi bi-check-circle me-2"></i>Salary saved!
+  {% if salary.id %}<a href="{% url 'salary_slip' salary.id %}" class="alert-link ms-2">View Slip &rarr;</a>{% endif %}
 </div>
 {% endif %}
 
@@ -30,16 +30,16 @@
 <div class="card mb-4" style="border-left:4px solid #BAF2BF;">
   <div class="card-body py-3">
     <div class="d-flex align-items-center gap-3 flex-wrap">
-      <div style="width:52px;height:52px;border-radius:50%;background:#111827;display:flex;align-items:center;justify-content:center;color:#BAF2BF;font-size:1.3rem;font-weight:700;flex-shrink:0;">
+      <div style="width:48px;height:48px;border-radius:50%;background:#111827;display:flex;align-items:center;justify-content:center;color:#BAF2BF;font-size:1.2rem;font-weight:700;flex-shrink:0;">
         {{ employee.user.first_name|first|upper }}
       </div>
-      <div>
+      <div class="flex-grow-1">
         <h5 class="mb-0 fw-bold">{{ employee.user.get_full_name }}</h5>
         <span class="text-muted small">{{ employee.employee_id }} &middot; {{ employee.designation }}</span>
         {% if employee.department %}<span class="badge bg-light text-dark ms-2 border">{{ employee.department }}</span>{% endif %}
       </div>
-      <div class="ms-auto text-end">
-        <div class="fw-semibold text-muted" style="font-size:0.75rem;">PERIOD</div>
+      <div class="text-end">
+        <div class="text-muted" style="font-size:0.72rem;">PERIOD</div>
         <div class="fw-bold fs-5">{{ month_name }} {{ year }}</div>
       </div>
     </div>
@@ -53,33 +53,49 @@
     <!-- Attendance Summary -->
     <div class="card mb-4">
       <div class="card-header py-3">
-        <i class="bi bi-calendar-check me-2 text-success"></i>Attendance This Month (Auto-calculated)
+        <i class="bi bi-calendar-check me-2 text-success"></i>Attendance This Month
       </div>
       <div class="card-body">
-        <div class="row g-3">
-          <div class="col-4 text-center">
-            <div class="p-3 rounded-3" style="background:#f0fdf4;">
-              <div style="font-size:1.6rem;font-weight:700;color:#166534;">30.4</div>
-              <div class="text-muted small">Standard Days</div>
+        <div class="row g-2 mb-3">
+          <div class="col-6 col-sm-3">
+            <div class="text-center p-3 rounded-3" style="background:#f0fdf4;">
+              <div style="font-size:1.5rem;font-weight:700;color:#166534;">{{ present_days }}</div>
+              <div class="text-muted small">Present</div>
             </div>
           </div>
-          <div class="col-4 text-center">
-            <div class="p-3 rounded-3" style="background:#fef2f2;">
-              <div style="font-size:1.6rem;font-weight:700;color:#991b1b;" id="absentDaysDisplay">{{ absent_days }}</div>
-              <div class="text-muted small">Absent Days<br><small>(Sundays excluded)</small></div>
+          <div class="col-6 col-sm-3">
+            <div class="text-center p-3 rounded-3" style="background:#dbeafe;">
+              <div style="font-size:1.5rem;font-weight:700;color:#1e40af;" id="halfDaysDisplay">{{ half_days }}</div>
+              <div class="text-muted small">Half Days</div>
             </div>
           </div>
-          <div class="col-4 text-center">
-            <div class="p-3 rounded-3" style="background:#fff7ed;">
-              <div style="font-size:1.6rem;font-weight:700;color:#9a3412;" id="dailyRateDisplay">&#8377;{{ daily_rate }}</div>
+          <div class="col-6 col-sm-3">
+            <div class="text-center p-3 rounded-3" style="background:#fef2f2;">
+              <div style="font-size:1.5rem;font-weight:700;color:#991b1b;" id="absentDaysDisplay">{{ absent_days }}</div>
+              <div class="text-muted small">Absent/Leave</div>
+            </div>
+          </div>
+          <div class="col-6 col-sm-3">
+            <div class="text-center p-3 rounded-3" style="background:#fff7ed;">
+              <div style="font-size:1.5rem;font-weight:700;color:#9a3412;" id="dailyRateDisplay">&#8377;{{ daily_rate }}</div>
               <div class="text-muted small">Per Day Rate</div>
             </div>
           </div>
         </div>
-        <div class="mt-3 p-3 rounded-3" style="background:#f8fafc;border:1px solid #e2e8f0;">
-          <div class="d-flex justify-content-between align-items-center">
-            <span class="text-muted small">Absence Deduction = {{ absent_days }} days &times; &#8377;{{ daily_rate }}</span>
-            <span class="fw-bold text-danger" id="deductionPreview">&minus;&#8377;{{ salary.deductions|floatformat:2 }}</span>
+
+        <!-- Deduction breakdown -->
+        <div class="p-3 rounded-3" style="background:#f8fafc;border:1px solid #e2e8f0;font-size:0.85rem;">
+          <div class="d-flex justify-content-between mb-1">
+            <span class="text-muted">Absent deduction ({{ absent_days }} × ₹{{ daily_rate }})</span>
+            <span class="text-danger fw-semibold" id="absentDeductPreview">—</span>
+          </div>
+          <div class="d-flex justify-content-between mb-1">
+            <span class="text-muted">Half-day deduction ({{ half_days }} × ₹{{ daily_rate }}/2)</span>
+            <span class="text-warning fw-semibold" id="halfDeductPreview">—</span>
+          </div>
+          <div class="d-flex justify-content-between pt-2" style="border-top:1px solid #e2e8f0;">
+            <span class="fw-semibold text-danger">Total Deduction</span>
+            <span class="fw-bold text-danger" id="deductionPreview">—</span>
           </div>
         </div>
       </div>
@@ -94,15 +110,15 @@
         <form method="POST" id="salaryForm">
           {% csrf_token %}
           <div class="row g-3 mb-3">
-            <div class="col-md-6">
+            <div class="col-12 col-sm-6">
               <label class="form-label fw-semibold">Basic Salary <span class="text-danger">*</span></label>
               <div class="input-group">
                 <span class="input-group-text">&#8377;</span>
                 {{ form.basic_salary }}
               </div>
-              <small class="text-muted">Monthly CTC / Base pay</small>
+              <small class="text-muted">Monthly base pay</small>
             </div>
-            <div class="col-md-6">
+            <div class="col-12 col-sm-6">
               <label class="form-label fw-semibold text-success">Allowances</label>
               <div class="input-group">
                 <span class="input-group-text text-success">+&#8377;</span>
@@ -116,7 +132,7 @@
             <div class="d-flex justify-content-between align-items-center">
               <div>
                 <div class="fw-semibold" style="color:#166534;">Net Payable Salary</div>
-                <small class="text-muted">Basic + Allowances &minus; Absent Deduction</small>
+                <small class="text-muted">Basic + Allowances − Deductions</small>
               </div>
               <div class="fw-bold fs-4" style="color:#111827;" id="netDisplay">&#8377;0</div>
             </div>
@@ -124,28 +140,24 @@
 
           <hr class="my-3">
           <div class="row g-3 mb-3">
-            <div class="col-md-6">
-              <div class="form-check form-switch mt-3">
+            <div class="col-12 col-sm-6">
+              <div class="form-check form-switch mt-2">
                 {{ form.is_paid }}
-                <label class="form-check-label fw-semibold ms-2" for="{{ form.is_paid.id_for_label }}">Mark as Paid</label>
+                <label class="form-check-label fw-semibold ms-2">Mark as Paid</label>
               </div>
             </div>
-            <div class="col-md-6" id="paidDateWrapper" style="display:none;">
+            <div class="col-12 col-sm-6" id="paidDateWrapper" style="display:none;">
               <label class="form-label fw-semibold">Payment Date</label>
               {{ form.paid_date }}
             </div>
           </div>
-
           <div class="mb-3">
             <label class="form-label fw-semibold">Notes <span class="text-muted fw-normal">(optional)</span></label>
             {{ form.notes }}
           </div>
-
-          <div class="d-flex gap-2 mt-4">
-            <button type="submit" class="btn btn-primary px-4">
-              <i class="bi bi-check-lg me-1"></i>Save Salary
-            </button>
-            {% if salary.id %}<a href="{% url 'salary_slip' salary.id %}" class="btn btn-outline-success px-4" target="_blank"><i class="bi bi-file-earmark-text me-1"></i>View Slip</a>{% endif %}
+          <div class="d-flex gap-2 flex-wrap mt-4">
+            <button type="submit" class="btn btn-primary px-4"><i class="bi bi-check-lg me-1"></i>Save Salary</button>
+            {% if salary.id %}<a href="{% url 'salary_slip' salary.id %}" class="btn btn-outline-success px-4" target="_blank"><i class="bi bi-file-earmark-text me-1"></i>Slip</a>{% endif %}
             <a href="{% url 'admin_salary' %}?month={{ month }}&year={{ year }}" class="btn btn-outline-secondary px-4">Cancel</a>
           </div>
         </form>
@@ -155,19 +167,18 @@
 
   <!-- Right: Live Preview -->
   <div class="col-12 col-lg-5">
-    <div class="card sticky-top" style="top:20px;background:linear-gradient(135deg,#111827,#1f2937);color:white;border:none;">
+    <div class="card" style="background:linear-gradient(135deg,#111827,#1f2937);color:white;border:none;position:sticky;top:20px;">
       <div class="card-body p-4">
         <div class="d-flex justify-content-between align-items-start mb-3">
           <div>
-            <div style="font-size:0.65rem;letter-spacing:2px;opacity:0.5;">LIVE PREVIEW</div>
+            <div style="font-size:0.6rem;letter-spacing:2px;opacity:0.5;">LIVE PREVIEW</div>
             <div class="fw-bold mt-1" style="color:#BAF2BF;">{{ month_name }} {{ year }}</div>
           </div>
-          <i class="bi bi-receipt" style="font-size:1.8rem;opacity:0.25;"></i>
+          <i class="bi bi-receipt" style="font-size:1.8rem;opacity:0.2;"></i>
         </div>
-
-        <div class="mb-3 pb-3" style="border-bottom:1px solid rgba(255,255,255,0.12);">
+        <div class="mb-3 pb-3" style="border-bottom:1px solid rgba(255,255,255,0.1);">
           <div class="fw-bold">{{ employee.user.get_full_name }}</div>
-          <div style="opacity:0.55;font-size:0.82rem;">{{ employee.designation }}{% if employee.department %} &middot; {{ employee.department }}{% endif %}</div>
+          <div style="opacity:0.5;font-size:0.8rem;">{{ employee.designation }}{% if employee.department %} · {{ employee.department }}{% endif %}</div>
         </div>
 
         <div class="d-flex justify-content-between mb-2">
@@ -179,16 +190,30 @@
           <span class="fw-semibold" id="p_allow">&#8377;0</span>
         </div>
         <div class="d-flex justify-content-between mb-1" style="color:#fca5a5;">
-          <span>&minus; Absent ({{ absent_days }} days &times; &#8377;{{ daily_rate }})</span>
-          <span class="fw-semibold" id="p_deduct">&#8377;0</span>
+          <span>− Absent ({{ absent_days }}d × rate)</span>
+          <span class="fw-semibold" id="p_absent_deduct">&#8377;0</span>
         </div>
-        <div class="d-flex justify-content-between mb-3" style="opacity:0.45;font-size:0.78rem;">
-          <span>= Basic/30.4 &times; absent days</span>
+        <div class="d-flex justify-content-between mb-3" style="color:#fcd34d;">
+          <span>− Half Day ({{ half_days }}d × rate/2)</span>
+          <span class="fw-semibold" id="p_half_deduct">&#8377;0</span>
         </div>
 
-        <div class="d-flex justify-content-between align-items-center p-3 rounded-3" style="background:rgba(186,242,191,0.12);border:1px solid rgba(186,242,191,0.3);">
+        <div class="d-flex justify-content-between align-items-center p-3 rounded-3 mb-3" style="background:rgba(186,242,191,0.12);border:1px solid rgba(186,242,191,0.3);">
           <span class="fw-bold">Net Payable</span>
           <span class="fw-bold fs-3" style="color:#BAF2BF;" id="p_net">&#8377;0</span>
+        </div>
+
+        <!-- Attendance badges -->
+        <div class="d-flex gap-2 flex-wrap">
+          <span class="badge" style="background:rgba(134,239,172,0.2);color:#86efac;font-size:0.72rem;">
+            <i class="bi bi-check-circle me-1"></i>Present: {{ present_days }}d
+          </span>
+          <span class="badge" style="background:rgba(147,197,253,0.2);color:#93c5fd;font-size:0.72rem;">
+            <i class="bi bi-clock-history me-1"></i>Half Day: {{ half_days }}d
+          </span>
+          <span class="badge" style="background:rgba(252,165,165,0.2);color:#fca5a5;font-size:0.72rem;">
+            <i class="bi bi-x-circle me-1"></i>Absent: {{ absent_days }}d
+          </span>
         </div>
 
         <div class="mt-3 text-center" id="p_status">
@@ -200,29 +225,37 @@
 </div>
 
 <script>
-  const basicInput  = document.getElementById('{{ form.basic_salary.id_for_label }}');
-  const allowInput  = document.getElementById('{{ form.allowances.id_for_label }}');
-  const isPaidCheck = document.getElementById('{{ form.is_paid.id_for_label }}');
+  const basicInput   = document.getElementById('{{ form.basic_salary.id_for_label }}');
+  const allowInput   = document.getElementById('{{ form.allowances.id_for_label }}');
+  const isPaidCheck  = document.getElementById('{{ form.is_paid.id_for_label }}');
   const paidDateWrap = document.getElementById('paidDateWrapper');
-  const absentDays  = {{ absent_days }};
+  const absentDays   = {{ absent_days }};
+  const halfDays     = {{ half_days }};
 
-  function fmt(n) { return '₹' + Math.max(0, n).toLocaleString('en-IN', {minimumFractionDigits:0, maximumFractionDigits:2}); }
+  function fmt(n) {
+    return '₹' + Math.max(0, n).toLocaleString('en-IN', {minimumFractionDigits:0, maximumFractionDigits:2});
+  }
 
   function recalc() {
-    const b = parseFloat(basicInput.value) || 0;
-    const a = parseFloat(allowInput.value) || 0;
-    const dailyRate = b / 30.4;
-    const deduction = dailyRate * absentDays;
-    const net = b + a - deduction;
+    const b    = parseFloat(basicInput.value) || 0;
+    const a    = parseFloat(allowInput.value) || 0;
+    const rate = b / 30.4;
+    const absentDeduct   = rate * absentDays;
+    const halfDeduct     = rate / 2 * halfDays;
+    const totalDeduction = absentDeduct + halfDeduct;
+    const net            = b + a - totalDeduction;
 
-    document.getElementById('dailyRateDisplay').textContent = fmt(dailyRate);
-    document.getElementById('deductionPreview').textContent = '−' + fmt(deduction);
-    document.getElementById('netDisplay').textContent = fmt(net);
+    document.getElementById('dailyRateDisplay').textContent    = fmt(rate);
+    document.getElementById('absentDeductPreview').textContent = '−' + fmt(absentDeduct);
+    document.getElementById('halfDeductPreview').textContent   = '−' + fmt(halfDeduct);
+    document.getElementById('deductionPreview').textContent    = '−' + fmt(totalDeduction);
+    document.getElementById('netDisplay').textContent          = fmt(net);
 
-    document.getElementById('p_basic').textContent   = fmt(b);
-    document.getElementById('p_allow').textContent   = fmt(a);
-    document.getElementById('p_deduct').textContent  = fmt(deduction);
-    document.getElementById('p_net').textContent     = fmt(net);
+    document.getElementById('p_basic').textContent        = fmt(b);
+    document.getElementById('p_allow').textContent        = fmt(a);
+    document.getElementById('p_absent_deduct').textContent = fmt(absentDeduct);
+    document.getElementById('p_half_deduct').textContent  = fmt(halfDeduct);
+    document.getElementById('p_net').textContent          = fmt(net);
   }
 
   function togglePaid() {
@@ -235,7 +268,6 @@
   basicInput.addEventListener('input', recalc);
   allowInput.addEventListener('input', recalc);
   isPaidCheck.addEventListener('change', togglePaid);
-  recalc();
-  togglePaid();
+  recalc(); togglePaid();
 </script>
 {% endblock %}

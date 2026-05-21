@@ -6,22 +6,22 @@
 
 <!-- Stats -->
 <div class="row g-3 mb-4">
-  <div class="col-md-6">
-    <div class="stat-card text-center">
-      <div class="icon mx-auto" style="background:#fff3cd;">
-        <i class="bi bi-ticket-perforated" style="color:#856404; font-size:1.5rem;"></i>
+  <div class="col-6">
+    <div class="stat-card dash-stat text-center">
+      <div class="dash-stat-icon mx-auto" style="background:#fff3cd;">
+        <i class="bi bi-ticket-perforated" style="color:#856404;"></i>
       </div>
-      <div style="font-size:2rem; font-weight:700; color:#856404;">{{ open_count }}</div>
-      <div class="text-muted">Open Tickets</div>
+      <div class="dash-stat-num" style="color:#856404;">{{ open_count }}</div>
+      <div class="dash-stat-label">Open Tickets</div>
     </div>
   </div>
-  <div class="col-md-6">
-    <div class="stat-card text-center">
-      <div class="icon mx-auto" style="background:#d4edda;">
-        <i class="bi bi-check-all text-success" style="font-size:1.5rem;"></i>
+  <div class="col-6">
+    <div class="stat-card dash-stat text-center">
+      <div class="dash-stat-icon mx-auto" style="background:#d4edda;">
+        <i class="bi bi-check-all text-success"></i>
       </div>
-      <div style="font-size:2rem; font-weight:700; color:#155724;">{{ resolved_count }}</div>
-      <div class="text-muted">Resolved</div>
+      <div class="dash-stat-num" style="color:#155724;">{{ resolved_count }}</div>
+      <div class="dash-stat-label">Resolved</div>
     </div>
   </div>
 </div>
