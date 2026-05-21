@@ -22,6 +22,7 @@ urlpatterns = [
     # Support tickets (employee)
     path('tickets/raise/', views.raise_ticket, name='raise_ticket'),
     path('tickets/my-tickets/', views.my_tickets, name='my_tickets'),
+    path('tickets/<int:ticket_id>/edit/', views.edit_ticket, name='edit_ticket'),
 
     # Attendance correction (employee)
     path('attendance/correction/', views.request_correction, name='request_correction'),

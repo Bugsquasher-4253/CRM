@@ -1,5 +1,5 @@
 {% extends 'attendance/base.html' %}
-{% block title %}My Tickets - AttendTrack{% endblock %}
+{% block title %}My Tickets – Crefio{% endblock %}
 {% block page_title %}My Support Tickets{% endblock %}
 
 {% block content %}
@@ -39,11 +39,12 @@
   {% for ticket in tickets %}
   <div class="card">
     <div class="card-body p-4">
-      <div class="d-flex justify-content-between align-items-start">
-        <div class="flex-fill">
-          <div class="d-flex align-items-center gap-2 mb-2">
-            <span class="text-muted small">#{{ ticket.id }}</span>
+      <div class="d-flex justify-content-between align-items-start gap-3">
+        <div class="flex-fill min-w-0">
 
+          <!-- Badges row -->
+          <div class="d-flex align-items-center gap-2 mb-2 flex-wrap">
+            <span class="text-muted small">#{{ ticket.id }}</span>
             {% if ticket.priority == 'high' %}
               <span class="badge bg-danger">🔴 High</span>
             {% elif ticket.priority == 'medium' %}
@@ -51,36 +52,52 @@
             {% else %}
               <span class="badge bg-success">🟢 Low</span>
             {% endif %}
-
             {% if ticket.status == 'open' %}
-              <span class="badge" style="background:#fff3cd; color:#856404;">Open</span>
+              <span class="badge" style="background:#fff3cd;color:#856404;">Open</span>
             {% elif ticket.status == 'in_progress' %}
               <span class="badge bg-primary">In Progress</span>
             {% elif ticket.status == 'resolved' %}
-              <span class="badge" style="background:#d4edda; color:#155724;">Resolved</span>
+              <span class="badge" style="background:#d4edda;color:#155724;">Resolved</span>
             {% else %}
               <span class="badge bg-secondary">Closed</span>
             {% endif %}
           </div>
 
+          <!-- Subject + description -->
           <h6 class="fw-bold mb-1">{{ ticket.subject }}</h6>
           <p class="text-muted mb-2" style="font-size:0.9rem;">{{ ticket.description }}</p>
 
+          <!-- Admin response -->
           {% if ticket.admin_response %}
-            <div class="p-3 rounded-3 mt-2" style="background:#f0f7ff; border-left: 3px solid #1a5fa8;">
+            <div class="p-3 rounded-3 mt-2" style="background:#f0f7ff;border-left:3px solid #1a5fa8;">
               <small class="fw-bold text-primary d-block mb-1">
                 <i class="bi bi-reply me-1"></i>Admin Response:
               </small>
-              <span style="color:#333; font-size:0.9rem;">{{ ticket.admin_response }}</span>
+              <span style="color:#333;font-size:0.9rem;">{{ ticket.admin_response }}</span>
             </div>
           {% else %}
             <small class="text-muted fst-italic">Waiting for admin response...</small>
           {% endif %}
-        </div>
 
-        <div class="text-muted small text-end ms-3" style="white-space:nowrap;">
-          {{ ticket.created_at|date:"d M Y" }}<br>
-          {{ ticket.created_at|time:"h:i A" }}
+          <!-- Timestamps + edit button -->
+          <div class="d-flex align-items-center gap-3 mt-3 flex-wrap">
+            <div>
+              <span class="text-muted" style="font-size:0.75rem;">
+                <i class="bi bi-calendar-plus me-1"></i>{{ ticket.created_at|date:"d M Y, h:i A" }}
+              </span>
+              {% if ticket.updated_at != ticket.created_at %}
+              <span class="text-muted ms-3" style="font-size:0.75rem;">
+                <i class="bi bi-pencil me-1"></i>Edited: {{ ticket.updated_at|date:"d M Y, h:i A" }}
+              </span>
+              {% endif %}
+            </div>
+            {% if ticket.status == 'open' or ticket.status == 'in_progress' %}
+            <a href="{% url 'edit_ticket' ticket.id %}" class="btn btn-sm btn-outline-secondary ms-auto">
+              <i class="bi bi-pencil me-1"></i>Edit
+            </a>
+            {% endif %}
+          </div>
+
         </div>
       </div>
     </div>

@@ -1,0 +1,79 @@
+{% extends 'attendance/base.html' %}
+{% block title %}Edit Ticket #{{ ticket.id }} – Crefio{% endblock %}
+{% block page_title %}Edit Ticket{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-7">
+
+    <div class="d-flex align-items-center gap-3 mb-4 flex-wrap">
+      <a href="{% url 'my_tickets' %}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left me-1"></i>Back
+      </a>
+      <div>
+        <span class="text-muted small">Editing</span>
+        <span class="fw-bold ms-1">#{{ ticket.id }} · {{ ticket.subject|truncatechars:40 }}</span>
+      </div>
+    </div>
+
+    <!-- Status note -->
+    {% if ticket.status == 'in_progress' %}
+    <div class="alert alert-info mb-4" style="font-size:0.88rem;">
+      <i class="bi bi-info-circle me-2"></i>This ticket is <strong>In Progress</strong> — admin has seen it. You can still update the description.
+    </div>
+    {% endif %}
+
+    <!-- Form -->
+    <div class="card">
+      <div class="card-header py-3">
+        <i class="bi bi-pencil-square me-2 text-warning"></i>Update Ticket Details
+      </div>
+      <div class="card-body p-4">
+        <form method="POST">
+          {% csrf_token %}
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Subject <span class="text-danger">*</span></label>
+            {{ form.subject }}
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label fw-semibold">Priority</label>
+            {{ form.priority }}
+            <small class="text-muted d-block mt-1">
+              🟢 Low — not urgent &nbsp;|&nbsp; 🟡 Medium — needs attention &nbsp;|&nbsp; 🔴 High — urgent
+            </small>
+          </div>
+
+          <div class="mb-4">
+            <label class="form-label fw-semibold">Description <span class="text-danger">*</span></label>
+            {{ form.description }}
+          </div>
+
+          <!-- Meta info -->
+          <div class="p-3 rounded-3 mb-4" style="background:#f8f9fa;font-size:0.84rem;">
+            <div class="row g-2 text-muted">
+              <div class="col-6">
+                <i class="bi bi-calendar-plus me-1"></i>Created: {{ ticket.created_at|date:"d M Y, h:i A" }}
+              </div>
+              {% if ticket.updated_at != ticket.created_at %}
+              <div class="col-6">
+                <i class="bi bi-pencil me-1"></i>Last edited: {{ ticket.updated_at|date:"d M Y, h:i A" }}
+              </div>
+              {% endif %}
+            </div>
+          </div>
+
+          <div class="d-flex gap-3 flex-wrap">
+            <button type="submit" class="btn btn-warning text-dark px-5 fw-semibold">
+              <i class="bi bi-check-lg me-2"></i>Save Changes
+            </button>
+            <a href="{% url 'my_tickets' %}" class="btn btn-outline-secondary px-4">Cancel</a>
+          </div>
+        </form>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

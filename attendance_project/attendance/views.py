@@ -988,6 +988,35 @@ def raise_ticket(request):
 
 
 @login_required
+def edit_ticket(request, ticket_id):
+    try:
+        employee = request.user.employee
+    except Employee.DoesNotExist:
+        return redirect('dashboard')
+
+    ticket = get_object_or_404(SupportTicket, id=ticket_id, employee=employee)
+
+    if ticket.status not in ('open', 'in_progress'):
+        messages.error(request, 'This ticket can no longer be edited.')
+        return redirect('my_tickets')
+
+    if request.method == 'POST':
+        form = SupportTicketForm(request.POST, instance=ticket)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f'Ticket #{ticket.id} updated successfully.')
+            return redirect('my_tickets')
+    else:
+        form = SupportTicketForm(instance=ticket)
+
+    return render(request, 'attendance/edit_ticket.html', {
+        'form': form,
+        'ticket': ticket,
+        'employee': employee,
+    })
+
+
+@login_required
 def my_tickets(request):
     try:
         employee = request.user.employee
