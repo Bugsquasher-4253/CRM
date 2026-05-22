@@ -173,6 +173,7 @@ class SalaryRecord(models.Model):
     net_salary = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     is_paid = models.BooleanField(default=False)
     absent_days = models.IntegerField(default=0)
+    half_days = models.IntegerField(default=0)
     paid_date = models.DateField(null=True, blank=True)
     notes = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -186,9 +187,18 @@ class SalaryRecord(models.Model):
         import calendar
         return f"{self.employee.user.get_full_name()} - {calendar.month_name[self.month]} {self.year}"
 
+    @property
+    def daily_rate(self):
+        return float(self.basic_salary) / 30.4 if self.basic_salary else 0
+
     def save(self, *args, **kwargs):
-        import decimal
-        daily_rate = float(self.basic_salary) / 30.4 if self.basic_salary else 0
-        self.deductions = round(self.absent_days * daily_rate, 2)
-        self.net_salary = round(float(self.basic_salary) + float(self.allowances) - float(self.deductions), 2)
+        rate = self.daily_rate
+        # Full absent/leave days → full day deduction
+        absent_deduction   = self.absent_days * rate
+        # Half days → deduct only the missing half (employee worked half)
+        half_day_deduction = self.half_days * (rate / 2)
+        self.deductions = round(absent_deduction + half_day_deduction, 2)
+        self.net_salary = round(
+            float(self.basic_salary) + float(self.allowances) - self.deductions, 2
+        )
         super().save(*args, **kwargs)

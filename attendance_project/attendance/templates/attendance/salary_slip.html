@@ -1,5 +1,5 @@
 {% extends 'attendance/base.html' %}
-{% block title %}Salary Slip - {{ month_name }} {{ slip.year }}{% endblock %}
+{% block title %}Salary Slip – {{ month_name }} {{ slip.year }}{% endblock %}
 {% block page_title %}Salary Slip{% endblock %}
 
 {% block content %}
@@ -11,14 +11,18 @@
     body { background: white !important; }
     .slip-wrap { box-shadow: none !important; max-width: 100% !important; }
   }
-  .slip-wrap { max-width: 720px; margin: 0 auto; }
-  .slip-header { background: #111827; color: white; padding: 28px 32px; border-radius: 16px 16px 0 0; }
-  .slip-body { background: white; border: 1px solid #E5E7EB; border-top: none; border-radius: 0 0 16px 16px; padding: 28px 32px; }
-  .slip-row { display: flex; justify-content: space-between; padding: 9px 0; border-bottom: 1px solid #F3F4F6; font-size: 0.9rem; }
+  .slip-wrap { max-width: 680px; margin: 0 auto; }
+  .slip-header { background: #111827; color: white; padding: 26px 30px; border-radius: 16px 16px 0 0; }
+  .slip-body { background: white; border: 1px solid #E5E7EB; border-top: none; border-radius: 0 0 16px 16px; padding: 24px 30px; }
+  .slip-row { display: flex; justify-content: space-between; align-items: center; padding: 9px 0; border-bottom: 1px solid #F3F4F6; font-size: 0.88rem; flex-wrap: wrap; gap: 4px; }
   .slip-row:last-child { border-bottom: none; }
-  .slip-section-title { font-size: 0.68rem; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: #9CA3AF; margin: 18px 0 8px; }
-  .slip-total { background: #F7F8FA; border-radius: 10px; padding: 14px 18px; margin: 4px 0; display: flex; justify-content: space-between; align-items: center; }
-  .slip-net { background: #111827; color: white; border-radius: 12px; padding: 18px 22px; display: flex; justify-content: space-between; align-items: center; margin-top: 16px; }
+  .slip-section-title { font-size: 0.66rem; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; color: #9CA3AF; margin: 18px 0 8px; }
+  .slip-total { background: #F7F8FA; border-radius: 10px; padding: 12px 16px; margin: 4px 0; display: flex; justify-content: space-between; align-items: center; }
+  .slip-net { background: #111827; color: white; border-radius: 12px; padding: 16px 20px; display: flex; justify-content: space-between; align-items: center; margin-top: 16px; }
+  @media (max-width: 576px) {
+    .slip-header { padding: 20px; }
+    .slip-body { padding: 18px; }
+  }
 </style>
 
 <div class="no-print d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
@@ -28,7 +32,7 @@
     </a>
   {% else %}
     <a href="{% url 'my_salary' %}" class="btn btn-outline-secondary">
-      <i class="bi bi-arrow-left me-1"></i>Back to My Salary
+      <i class="bi bi-arrow-left me-1"></i>My Salary
     </a>
   {% endif %}
   <button onclick="window.print()" class="btn btn-primary">
@@ -42,26 +46,25 @@
   <div class="slip-header">
     <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
       <div>
-        <div style="font-size:1.8rem;font-weight:800;color:#BAF2BF;letter-spacing:-1px;line-height:1;">Crefio</div>
-        <div style="opacity:0.45;font-size:0.72rem;letter-spacing:1px;text-transform:uppercase;margin-top:2px;">Attendance &amp; HR</div>
+        <div style="font-size:1.7rem;font-weight:800;color:#BAF2BF;letter-spacing:-1px;line-height:1;">Crefio</div>
+        <div style="opacity:0.4;font-size:0.68rem;letter-spacing:1px;text-transform:uppercase;margin-top:2px;">Attendance &amp; HR</div>
       </div>
       <div class="text-end">
-        <div style="font-size:0.65rem;letter-spacing:2px;opacity:0.5;text-transform:uppercase;">Salary Slip</div>
-        <div style="font-size:1.1rem;font-weight:700;color:#BAF2BF;margin-top:2px;">{{ month_name }} {{ slip.year }}</div>
+        <div style="font-size:0.62rem;letter-spacing:2px;opacity:0.45;text-transform:uppercase;">Salary Slip</div>
+        <div style="font-size:1.05rem;font-weight:700;color:#BAF2BF;margin-top:2px;">{{ month_name }} {{ slip.year }}</div>
       </div>
     </div>
-
     <div class="mt-4 pt-3" style="border-top:1px solid rgba(255,255,255,0.1);">
       <div class="row g-3">
-        <div class="col-sm-6">
-          <div style="opacity:0.45;font-size:0.7rem;text-transform:uppercase;letter-spacing:0.8px;">Employee</div>
+        <div class="col-6">
+          <div style="opacity:0.4;font-size:0.68rem;text-transform:uppercase;letter-spacing:0.8px;">Employee</div>
           <div class="fw-bold mt-1">{{ employee.user.get_full_name }}</div>
-          <div style="opacity:0.6;font-size:0.82rem;">{{ employee.employee_id }}</div>
+          <div style="opacity:0.55;font-size:0.8rem;">{{ employee.employee_id }}</div>
         </div>
-        <div class="col-sm-6">
-          <div style="opacity:0.45;font-size:0.7rem;text-transform:uppercase;letter-spacing:0.8px;">Designation</div>
+        <div class="col-6">
+          <div style="opacity:0.4;font-size:0.68rem;text-transform:uppercase;letter-spacing:0.8px;">Designation</div>
           <div class="fw-semibold mt-1">{{ employee.designation }}</div>
-          <div style="opacity:0.6;font-size:0.82rem;">{% if employee.department %}{{ employee.department }}{% else %}&mdash;{% endif %}</div>
+          <div style="opacity:0.55;font-size:0.8rem;">{{ employee.department|default:"—" }}</div>
         </div>
       </div>
     </div>
@@ -92,20 +95,41 @@
       <span>30.4</span>
     </div>
     <div class="slip-row">
-      <span class="text-muted">Per Day Rate (Basic &divide; 30.4)</span>
+      <span class="text-muted">Per Day Rate (Basic ÷ 30.4)</span>
       <span>&#8377;{{ daily_rate|floatformat:2 }}</span>
     </div>
+
+    {% if slip.absent_days > 0 %}
     <div class="slip-row">
-      <span class="text-muted">Absent + Leave Days <small class="text-muted">(Sundays excluded)</small></span>
-      <span class="fw-semibold text-danger">{{ slip.absent_days }} day{{ slip.absent_days|pluralize }}</span>
+      <span class="text-muted">
+        Absent / Leave Days
+        <span class="badge ms-2" style="background:#fee2e2;color:#991b1b;font-size:0.72rem;">{{ slip.absent_days }} day{{ slip.absent_days|pluralize }}</span>
+      </span>
+      <span class="fw-semibold text-danger">−&#8377;{{ absent_deduction|floatformat:2 }}</span>
     </div>
+    {% endif %}
+
+    {% if slip.half_days > 0 %}
     <div class="slip-row">
-      <span style="color:#dc2626;">&minus; Deduction ({{ slip.absent_days }} &times; &#8377;{{ daily_rate|floatformat:2 }})</span>
-      <span class="fw-semibold" style="color:#dc2626;">&minus;&#8377;{{ slip.deductions|floatformat:2 }}</span>
+      <span class="text-muted">
+        Half Days
+        <span class="badge ms-2" style="background:#dbeafe;color:#1e40af;font-size:0.72rem;">{{ slip.half_days }} day{{ slip.half_days|pluralize }}</span>
+        <small class="text-muted d-block" style="font-size:0.75rem;">{{ slip.half_days }} × ₹{{ daily_rate|floatformat:2 }} ÷ 2</small>
+      </span>
+      <span class="fw-semibold" style="color:#1e40af;">−&#8377;{{ half_day_deduction|floatformat:2 }}</span>
     </div>
+    {% endif %}
+
+    {% if slip.absent_days == 0 and slip.half_days == 0 %}
+    <div class="slip-row">
+      <span class="text-muted">Deductions</span>
+      <span class="text-success fw-semibold">None ✓</span>
+    </div>
+    {% endif %}
+
     <div class="slip-total">
       <span class="fw-semibold text-danger">Total Deductions</span>
-      <span class="fw-bold text-danger">&minus;&#8377;{{ slip.deductions|floatformat:2 }}</span>
+      <span class="fw-bold text-danger">−&#8377;{{ slip.deductions|floatformat:2 }}</span>
     </div>
 
     {% if slip.notes %}
@@ -116,20 +140,19 @@
     <!-- Net Salary -->
     <div class="slip-net">
       <div>
-        <div style="opacity:0.55;font-size:0.7rem;letter-spacing:1.5px;text-transform:uppercase;">Net Payable Salary</div>
-        <div style="font-size:0.78rem;opacity:0.4;margin-top:2px;">{{ month_name }} {{ slip.year }}</div>
+        <div style="opacity:0.5;font-size:0.68rem;letter-spacing:1.5px;text-transform:uppercase;">Net Payable Salary</div>
+        <div style="font-size:0.75rem;opacity:0.35;margin-top:2px;">{{ month_name }} {{ slip.year }}</div>
       </div>
-      <div style="font-size:2rem;font-weight:800;color:#BAF2BF;">&#8377;{{ slip.net_salary|floatformat:2 }}</div>
+      <div style="font-size:1.9rem;font-weight:800;color:#BAF2BF;">&#8377;{{ slip.net_salary|floatformat:2 }}</div>
     </div>
 
     <!-- Payment Status -->
-    <div class="d-flex align-items-center justify-content-between mt-4 pt-3" style="border-top:1px solid #F3F4F6;">
+    <div class="d-flex align-items-center justify-content-between mt-4 pt-3 flex-wrap gap-3" style="border-top:1px solid #F3F4F6;">
       <div>
-        <div class="text-muted" style="font-size:0.78rem;">Payment Status</div>
+        <div class="text-muted" style="font-size:0.75rem;">Payment Status</div>
         {% if slip.is_paid %}
           <span class="badge bg-success px-3 py-2 rounded-pill mt-1 d-inline-block">
-            <i class="bi bi-check-circle me-1"></i>Paid
-            {% if slip.paid_date %} &middot; {{ slip.paid_date|date:"d M Y" }}{% endif %}
+            <i class="bi bi-check-circle me-1"></i>Paid{% if slip.paid_date %} · {{ slip.paid_date|date:"d M Y" }}{% endif %}
           </span>
         {% else %}
           <span class="badge bg-warning text-dark px-3 py-2 rounded-pill mt-1 d-inline-block">
@@ -138,7 +161,7 @@
         {% endif %}
       </div>
       <div class="text-end no-print">
-        <div class="text-muted" style="font-size:0.75rem;">Generated on</div>
+        <div class="text-muted" style="font-size:0.72rem;">Generated on</div>
         <div style="font-size:0.82rem;font-weight:600;">{% now "d M Y" %}</div>
       </div>
     </div>

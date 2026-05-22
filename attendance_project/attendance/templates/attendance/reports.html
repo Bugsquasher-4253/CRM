@@ -81,9 +81,11 @@
   </div>
 </div>
 
-<!-- Report Table -->
+<!-- Report Table / Cards -->
 <div class="card">
-  <div class="card-body p-0">
+
+  <!-- Desktop table -->
+  <div class="card-body p-0 d-none d-md-block">
     <table class="table table-hover mb-0">
       <thead style="background:#f8f9fa;">
         <tr>
@@ -106,15 +108,9 @@
             <small class="text-muted">{{ row.employee.designation }}</small>
           </td>
           <td class="py-3"><code>{{ row.employee.employee_id }}</code></td>
-          <td class="py-3 text-center">
-            <span class="badge badge-present px-3 py-2">{{ row.present }}</span>
-          </td>
-          <td class="py-3 text-center">
-            <span class="badge badge-absent px-3 py-2">{{ row.absent }}</span>
-          </td>
-          <td class="py-3 text-center">
-            <span class="badge badge-leave px-3 py-2">{{ row.leave }}</span>
-          </td>
+          <td class="py-3 text-center"><span class="badge badge-present px-3 py-2">{{ row.present }}</span></td>
+          <td class="py-3 text-center"><span class="badge badge-absent px-3 py-2">{{ row.absent }}</span></td>
+          <td class="py-3 text-center"><span class="badge badge-leave px-3 py-2">{{ row.leave }}</span></td>
           <td class="py-3 text-center fw-semibold">{{ row.total_hours }} hrs</td>
           <td class="py-3">
             {% if total > 0 %}
@@ -148,5 +144,67 @@
       </tbody>
     </table>
   </div>
+
+  <!-- Mobile card layout -->
+  <div class="d-block d-md-none p-3">
+    {% for row in report_data %}
+    {% with total=row.present|add:row.absent|add:row.leave %}
+    <div class="card mb-3 border" style="border-radius:12px;overflow:hidden;">
+      <div class="d-flex align-items-center gap-3 p-3" style="background:#f8f9fa;border-bottom:1px solid #E5E7EB;">
+        <div style="width:40px;height:40px;border-radius:50%;background:#111827;display:flex;align-items:center;justify-content:center;color:white;font-weight:700;flex-shrink:0;">
+          {{ row.employee.user.first_name|first|upper }}
+        </div>
+        <div class="flex-grow-1 min-w-0">
+          <div class="fw-bold" style="font-size:0.9rem;">{{ row.employee.user.get_full_name }}</div>
+          <small class="text-muted">{{ row.employee.employee_id }} · {{ row.employee.designation }}</small>
+        </div>
+        {% if total > 0 %}
+          {% widthratio row.present total 100 as pct %}
+          <div class="text-end">
+            <div class="fw-bold" style="font-size:1rem;color:#166534;">{{ pct }}%</div>
+            <div class="text-muted" style="font-size:0.68rem;">attendance</div>
+          </div>
+        {% endif %}
+      </div>
+      <div class="p-3">
+        <div class="row g-2 mb-3">
+          <div class="col-4 text-center">
+            <span class="badge badge-present d-block py-2" style="font-size:0.9rem;">{{ row.present }}</span>
+            <div class="text-muted mt-1" style="font-size:0.7rem;">Present</div>
+          </div>
+          <div class="col-4 text-center">
+            <span class="badge badge-absent d-block py-2" style="font-size:0.9rem;">{{ row.absent }}</span>
+            <div class="text-muted mt-1" style="font-size:0.7rem;">Absent</div>
+          </div>
+          <div class="col-4 text-center">
+            <span class="badge badge-leave d-block py-2" style="font-size:0.9rem;">{{ row.leave }}</span>
+            <div class="text-muted mt-1" style="font-size:0.7rem;">Leave</div>
+          </div>
+        </div>
+        {% if total > 0 %}
+          {% widthratio row.present total 100 as pct %}
+          <div class="progress mb-3" style="height:6px;">
+            <div class="progress-bar bg-success" style="width:{{ pct }}%"></div>
+          </div>
+        {% endif %}
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <span class="text-muted small">Total Hours</span>
+          <span class="fw-semibold">{{ row.total_hours }} hrs</span>
+        </div>
+        <a href="{% url 'employee_monthly_detail' row.employee.id %}?month={{ month }}&year={{ year }}"
+           class="btn btn-sm btn-outline-primary w-100">
+          <i class="bi bi-clock-history me-1"></i>View Day-by-Day Times
+        </a>
+      </div>
+    </div>
+    {% endwith %}
+    {% empty %}
+    <div class="text-center py-5 text-muted">
+      <i class="bi bi-bar-chart display-6 d-block mb-2"></i>
+      No data for this period
+    </div>
+    {% endfor %}
+  </div>
+
 </div>
 {% endblock %}

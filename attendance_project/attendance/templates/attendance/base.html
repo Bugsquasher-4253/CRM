@@ -1,12 +1,15 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{% block title %}Crefio{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+  <link href="{% static 'attendance/vendor/bootstrap.min.css' %}" rel="stylesheet">
+  <link href="{% static 'attendance/vendor/bootstrap-icons.min.css' %}" rel="stylesheet">
   <style>
     /* ── DESIGN TOKENS ───────────────────────────── */
     :root {
@@ -32,11 +35,12 @@
 
     /* ── SIDEBAR ─────────────────────────────────── */
     .sidebar {
-      width: 250px; min-height: 100vh;
+      width: 250px; height: 100vh;
       background: var(--dark);
       position: fixed; top: 0; left: 0; z-index: 100;
       padding-top: 0;
       display: flex; flex-direction: column;
+      overflow: hidden;
     }
     .sidebar .brand {
       display: flex; align-items: center; gap: 10px;
@@ -87,7 +91,7 @@
     .sidebar-bottom {
       padding: 14px 10px;
       border-top: 1px solid rgba(255,255,255,0.07);
-      margin-top: auto;
+      flex-shrink: 0;
     }
     .panel-switcher {
       background: rgba(255,255,255,0.05);
@@ -270,28 +274,30 @@
       .sidebar.open { transform: translateX(0); }
       .main-content { margin-left: 0; }
       .hamburger-btn { display: inline-flex; align-items: center; }
-    }
-
-    @media (max-width: 900px) {
       .main-content { padding: 16px 14px; }
       .top-bar { padding: 11px 14px; }
     }
 
     @media (max-width: 576px) {
-      .main-content { padding: 12px 10px; }
-      .top-bar { padding: 10px 12px; flex-wrap: wrap; gap: 8px; }
-      .top-bar h5 { font-size: 0.88rem; }
-      .stat-card { padding: 16px; }
-      .stat-card .icon { width: 40px; height: 40px; font-size: 1.1rem; margin-bottom: 10px; }
-      .top-bar .d-flex.align-items-center.gap-3 { gap: 8px !important; }
-      .top-bar .badge { display: none; }
-      .top-bar small { font-size: 0.72rem; }
+      /* Sidebar full-width on phones — no main content peeking through */
+      .sidebar { width: 100vw; }
+      .main-content { padding: 10px 8px; }
+      .top-bar { padding: 9px 10px; gap: 6px; }
+      .top-bar h5 { font-size: 0.86rem; }
+      .top-bar small { font-size: 0.7rem; }
+      .top-bar .badge { font-size: 0.65rem !important; padding: 3px 8px !important; }
+      .stat-card { padding: 14px; }
+      .stat-card .icon { width: 38px; height: 38px; font-size: 1rem; margin-bottom: 8px; }
     }
 
-    /* ── TABLES: always scrollable ──────────────────── */
+    /* ── BODY: allow full-page scroll on mobile ─── */
+    html, body { height: 100%; }
+    body { overflow-y: auto; -webkit-overflow-scrolling: touch; }
+    .main-content { min-height: 100vh; }
+
+    /* ── TABLES ──────────────────────────────────────── */
     .card-body { overflow-x: auto; -webkit-overflow-scrolling: touch; min-width: 0; }
-    .table { min-width: 520px; }     /* prevents columns from squishing */
-    .table-sm-no-minw { min-width: 0; }   /* opt-out for simple tables */
+    .table { min-width: 0; }
 
     /* ── RESPONSIVE UTILITIES ────────────────────────── */
     .fs-resp-lg { font-size: clamp(1.4rem, 4vw, 2.5rem); font-weight: 800; }
@@ -332,7 +338,7 @@
     </div>
   </div>
 
-  <nav class="nav flex-column mt-1 flex-fill overflow-auto pb-2">
+  <nav class="nav flex-column mt-1 flex-fill overflow-auto pb-2" style="min-height:0;">
     {% if request.user.is_staff and panel_mode == 'admin' %}
       <!-- ── ADMIN SIDEBAR ── -->
       <div class="sidebar-section-label">Overview</div>
@@ -479,23 +485,43 @@
   {% block content %}{% endblock %}
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="{% static 'attendance/vendor/bootstrap.bundle.min.js' %}"></script>
 <script>
   (function() {
     var btn     = document.getElementById('hamburgerBtn');
     var sidebar = document.getElementById('sidebar');
     var overlay = document.getElementById('sidebarOverlay');
 
-    function open()  { sidebar.classList.add('open'); overlay.classList.add('open'); document.body.style.overflow = 'hidden'; }
-    function close() { sidebar.classList.remove('open'); overlay.classList.remove('open'); document.body.style.overflow = ''; }
+    function openSidebar()  {
+      sidebar.classList.add('open');
+      overlay.classList.add('open');
+      document.body.style.overflow = 'hidden';
+    }
+    function closeSidebar() {
+      sidebar.classList.remove('open');
+      overlay.classList.remove('open');
+      document.body.style.overflow = '';
+    }
 
-    if (btn)     btn.addEventListener('click', open);
-    if (overlay) overlay.addEventListener('click', close);
+    if (btn)     btn.addEventListener('click', openSidebar);
+    if (overlay) overlay.addEventListener('click', closeSidebar);
 
-    // Close sidebar when a nav link is tapped on mobile
+    // Close sidebar when any nav link or panel switcher is tapped on mobile
     document.querySelectorAll('.sidebar .nav-link, .sidebar .panel-switcher').forEach(function(el) {
-      el.addEventListener('click', function() { if (window.innerWidth <= 900) close(); });
+      el.addEventListener('click', function() {
+        if (window.innerWidth <= 900) closeSidebar();
+      });
     });
+
+    // Swipe left on sidebar to close (touch support)
+    var touchStartX = 0;
+    sidebar.addEventListener('touchstart', function(e) {
+      touchStartX = e.touches[0].clientX;
+    }, { passive: true });
+    sidebar.addEventListener('touchend', function(e) {
+      var dx = e.changedTouches[0].clientX - touchStartX;
+      if (dx < -60) closeSidebar();
+    }, { passive: true });
   })();
 </script>
 </body>

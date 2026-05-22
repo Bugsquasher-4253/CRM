@@ -61,7 +61,9 @@ WSGI_APPLICATION = "attendance_project.wsgi.application"
 DATABASES = {
     "default": dj_database_url.config(
         default=f'sqlite:///{BASE_DIR / "db.sqlite3"}',
-        conn_max_age=0,
+        # 60 s lets warm Vercel instances reuse the connection while avoiding
+        # the stale-connection error Neon throws after it scales to zero.
+        conn_max_age=60,
         ssl_require=False,
     )
 }
@@ -108,11 +110,28 @@ LOGIN_REDIRECT_URL   = "/dashboard/"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # ── SESSIONS ──────────────────────────────────────────────────────────────────
-# Store sessions in DB so all server instances share the same sessions
-SESSION_ENGINE   = 'django.contrib.sessions.backends.db'
+# Signed cookies: session data lives in the browser cookie (signed, not encrypted,
+# but httponly so JS can't read it). Eliminates one DB round-trip per request
+# compared to the db backend — significant on Neon serverless.
+SESSION_ENGINE          = 'django.contrib.sessions.backends.signed_cookies'
 SESSION_COOKIE_AGE      = 43200   # 12 hours
 SESSION_COOKIE_HTTPONLY = True
 SESSION_SAVE_EVERY_REQUEST = False
+
+# ── EMAIL ────────────────────────────────────────────────────────────────────
+EMAIL_HOST          = os.environ.get('EMAIL_HOST', 'smtp.gmail.com')
+EMAIL_PORT          = int(os.environ.get('EMAIL_PORT', '587'))
+EMAIL_USE_TLS       = os.environ.get('EMAIL_USE_TLS', 'True') == 'True'
+EMAIL_HOST_USER     = os.environ.get('EMAIL_HOST_USER', '')
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
+DEFAULT_FROM_EMAIL  = os.environ.get('DEFAULT_FROM_EMAIL', EMAIL_HOST_USER) or 'noreply@crefio.in'
+ADMIN_NOTIFICATION_EMAIL = os.environ.get('ADMIN_EMAIL', EMAIL_HOST_USER)
+
+# Fall back to console when no SMTP credentials are configured (local dev)
+if EMAIL_HOST_USER:
+    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+else:
+    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
 # ── SECURITY HEADERS ──────────────────────────────────────────────────────────
 SECURE_CONTENT_TYPE_NOSNIFF = True
