@@ -327,8 +327,20 @@ def admin_dashboard(request):
         return redirect('dashboard')
 
     today = timezone.now().date()
-    total_employees = Employee.objects.filter(is_active=True).count()
-    today_present = AttendanceRecord.objects.filter(date=today, status='present').count()
+    status_filter = request.GET.get('filter', '')  # 'present' | 'absent' | 'in_office'
+
+    all_active = Employee.objects.filter(is_active=True).select_related('user', 'department')
+    total_employees = all_active.count()
+
+    present_records = AttendanceRecord.objects.filter(
+        date=today, status__in=['present', 'half_day']
+    ).select_related('employee__user', 'employee__department')
+
+    present_emp_ids = present_records.values_list('employee_id', flat=True)
+    today_present = present_records.count()
+
+    absent_employees = all_active.exclude(id__in=present_emp_ids)
+    today_absent = absent_employees.count()
 
     checked_in_now = AttendanceRecord.objects.filter(
         date=today, check_in_time__isnull=False, check_out_time__isnull=True
@@ -338,13 +350,29 @@ def admin_dashboard(request):
         date=today
     ).select_related('employee__user').order_by('-check_in_time')[:10]
 
+    # Filtered list for stat card clicks
+    filtered_label = ''
+    filtered_list = None
+    if status_filter == 'present':
+        filtered_list = present_records.order_by('-check_in_time')
+        filtered_label = 'Present Today'
+    elif status_filter == 'absent':
+        filtered_list = absent_employees.order_by('user__first_name')
+        filtered_label = 'Absent Today'
+    elif status_filter == 'in_office':
+        filtered_list = checked_in_now.order_by('-check_in_time')
+        filtered_label = 'Currently In Office'
+
     context = {
         'total_employees': total_employees,
         'today_present': today_present,
-        'today_absent': total_employees - today_present,
+        'today_absent': today_absent,
         'checked_in_now': checked_in_now,
         'recent_activity': recent_activity,
         'today': today,
+        'status_filter': status_filter,
+        'filtered_list': filtered_list,
+        'filtered_label': filtered_label,
     }
     return render(request, 'attendance/admin_dashboard.html', context)
 

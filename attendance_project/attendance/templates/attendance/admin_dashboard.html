@@ -1,5 +1,5 @@
 {% extends 'attendance/base.html' %}
-{% block title %}Admin Dashboard - AttendTrack{% endblock %}
+{% block title %}Admin Dashboard – Crefio{% endblock %}
 {% block page_title %}Admin Dashboard{% endblock %}
 
 {% block content %}
@@ -7,7 +7,7 @@
 <div class="row g-3 mb-4">
   <div class="col-6 col-md-3">
     <a href="{% url 'manage_employees' %}" class="text-decoration-none">
-      <div class="stat-card dash-stat" style="cursor:pointer;transition:box-shadow .18s,transform .18s;" onmouseover="this.style.transform='translateY(-3px)';this.style.boxShadow='0 6px 20px rgba(0,0,0,.10)'" onmouseout="this.style.transform='';this.style.boxShadow=''">
+      <div class="stat-card dash-stat" style="cursor:pointer;transition:box-shadow .18s,transform .18s;{% if not status_filter %}{% endif %}" onmouseover="this.style.transform='translateY(-3px)';this.style.boxShadow='0 6px 20px rgba(0,0,0,.10)'" onmouseout="this.style.transform='';this.style.boxShadow=''">
         <div class="dash-stat-icon" style="background:#e3f2fd;">
           <i class="bi bi-people-fill" style="color:#1565c0;"></i>
         </div>
@@ -17,8 +17,8 @@
     </a>
   </div>
   <div class="col-6 col-md-3">
-    <a href="{% url 'admin_attendance_records' %}?date={{ today|date:'Y-m-d' }}" class="text-decoration-none">
-      <div class="stat-card dash-stat" style="cursor:pointer;transition:box-shadow .18s,transform .18s;" onmouseover="this.style.transform='translateY(-3px)';this.style.boxShadow='0 6px 20px rgba(0,0,0,.10)'" onmouseout="this.style.transform='';this.style.boxShadow=''">
+    <a href="?filter=present" class="text-decoration-none">
+      <div class="stat-card dash-stat" style="cursor:pointer;transition:box-shadow .18s,transform .18s;{% if status_filter == 'present' %}border:2px solid #2e7d32;{% endif %}" onmouseover="this.style.transform='translateY(-3px)';this.style.boxShadow='0 6px 20px rgba(0,0,0,.10)'" onmouseout="this.style.transform='';this.style.boxShadow=''">
         <div class="dash-stat-icon" style="background:#e8f5e9;">
           <i class="bi bi-person-check-fill" style="color:#2e7d32;"></i>
         </div>
@@ -28,8 +28,8 @@
     </a>
   </div>
   <div class="col-6 col-md-3">
-    <a href="{% url 'admin_attendance_records' %}?date={{ today|date:'Y-m-d' }}" class="text-decoration-none">
-      <div class="stat-card dash-stat" style="cursor:pointer;transition:box-shadow .18s,transform .18s;" onmouseover="this.style.transform='translateY(-3px)';this.style.boxShadow='0 6px 20px rgba(0,0,0,.10)'" onmouseout="this.style.transform='';this.style.boxShadow=''">
+    <a href="?filter=absent" class="text-decoration-none">
+      <div class="stat-card dash-stat" style="cursor:pointer;transition:box-shadow .18s,transform .18s;{% if status_filter == 'absent' %}border:2px solid #c62828;{% endif %}" onmouseover="this.style.transform='translateY(-3px)';this.style.boxShadow='0 6px 20px rgba(0,0,0,.10)'" onmouseout="this.style.transform='';this.style.boxShadow=''">
         <div class="dash-stat-icon" style="background:#fce4ec;">
           <i class="bi bi-person-x-fill" style="color:#c62828;"></i>
         </div>
@@ -39,8 +39,8 @@
     </a>
   </div>
   <div class="col-6 col-md-3">
-    <a href="{% url 'admin_attendance_records' %}?date={{ today|date:'Y-m-d' }}" class="text-decoration-none">
-      <div class="stat-card dash-stat" style="cursor:pointer;transition:box-shadow .18s,transform .18s;" onmouseover="this.style.transform='translateY(-3px)';this.style.boxShadow='0 6px 20px rgba(0,0,0,.10)'" onmouseout="this.style.transform='';this.style.boxShadow=''">
+    <a href="?filter=in_office" class="text-decoration-none">
+      <div class="stat-card dash-stat" style="cursor:pointer;transition:box-shadow .18s,transform .18s;{% if status_filter == 'in_office' %}border:2px solid #6a1b9a;{% endif %}" onmouseover="this.style.transform='translateY(-3px)';this.style.boxShadow='0 6px 20px rgba(0,0,0,.10)'" onmouseout="this.style.transform='';this.style.boxShadow=''">
         <div class="dash-stat-icon" style="background:#f3e5f5;">
           <i class="bi bi-person-workspace" style="color:#6a1b9a;"></i>
         </div>
@@ -51,6 +51,114 @@
   </div>
 </div>
 
+<!-- Filtered Results (shown when a stat card is clicked) -->
+{% if filtered_list is not None %}
+<div class="card mb-4">
+  <div class="card-header py-3 d-flex justify-content-between align-items-center">
+    <span>
+      {% if status_filter == 'present' %}
+        <i class="bi bi-person-check-fill me-2 text-success"></i>
+      {% elif status_filter == 'absent' %}
+        <i class="bi bi-person-x-fill me-2 text-danger"></i>
+      {% else %}
+        <i class="bi bi-person-workspace me-2" style="color:#6a1b9a;"></i>
+      {% endif %}
+      {{ filtered_label }}
+      <span class="badge bg-light text-dark border ms-2">
+        {% if status_filter == 'absent' %}{{ today_absent }}{% elif status_filter == 'present' %}{{ today_present }}{% else %}{{ checked_in_now.count }}{% endif %}
+      </span>
+    </span>
+    <a href="{% url 'admin_dashboard' %}" class="btn btn-sm btn-outline-secondary">
+      <i class="bi bi-x-lg me-1"></i>Clear
+    </a>
+  </div>
+
+  {% if status_filter == 'absent' %}
+  <!-- Absent: employees with no record today -->
+  <div class="card-body p-0">
+    {% if filtered_list %}
+    <ul class="list-group list-group-flush">
+      {% for emp in filtered_list %}
+      <li class="list-group-item d-flex justify-content-between align-items-center px-4 py-3">
+        <div class="d-flex align-items-center gap-3">
+          <div style="width:36px;height:36px;border-radius:50%;background:#c62828;display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:0.85rem;flex-shrink:0;">
+            {{ emp.user.first_name|first|upper }}
+          </div>
+          <div>
+            <div class="fw-semibold">{{ emp.user.get_full_name }}</div>
+            <small class="text-muted">{{ emp.employee_id }} · {{ emp.designation }}</small>
+          </div>
+        </div>
+        <span class="badge bg-danger rounded-pill px-3">Absent</span>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <div class="text-center py-5 text-muted">
+      <i class="bi bi-emoji-smile display-6 d-block mb-2"></i>
+      No absent employees today!
+    </div>
+    {% endif %}
+  </div>
+
+  {% elif status_filter == 'present' %}
+  <!-- Present: employees with attendance record today -->
+  <div class="card-body p-0">
+    {% if filtered_list %}
+    <ul class="list-group list-group-flush">
+      {% for record in filtered_list %}
+      <li class="list-group-item d-flex justify-content-between align-items-center px-4 py-3">
+        <div class="d-flex align-items-center gap-3">
+          <div style="width:36px;height:36px;border-radius:50%;background:#2e7d32;display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:0.85rem;flex-shrink:0;">
+            {{ record.employee.user.first_name|first|upper }}
+          </div>
+          <div>
+            <div class="fw-semibold">{{ record.employee.user.get_full_name }}</div>
+            <small class="text-muted">
+              {{ record.employee.employee_id }} · {{ record.employee.designation }}
+              {% if record.check_in_time %} · In: {{ record.check_in_time|time:"h:i A" }}{% endif %}
+            </small>
+          </div>
+        </div>
+        <span class="badge badge-{{ record.status }} rounded-pill px-3">{{ record.get_status_display }}</span>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <div class="text-center py-5 text-muted">No present records yet today.</div>
+    {% endif %}
+  </div>
+
+  {% elif status_filter == 'in_office' %}
+  <!-- In Office Now -->
+  <div class="card-body p-0">
+    {% if filtered_list %}
+    <ul class="list-group list-group-flush">
+      {% for record in filtered_list %}
+      <li class="list-group-item d-flex justify-content-between align-items-center px-4 py-3">
+        <div class="d-flex align-items-center gap-3">
+          <div style="width:36px;height:36px;border-radius:50%;background:#6a1b9a;display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:0.85rem;flex-shrink:0;">
+            {{ record.employee.user.first_name|first|upper }}
+          </div>
+          <div>
+            <div class="fw-semibold">{{ record.employee.user.get_full_name }}</div>
+            <small class="text-muted">{{ record.employee.designation }}</small>
+          </div>
+        </div>
+        <span class="badge bg-success rounded-pill px-3">In since {{ record.check_in_time|time:"h:i A" }}</span>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <div class="text-center py-5 text-muted">No one currently in office.</div>
+    {% endif %}
+  </div>
+  {% endif %}
+</div>
+{% endif %}
+
+<!-- Default dashboard panels (hidden when filter is active) -->
+{% if not status_filter %}
 <div class="row g-4">
   <!-- Currently Checked In -->
   <div class="col-md-6">
@@ -118,4 +226,6 @@
     </div>
   </div>
 </div>
+{% endif %}
+
 {% endblock %}
