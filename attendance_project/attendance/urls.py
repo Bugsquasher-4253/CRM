@@ -61,6 +61,9 @@ urlpatterns = [
     path('admin-panel/tickets/', views.admin_tickets, name='admin_tickets'),
     path('admin-panel/tickets/<int:ticket_id>/', views.admin_ticket_action, name='admin_ticket_action'),
 
+    # One-click email actions (approve/reject via signed token — no login needed)
+    path('ea/<str:token>/', views.email_action, name='email_action'),
+
     # Salary
     path('admin-panel/salary/', views.admin_salary, name='admin_salary'),
     path('admin-panel/salary/<int:emp_id>/', views.update_salary, name='update_salary'),

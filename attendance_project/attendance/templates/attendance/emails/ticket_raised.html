@@ -1,131 +1,125 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>New Support Ticket – Crefio</title>
-</head>
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>Support Ticket – Crefio</title></head>
 <body style="margin:0;padding:0;background:#F7F8FA;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background:#F7F8FA;padding:32px 0;">
-    <tr>
-      <td align="center">
-        <table width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%;background:#ffffff;border-radius:14px;overflow:hidden;box-shadow:0 2px 16px rgba(0,0,0,0.08);">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#F7F8FA;padding:32px 0;">
+  <tr><td align="center">
+  <table width="580" cellpadding="0" cellspacing="0" style="max-width:580px;width:100%;background:#ffffff;border-radius:14px;overflow:hidden;box-shadow:0 2px 16px rgba(0,0,0,0.08);">
 
-          <!-- Header -->
-          <tr>
-            <td style="background:#111827;padding:28px 36px;">
-              <table width="100%" cellpadding="0" cellspacing="0">
-                <tr>
-                  <td>
-                    <span style="font-size:1.5rem;font-weight:700;color:#BAF2BF;letter-spacing:-0.5px;">Crefio</span><br>
-                    <span style="font-size:0.7rem;color:rgba(255,255,255,0.35);text-transform:uppercase;letter-spacing:1px;">Attendance &amp; HR</span>
-                  </td>
-                  <td align="right">
-                    <span style="background:rgba(251,191,36,0.15);color:#FCD34D;font-size:0.72rem;font-weight:600;padding:5px 14px;border-radius:20px;border:1px solid rgba(251,191,36,0.3);">Support Ticket</span>
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
+    <!-- Header -->
+    <tr><td style="background:#111827;padding:28px 36px;">
+      <table width="100%" cellpadding="0" cellspacing="0"><tr>
+        <td><span style="font-size:1.4rem;font-weight:700;color:#BAF2BF;letter-spacing:-0.5px;">Crefio</span><br>
+            <span style="font-size:0.68rem;color:rgba(255,255,255,0.35);text-transform:uppercase;letter-spacing:1px;">Attendance &amp; HR</span></td>
+        <td align="right"><span style="background:rgba(251,191,36,0.15);color:#FCD34D;font-size:0.7rem;font-weight:600;padding:5px 14px;border-radius:20px;border:1px solid rgba(251,191,36,0.3);">Support Ticket</span></td>
+      </tr></table>
+    </td></tr>
 
-          <!-- Body -->
-          <tr>
-            <td style="padding:32px 36px 24px;">
-              <h2 style="margin:0 0 6px;font-size:1.15rem;font-weight:700;color:#111827;">New Support Ticket #{{ ticket.id }}</h2>
-              <p style="margin:0 0 24px;font-size:0.875rem;color:#6B7280;line-height:1.6;">
-                An employee has raised a new support ticket that requires your attention.
-              </p>
+    <!-- Action banner -->
+    <tr><td style="background:#FEF3C7;padding:14px 36px;border-bottom:1px solid #FDE68A;">
+      <p style="margin:0;font-size:0.85rem;font-weight:600;color:#92400E;">
+        ⚡ Action Required — respond to this ticket directly from your inbox.
+      </p>
+    </td></tr>
 
-              <!-- Employee info -->
-              <table width="100%" cellpadding="0" cellspacing="0" style="background:#F7F8FA;border-radius:10px;margin-bottom:20px;">
-                <tr>
-                  <td style="padding:20px 22px;">
-                    <table width="100%" cellpadding="0" cellspacing="0">
-                      <tr>
-                        <td style="font-size:0.72rem;font-weight:700;color:#9CA3AF;text-transform:uppercase;letter-spacing:0.8px;padding-bottom:12px;" colspan="2">
-                          Employee
-                        </td>
-                      </tr>
-                      <tr>
-                        <td style="font-size:0.82rem;color:#6B7280;padding:4px 0;width:40%;">Name</td>
-                        <td style="font-size:0.82rem;font-weight:600;color:#111827;padding:4px 0;">{{ employee.user.get_full_name }}</td>
-                      </tr>
-                      <tr>
-                        <td style="font-size:0.82rem;color:#6B7280;padding:4px 0;">Email</td>
-                        <td style="font-size:0.82rem;font-weight:600;color:#111827;padding:4px 0;">{{ employee.user.email|default:"—" }}</td>
-                      </tr>
-                      <tr>
-                        <td style="font-size:0.82rem;color:#6B7280;padding:4px 0;">Department</td>
-                        <td style="font-size:0.82rem;font-weight:600;color:#111827;padding:4px 0;">{{ employee.department|default:"—" }}</td>
-                      </tr>
-                    </table>
-                  </td>
-                </tr>
-              </table>
+    <!-- Body -->
+    <tr><td style="padding:28px 36px 20px;">
+      <h2 style="margin:0 0 6px;font-size:1.1rem;font-weight:700;color:#111827;">New Support Ticket #{{ ticket.id }}</h2>
+      <p style="margin:0 0 22px;font-size:0.875rem;color:#6B7280;line-height:1.6;">
+        An employee has raised a new support ticket. Use the buttons below to update its status.
+      </p>
 
-              <!-- Ticket details -->
-              <table width="100%" cellpadding="0" cellspacing="0" style="border:1.5px solid #E5E7EB;border-radius:10px;margin-bottom:20px;">
-                <tr>
-                  <td style="padding:20px 22px;">
-                    <table width="100%" cellpadding="0" cellspacing="0">
-                      <tr>
-                        <td style="font-size:0.72rem;font-weight:700;color:#9CA3AF;text-transform:uppercase;letter-spacing:0.8px;padding-bottom:12px;" colspan="2">
-                          Ticket Details
-                        </td>
-                      </tr>
-                      <tr>
-                        <td style="font-size:0.82rem;color:#6B7280;padding:4px 0;width:40%;">Subject</td>
-                        <td style="font-size:0.82rem;font-weight:600;color:#111827;padding:4px 0;">{{ ticket.subject }}</td>
-                      </tr>
-                      <tr>
-                        <td style="font-size:0.82rem;color:#6B7280;padding:4px 0;">Priority</td>
-                        <td style="padding:4px 0;">
-                          {% if ticket.priority == 'high' %}
-                          <span style="background:#FEE2E2;color:#991B1B;font-size:0.75rem;font-weight:700;padding:2px 10px;border-radius:20px;">High</span>
-                          {% elif ticket.priority == 'medium' %}
-                          <span style="background:#FEF3C7;color:#92400E;font-size:0.75rem;font-weight:700;padding:2px 10px;border-radius:20px;">Medium</span>
-                          {% else %}
-                          <span style="background:#DBEAFE;color:#1E40AF;font-size:0.75rem;font-weight:700;padding:2px 10px;border-radius:20px;">Low</span>
-                          {% endif %}
-                        </td>
-                      </tr>
-                      <tr>
-                        <td style="font-size:0.82rem;color:#6B7280;padding:4px 0;">Raised On</td>
-                        <td style="font-size:0.82rem;font-weight:600;color:#111827;padding:4px 0;">{{ ticket.created_at|date:"d M Y, h:i A" }}</td>
-                      </tr>
-                    </table>
-                  </td>
-                </tr>
-              </table>
+      <!-- Employee info -->
+      <table width="100%" cellpadding="0" cellspacing="0" style="background:#F7F8FA;border-radius:10px;margin-bottom:18px;">
+        <tr><td style="padding:18px 22px;">
+          <table width="100%" cellpadding="0" cellspacing="0">
+            <tr><td colspan="2" style="font-size:0.68rem;font-weight:700;color:#9CA3AF;text-transform:uppercase;letter-spacing:0.8px;padding-bottom:12px;">Employee</td></tr>
+            <tr>
+              <td style="font-size:0.82rem;color:#6B7280;padding:4px 0;width:40%;">Name</td>
+              <td style="font-size:0.82rem;font-weight:600;color:#111827;padding:4px 0;">{{ employee.user.get_full_name }}</td>
+            </tr>
+            <tr>
+              <td style="font-size:0.82rem;color:#6B7280;padding:4px 0;">Department</td>
+              <td style="font-size:0.82rem;font-weight:600;color:#111827;padding:4px 0;">{{ employee.department|default:"—" }}</td>
+            </tr>
+            <tr>
+              <td style="font-size:0.82rem;color:#6B7280;padding:4px 0;">Email</td>
+              <td style="font-size:0.82rem;font-weight:600;color:#111827;padding:4px 0;">{{ employee.user.email|default:"—" }}</td>
+            </tr>
+          </table>
+        </td></tr>
+      </table>
 
-              <!-- Description -->
-              {% if ticket.description %}
-              <table width="100%" cellpadding="0" cellspacing="0" style="background:#FEF9C3;border-radius:10px;margin-bottom:20px;">
-                <tr>
-                  <td style="padding:16px 20px;">
-                    <p style="margin:0 0 6px;font-size:0.72rem;font-weight:700;color:#854D0E;text-transform:uppercase;letter-spacing:0.8px;">Description</p>
-                    <p style="margin:0;font-size:0.875rem;color:#713F12;line-height:1.7;">{{ ticket.description }}</p>
-                  </td>
-                </tr>
-              </table>
-              {% endif %}
+      <!-- Ticket details -->
+      <table width="100%" cellpadding="0" cellspacing="0" style="border:1.5px solid #E5E7EB;border-radius:10px;margin-bottom:18px;">
+        <tr><td style="padding:18px 22px;">
+          <table width="100%" cellpadding="0" cellspacing="0">
+            <tr><td colspan="2" style="font-size:0.68rem;font-weight:700;color:#9CA3AF;text-transform:uppercase;letter-spacing:0.8px;padding-bottom:12px;">Ticket Details</td></tr>
+            <tr>
+              <td style="font-size:0.82rem;color:#6B7280;padding:4px 0;width:40%;">Subject</td>
+              <td style="font-size:0.82rem;font-weight:600;color:#111827;padding:4px 0;">{{ ticket.subject }}</td>
+            </tr>
+            <tr>
+              <td style="font-size:0.82rem;color:#6B7280;padding:4px 0;">Priority</td>
+              <td style="padding:4px 0;">
+                {% if ticket.priority == 'high' %}
+                  <span style="background:#FEE2E2;color:#991B1B;font-size:0.75rem;font-weight:700;padding:2px 10px;border-radius:20px;">High</span>
+                {% elif ticket.priority == 'medium' %}
+                  <span style="background:#FEF3C7;color:#92400E;font-size:0.75rem;font-weight:700;padding:2px 10px;border-radius:20px;">Medium</span>
+                {% else %}
+                  <span style="background:#DBEAFE;color:#1E40AF;font-size:0.75rem;font-weight:700;padding:2px 10px;border-radius:20px;">Low</span>
+                {% endif %}
+              </td>
+            </tr>
+            <tr>
+              <td style="font-size:0.82rem;color:#6B7280;padding:4px 0;">Raised On</td>
+              <td style="font-size:0.82rem;font-weight:600;color:#111827;padding:4px 0;">{{ ticket.created_at|date:"d M Y, h:i A" }}</td>
+            </tr>
+          </table>
+        </td></tr>
+      </table>
 
-              <p style="margin:0;font-size:0.85rem;color:#374151;">Please log in to the admin panel to review and respond to this ticket.</p>
-            </td>
-          </tr>
+      {% if ticket.description %}
+      <table width="100%" cellpadding="0" cellspacing="0" style="background:#FEF9C3;border-radius:10px;margin-bottom:22px;">
+        <tr><td style="padding:14px 20px;">
+          <p style="margin:0 0 4px;font-size:0.68rem;font-weight:700;color:#854D0E;text-transform:uppercase;letter-spacing:0.8px;">Description</p>
+          <p style="margin:0;font-size:0.875rem;color:#713F12;line-height:1.7;">{{ ticket.description }}</p>
+        </td></tr>
+      </table>
+      {% endif %}
 
-          <!-- Footer -->
-          <tr>
-            <td style="background:#F7F8FA;padding:18px 36px;border-top:1px solid #E5E7EB;">
-              <p style="margin:0;font-size:0.75rem;color:#9CA3AF;text-align:center;">
-                This is an automated notification from <strong>{{ app_name }}</strong>. Please do not reply to this email.
-              </p>
-            </td>
-          </tr>
+      <!-- Action buttons -->
+      <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:8px;">
+        <tr>
+          <td width="48%" align="center" style="padding-right:8px;">
+            <a href="{{ resolve_url }}"
+               style="display:block;background:#16a34a;color:#ffffff;text-decoration:none;font-weight:700;font-size:0.95rem;padding:14px 0;border-radius:10px;text-align:center;letter-spacing:0.3px;">
+              ✓ &nbsp;Mark Resolved
+            </a>
+          </td>
+          <td width="4%"></td>
+          <td width="48%" align="center" style="padding-left:8px;">
+            <a href="{{ in_progress_url }}"
+               style="display:block;background:#2563eb;color:#ffffff;text-decoration:none;font-weight:700;font-size:0.95rem;padding:14px 0;border-radius:10px;text-align:center;letter-spacing:0.3px;">
+              ↻ &nbsp;Mark In Progress
+            </a>
+          </td>
+        </tr>
+      </table>
+      <p style="margin:10px 0 0;font-size:0.72rem;color:#9CA3AF;text-align:center;">
+        These links are valid for 7 days. The employee will be notified immediately.
+      </p>
+    </td></tr>
 
-        </table>
-      </td>
-    </tr>
+    <!-- Footer -->
+    <tr><td style="background:#F7F8FA;padding:16px 36px;border-top:1px solid #E5E7EB;">
+      <p style="margin:0;font-size:0.72rem;color:#9CA3AF;text-align:center;">
+        Automated notification from <strong>{{ app_name }}</strong>. Do not reply to this email.
+      </p>
+    </td></tr>
+
   </table>
+  </td></tr>
+</table>
 </body>
 </html>

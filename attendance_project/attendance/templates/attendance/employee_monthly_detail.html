@@ -51,6 +51,14 @@
     <div class="stat-card text-center py-3">
       <div style="font-size:2rem;font-weight:700;color:#155724;">{{ present }}</div>
       <div class="text-muted small">Present Days</div>
+      <div style="font-size:0.68rem;color:#166534;" class="mt-1">Full day (≥5h or check-in only)</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="stat-card text-center py-3">
+      <div style="font-size:2rem;font-weight:700;color:#1e40af;">{{ half_day }}</div>
+      <div class="text-muted small">Half Days</div>
+      <div style="font-size:0.68rem;color:#1e40af;" class="mt-1">Worked &lt;5h</div>
     </div>
   </div>
   <div class="col-6 col-md-3">
@@ -102,7 +110,9 @@
     <small class="text-muted">
       <span class="badge" style="background:#f0f0f0;color:#888;">Weekend</span>
       &nbsp;
-      <span class="badge" style="background:#d4edda;color:#155724;">Present</span>
+      <span class="badge" style="background:#d4edda;color:#155724;">Present (Full)</span>
+      &nbsp;
+      <span class="badge" style="background:#dbeafe;color:#1e40af;">Half Day</span>
       &nbsp;
       <span class="badge" style="background:#f8d7da;color:#721c24;">Absent</span>
     </small>

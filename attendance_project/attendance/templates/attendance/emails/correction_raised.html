@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
-<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>Leave Request – Crefio</title></head>
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>Correction Request – Crefio</title></head>
 <body style="margin:0;padding:0;background:#F7F8FA;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
 <table width="100%" cellpadding="0" cellspacing="0" style="background:#F7F8FA;padding:32px 0;">
   <tr><td align="center">
@@ -11,22 +11,22 @@
       <table width="100%" cellpadding="0" cellspacing="0"><tr>
         <td><span style="font-size:1.4rem;font-weight:700;color:#BAF2BF;letter-spacing:-0.5px;">Crefio</span><br>
             <span style="font-size:0.68rem;color:rgba(255,255,255,0.35);text-transform:uppercase;letter-spacing:1px;">Attendance &amp; HR</span></td>
-        <td align="right"><span style="background:rgba(186,242,191,0.15);color:#BAF2BF;font-size:0.7rem;font-weight:600;padding:5px 14px;border-radius:20px;border:1px solid rgba(186,242,191,0.3);">Leave Request</span></td>
+        <td align="right"><span style="background:rgba(139,92,246,0.15);color:#C4B5FD;font-size:0.7rem;font-weight:600;padding:5px 14px;border-radius:20px;border:1px solid rgba(139,92,246,0.3);">Correction Request</span></td>
       </tr></table>
     </td></tr>
 
-    <!-- Orange action banner -->
+    <!-- Action banner -->
     <tr><td style="background:#FEF3C7;padding:14px 36px;border-bottom:1px solid #FDE68A;">
       <p style="margin:0;font-size:0.85rem;font-weight:600;color:#92400E;">
-        ⚡ Action Required — please approve or reject this leave request.
+        ⚡ Action Required — approve or reject this attendance correction.
       </p>
     </td></tr>
 
     <!-- Body -->
     <tr><td style="padding:28px 36px 20px;">
-      <h2 style="margin:0 0 6px;font-size:1.1rem;font-weight:700;color:#111827;">New Leave Application</h2>
+      <h2 style="margin:0 0 6px;font-size:1.1rem;font-weight:700;color:#111827;">Attendance Correction Request</h2>
       <p style="margin:0 0 22px;font-size:0.875rem;color:#6B7280;line-height:1.6;">
-        An employee has submitted a leave request. You can approve or reject it directly from this email.
+        An employee has requested a correction to their attendance record.
       </p>
 
       <!-- Employee info -->
@@ -46,48 +46,44 @@
               <td style="font-size:0.82rem;color:#6B7280;padding:4px 0;">Department</td>
               <td style="font-size:0.82rem;font-weight:600;color:#111827;padding:4px 0;">{{ employee.department|default:"—" }}</td>
             </tr>
-            <tr>
-              <td style="font-size:0.82rem;color:#6B7280;padding:4px 0;">Email</td>
-              <td style="font-size:0.82rem;font-weight:600;color:#111827;padding:4px 0;">{{ employee.user.email|default:"—" }}</td>
-            </tr>
           </table>
         </td></tr>
       </table>
 
-      <!-- Leave details -->
+      <!-- Correction details -->
       <table width="100%" cellpadding="0" cellspacing="0" style="border:1.5px solid #E5E7EB;border-radius:10px;margin-bottom:18px;">
         <tr><td style="padding:18px 22px;">
           <table width="100%" cellpadding="0" cellspacing="0">
-            <tr><td colspan="2" style="font-size:0.68rem;font-weight:700;color:#9CA3AF;text-transform:uppercase;letter-spacing:0.8px;padding-bottom:12px;">Leave Details</td></tr>
+            <tr><td colspan="2" style="font-size:0.68rem;font-weight:700;color:#9CA3AF;text-transform:uppercase;letter-spacing:0.8px;padding-bottom:12px;">Correction Details</td></tr>
             <tr>
-              <td style="font-size:0.82rem;color:#6B7280;padding:4px 0;width:40%;">Leave Type</td>
-              <td style="font-size:0.82rem;font-weight:600;color:#111827;padding:4px 0;">{{ leave.get_leave_type_display }}</td>
+              <td style="font-size:0.82rem;color:#6B7280;padding:4px 0;width:40%;">Date</td>
+              <td style="font-size:0.82rem;font-weight:600;color:#111827;padding:4px 0;">{{ correction.date|date:"d M Y, l" }}</td>
             </tr>
+            {% if correction.requested_check_in %}
             <tr>
-              <td style="font-size:0.82rem;color:#6B7280;padding:4px 0;">From</td>
-              <td style="font-size:0.82rem;font-weight:600;color:#111827;padding:4px 0;">{{ leave.from_date|date:"d M Y, l" }}</td>
+              <td style="font-size:0.82rem;color:#6B7280;padding:4px 0;">Requested Check-In</td>
+              <td style="font-size:0.82rem;font-weight:600;color:#111827;padding:4px 0;">{{ correction.requested_check_in|time:"h:i A" }}</td>
             </tr>
+            {% endif %}
+            {% if correction.requested_check_out %}
             <tr>
-              <td style="font-size:0.82rem;color:#6B7280;padding:4px 0;">To</td>
-              <td style="font-size:0.82rem;font-weight:600;color:#111827;padding:4px 0;">{{ leave.to_date|date:"d M Y, l" }}</td>
+              <td style="font-size:0.82rem;color:#6B7280;padding:4px 0;">Requested Check-Out</td>
+              <td style="font-size:0.82rem;font-weight:600;color:#111827;padding:4px 0;">{{ correction.requested_check_out|time:"h:i A" }}</td>
             </tr>
+            {% endif %}
             <tr>
-              <td style="font-size:0.82rem;color:#6B7280;padding:4px 0;">Working Days</td>
-              <td style="font-size:0.82rem;font-weight:700;color:#111827;padding:4px 0;">{{ leave.total_days }} day{{ leave.total_days|pluralize }} (Sundays excluded)</td>
-            </tr>
-            <tr>
-              <td style="font-size:0.82rem;color:#6B7280;padding:4px 0;">Applied On</td>
-              <td style="font-size:0.82rem;font-weight:600;color:#111827;padding:4px 0;">{{ leave.applied_on|date:"d M Y, h:i A" }}</td>
+              <td style="font-size:0.82rem;color:#6B7280;padding:4px 0;">Submitted On</td>
+              <td style="font-size:0.82rem;font-weight:600;color:#111827;padding:4px 0;">{{ correction.created_at|date:"d M Y, h:i A" }}</td>
             </tr>
           </table>
         </td></tr>
       </table>
 
-      {% if leave.reason %}
+      {% if correction.reason %}
       <table width="100%" cellpadding="0" cellspacing="0" style="background:#FEF9C3;border-radius:10px;margin-bottom:22px;">
         <tr><td style="padding:14px 20px;">
           <p style="margin:0 0 4px;font-size:0.68rem;font-weight:700;color:#854D0E;text-transform:uppercase;letter-spacing:0.8px;">Reason</p>
-          <p style="margin:0;font-size:0.875rem;color:#713F12;line-height:1.6;">{{ leave.reason }}</p>
+          <p style="margin:0;font-size:0.875rem;color:#713F12;line-height:1.6;">{{ correction.reason }}</p>
         </td></tr>
       </table>
       {% endif %}
@@ -98,20 +94,20 @@
           <td width="48%" align="center" style="padding-right:8px;">
             <a href="{{ approve_url }}"
                style="display:block;background:#16a34a;color:#ffffff;text-decoration:none;font-weight:700;font-size:0.95rem;padding:14px 0;border-radius:10px;text-align:center;letter-spacing:0.3px;">
-              ✓ &nbsp;Approve Leave
+              ✓ &nbsp;Approve Correction
             </a>
           </td>
           <td width="4%"></td>
           <td width="48%" align="center" style="padding-left:8px;">
             <a href="{{ reject_url }}"
                style="display:block;background:#dc2626;color:#ffffff;text-decoration:none;font-weight:700;font-size:0.95rem;padding:14px 0;border-radius:10px;text-align:center;letter-spacing:0.3px;">
-              ✕ &nbsp;Reject Leave
+              ✕ &nbsp;Reject Correction
             </a>
           </td>
         </tr>
       </table>
       <p style="margin:10px 0 0;font-size:0.72rem;color:#9CA3AF;text-align:center;">
-        These links are valid for 7 days. Clicking will instantly notify the employee.
+        These links are valid for 7 days. The employee will be notified immediately.
       </p>
     </td></tr>
 

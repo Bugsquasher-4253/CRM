@@ -40,8 +40,13 @@
       position: fixed; top: 0; left: 0; z-index: 100;
       padding-top: 0;
       display: flex; flex-direction: column;
-      overflow: hidden;
+      overflow-x: hidden;
     }
+    /* Thin scrollbar for sidebar nav */
+    .sidebar nav::-webkit-scrollbar { width: 4px; }
+    .sidebar nav::-webkit-scrollbar-track { background: transparent; }
+    .sidebar nav::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 4px; }
+    .sidebar nav::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.3); }
     .sidebar .brand {
       display: flex; align-items: center; gap: 10px;
       padding: 22px 20px 18px;
@@ -334,11 +339,10 @@
   <div class="brand">
     <div>
       <div class="crefio-logo">Crefio</div>
-      <div class="brand-sub">Attendance &amp; HR</div>
     </div>
   </div>
 
-  <nav class="nav flex-column mt-1 flex-fill overflow-auto pb-2" style="min-height:0;">
+  <nav class="nav flex-column mt-1 flex-fill pb-2" style="min-height:0; overflow-y:auto; overflow-x:hidden;">
     {% if request.user.is_staff and panel_mode == 'admin' %}
       <!-- ── ADMIN SIDEBAR ── -->
       <div class="sidebar-section-label">Overview</div>
@@ -476,7 +480,7 @@
   </div>
 
   {% for message in messages %}
-    <div class="alert alert-{% if message.tags == 'error' %}danger{% elif message.tags == 'warning' %}warning{% elif message.tags == 'success' %}success{% else %}info{% endif %} alert-dismissible fade show" role="alert">
+    <div class="alert alert-{% if message.tags == 'error' %}danger{% elif message.tags == 'warning' %}warning{% elif message.tags == 'success' %}success{% else %}info{% endif %} alert-dismissible fade show auto-dismiss" role="alert">
       {{ message }}
       <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
@@ -523,6 +527,14 @@
       if (dx < -60) closeSidebar();
     }, { passive: true });
   })();
+
+  // Auto-dismiss alerts after 5 seconds
+  document.querySelectorAll('.alert.auto-dismiss').forEach(function(el) {
+    setTimeout(function() {
+      var bsAlert = bootstrap.Alert.getOrCreateInstance(el);
+      bsAlert.close();
+    }, 5000);
+  });
 </script>
 </body>
 </html>

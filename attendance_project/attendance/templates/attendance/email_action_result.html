@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% if success %}Action Complete{% else %}Action Failed{% endif %} – Crefio</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Poppins', sans-serif; background: #F7F8FA; min-height: 100vh;
+           display: flex; align-items: center; justify-content: center; padding: 24px; }
+    .card { background: #fff; border-radius: 18px; box-shadow: 0 4px 24px rgba(0,0,0,0.09);
+            max-width: 480px; width: 100%; overflow: hidden; }
+    .card-header { padding: 28px 36px; text-align: center; }
+    .icon { width: 64px; height: 64px; border-radius: 16px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.8rem; margin: 0 auto 16px; }
+    .card-body { padding: 0 36px 32px; text-align: center; }
+    h1 { font-size: 1.25rem; font-weight: 700; color: #111827; margin-bottom: 8px; }
+    .detail-box { background: #F7F8FA; border-radius: 10px; padding: 14px 18px;
+                  margin: 16px 0; text-align: left; font-size: 0.82rem; }
+    .detail-box p { color: #6B7280; margin-bottom: 4px; }
+    .detail-box span { color: #111827; font-weight: 600; }
+    .msg { font-size: 0.875rem; color: #6B7280; line-height: 1.6; margin-top: 12px; }
+    .btn { display: inline-block; margin-top: 22px; padding: 11px 28px;
+           border-radius: 9px; font-weight: 600; font-size: 0.875rem;
+           text-decoration: none; color: #fff; background: #111827; }
+    .brand { display: block; font-size: 1.1rem; font-weight: 700;
+             color: #BAF2BF; letter-spacing: -0.3px; margin-bottom: 4px; }
+    .brand-sub { font-size: 0.65rem; color: rgba(255,255,255,0.4);
+                 text-transform: uppercase; letter-spacing: 1px; }
+  </style>
+</head>
+<body>
+<div class="card">
+
+  <div class="card-header" style="background:#111827;">
+    <span class="brand">Crefio</span>
+    <span class="brand-sub">Attendance &amp; HR</span>
+  </div>
+
+  <div class="card-body" style="padding-top:28px;">
+
+    {% if success %}
+      <div class="icon" style="background:{% if 'Reject' in action_label %}#FEE2E2{% else %}#D1FAE5{% endif %};">
+        {% if 'Reject' in action_label %}✕{% else %}✓{% endif %}
+      </div>
+      <h1>{{ title }}</h1>
+
+      {% if employee_name or detail %}
+      <div class="detail-box">
+        {% if employee_name %}
+        <p>Employee &nbsp;<span>{{ employee_name }}</span></p>
+        {% endif %}
+        {% if obj_type %}
+        <p>Type &nbsp;<span>{{ obj_type }}</span></p>
+        {% endif %}
+        {% if detail %}
+        <p>Details &nbsp;<span>{{ detail }}</span></p>
+        {% endif %}
+      </div>
+      {% endif %}
+
+      <p class="msg">{{ message }}</p>
+      <a href="/admin-panel/" class="btn">Go to Admin Panel</a>
+
+    {% else %}
+      <div class="icon" style="background:#FEF3C7;">⚠</div>
+      <h1>{{ title }}</h1>
+
+      {% if employee_name %}
+      <div class="detail-box">
+        <p>Employee &nbsp;<span>{{ employee_name }}</span></p>
+      </div>
+      {% endif %}
+
+      <p class="msg">{{ message }}</p>
+      <a href="/admin-panel/" class="btn">Go to Admin Panel</a>
+    {% endif %}
+
+  </div>
+</div>
+</body>
+</html>

@@ -63,15 +63,35 @@ class AttendanceRecord(models.Model):
         return f"{self.employee} - {self.date}"
 
     def calculate_hours(self):
+        """
+        Recalculate total_hours and auto-set status based on business rules:
+          - No check-in            → absent (caller should handle; record shouldn't exist)
+          - Check-in, no check-out → present (full day credit; hours remain None)
+          - Check-in + check-out,
+              hours >= 5           → present (full day)
+              hours <  5           → half_day
+        Handles edge case where check-out is before check-in (midnight cross or bad entry)
+        by treating hours as 0 (→ half_day).
+        """
         if self.check_in_time and self.check_out_time:
-            check_in = datetime.datetime.combine(self.date, self.check_in_time)
+            check_in  = datetime.datetime.combine(self.date, self.check_in_time)
             check_out = datetime.datetime.combine(self.date, self.check_out_time)
-            duration = check_out - check_in
-            hours = duration.total_seconds() / 3600
+            duration  = check_out - check_in
+            # Guard against negative durations (bad data / midnight crossover)
+            hours = max(duration.total_seconds() / 3600, 0)
             self.total_hours = round(hours, 2)
-            self.save()
-            return self.total_hours
-        return None
+            # ≥5 hours → full day present; <5 → half day
+            if hours >= 5:
+                self.status = 'present'
+            else:
+                self.status = 'half_day'
+        elif self.check_in_time and not self.check_out_time:
+            # Checked in but forgot to check out → still present (full day)
+            self.total_hours = None
+            self.status = 'present'
+        # If somehow neither time exists, leave status as-is (absent / leave set externally)
+        self.save()
+        return self.total_hours
 
 
 class LeaveRequest(models.Model):
@@ -106,8 +126,13 @@ class LeaveRequest(models.Model):
 
     @property
     def total_days(self):
-        delta = self.to_date - self.from_date
-        return delta.days + 1
+        import datetime as _dt
+        total, cur = 0, self.from_date
+        while cur <= self.to_date:
+            if cur.weekday() != 6:   # skip Sunday
+                total += 1
+            cur += _dt.timedelta(days=1)
+        return total
 
 
 class SupportTicket(models.Model):
@@ -193,9 +218,9 @@ class SalaryRecord(models.Model):
 
     def save(self, *args, **kwargs):
         rate = self.daily_rate
-        # Full absent/leave days → full day deduction
+        # Absent / leave days → full daily rate deducted (0% pay)
         absent_deduction   = self.absent_days * rate
-        # Half days → deduct only the missing half (employee worked half)
+        # Half days → 50% pay, so deduct 50% of daily rate
         half_day_deduction = self.half_days * (rate / 2)
         self.deductions = round(absent_deduction + half_day_deduction, 2)
         self.net_salary = round(

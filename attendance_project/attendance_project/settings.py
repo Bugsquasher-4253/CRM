@@ -9,6 +9,9 @@ SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-6z^hccjv#h0^uxvw9grxs
 
 DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 
+# Base URL used to build absolute links in emails (no trailing slash)
+SITE_URL = os.environ.get('SITE_URL', 'http://127.0.0.1:8000')
+
 ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost 127.0.0.1').split() + ['.vercel.app']
 
 # Required for HTTPS form/login POSTs on a custom domain (Django 4+).

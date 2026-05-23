@@ -1,27 +1,32 @@
 """
 Email notification utilities for Crefio.
 
-All functions are fire-and-forget: email failures are logged but never
-raise exceptions so the main request flow is never interrupted.
+All functions are fire-and-forget: failures are logged but never raise,
+so the main request flow is never interrupted.
 
-Admin notifications go to EVERY staff user who has an email address set.
+Admin notifications go to EVERY staff user who has an email address.
+Admin emails include one-click Approve / Reject buttons backed by signed
+tokens (7-day expiry) — admin can act directly from their inbox.
 """
 
 import logging
 from django.conf import settings
+from django.core import signing
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
 from django.utils.html import strip_tags
 
 logger = logging.getLogger(__name__)
 
+_TOKEN_SALT    = 'crefio-email-action'
+_TOKEN_MAX_AGE = 7 * 24 * 3600   # 7 days in seconds
 
-# ─── INTERNAL HELPERS ───────────────────────────────────────────────────────
+
+# ─── INTERNAL HELPERS ────────────────────────────────────────────────────────
 
 def _send(subject: str, to: str, template: str, context: dict) -> bool:
-    """Render template and send as HTML + plain-text email. Fails silently."""
     if not to:
-        logger.warning("Email skipped – recipient empty (subject: %s)", subject)
+        logger.warning("Email skipped – empty recipient (subject: %s)", subject)
         return False
     try:
         html_body = render_to_string(template, context)
@@ -42,52 +47,71 @@ def _send(subject: str, to: str, template: str, context: dict) -> bool:
 
 
 def _get_all_admin_emails() -> list[str]:
-    """
-    Return email addresses of every active staff user who has one set.
-    This is the source of truth — no hardcoded env var needed.
-    """
     from django.contrib.auth.models import User
-    return list(
+    db_emails = set(
         User.objects.filter(is_staff=True, is_active=True)
                     .exclude(email='')
                     .values_list('email', flat=True)
     )
+    env_email = getattr(settings, 'ADMIN_NOTIFICATION_EMAIL', '').strip()
+    if env_email:
+        db_emails.add(env_email)
+    return list(db_emails)
 
 
 def _send_to_all_admins(subject: str, template: str, context: dict) -> int:
-    """Send the same email to every admin. Returns count of successful sends."""
     admin_emails = _get_all_admin_emails()
     if not admin_emails:
-        logger.warning("No admin emails found in DB – notification skipped (subject: %s)", subject)
+        logger.warning("No admin emails – skipped (subject: %s)", subject)
         return 0
     sent = sum(_send(subject, email, template, context) for email in admin_emails)
-    logger.info("Admin notification sent to %d/%d admins | %s", sent, len(admin_emails), subject)
+    logger.info("Admin notification %d/%d | %s", sent, len(admin_emails), subject)
     return sent
 
 
-# ─── LEAVE NOTIFICATIONS ────────────────────────────────────────────────────
+# ─── TOKEN HELPERS ────────────────────────────────────────────────────────────
+
+def _make_token(obj_type: str, obj_id: int, action: str) -> str:
+    return signing.dumps(
+        {'t': obj_type, 'id': obj_id, 'a': action},
+        salt=_TOKEN_SALT,
+        compress=True,
+    )
+
+
+def _action_url(token: str) -> str:
+    site = getattr(settings, 'SITE_URL', 'http://127.0.0.1:8000').rstrip('/')
+    return f"{site}/ea/{token}/"
+
+
+def decode_action_token(token: str) -> dict:
+    """Decode and verify a signed action token. Raises signing exceptions on failure."""
+    return signing.loads(token, salt=_TOKEN_SALT, max_age=_TOKEN_MAX_AGE)
+
+
+# ─── LEAVE NOTIFICATIONS ─────────────────────────────────────────────────────
 
 def notify_admin_leave_applied(leave) -> int:
-    """Notify ALL admins when an employee submits a new leave request."""
     context = {
-        'leave': leave,
-        'employee': leave.employee,
-        'app_name': 'Crefio',
+        'leave':       leave,
+        'employee':    leave.employee,
+        'app_name':    'Crefio',
+        'approve_url': _action_url(_make_token('leave', leave.id, 'approved')),
+        'reject_url':  _action_url(_make_token('leave', leave.id, 'rejected')),
     }
     return _send_to_all_admins(
-        subject=f"[Crefio] New Leave Request – {leave.employee.user.get_full_name()}",
+        subject=f"[Crefio] Leave Request — {leave.employee.user.get_full_name()} · Action Required",
         template='attendance/emails/leave_applied.html',
         context=context,
     )
 
 
 def notify_employee_leave_decision(leave) -> bool:
-    """Notify the employee when their leave is approved or rejected."""
     employee_email = leave.employee.user.email
     if not employee_email:
         return False
     context = {
-        'leave': leave,
+        'leave':    leave,
         'employee': leave.employee,
         'app_name': 'Crefio',
         'approved': leave.status == 'approved',
@@ -101,45 +125,82 @@ def notify_employee_leave_decision(leave) -> bool:
     )
 
 
-# ─── TICKET NOTIFICATIONS ───────────────────────────────────────────────────
+# ─── TICKET NOTIFICATIONS ────────────────────────────────────────────────────
 
 def notify_admin_ticket_raised(ticket) -> int:
-    """Notify ALL admins when an employee opens a new support ticket."""
     context = {
-        'ticket': ticket,
-        'employee': ticket.employee,
-        'app_name': 'Crefio',
+        'ticket':          ticket,
+        'employee':        ticket.employee,
+        'app_name':        'Crefio',
+        'resolve_url':     _action_url(_make_token('ticket', ticket.id, 'resolved')),
+        'in_progress_url': _action_url(_make_token('ticket', ticket.id, 'in_progress')),
     }
     return _send_to_all_admins(
-        subject=f"[Crefio] New Support Ticket #{ticket.id} – {ticket.subject}",
+        subject=f"[Crefio] Ticket #{ticket.id} — {ticket.subject} · Action Required",
         template='attendance/emails/ticket_raised.html',
         context=context,
     )
 
 
 def notify_employee_ticket_updated(ticket) -> bool:
-    """Notify the employee when admin updates their ticket."""
     employee_email = ticket.employee.user.email
     if not employee_email:
         return False
     context = {
-        'ticket': ticket,
+        'ticket':   ticket,
         'employee': ticket.employee,
         'app_name': 'Crefio',
         'resolved': ticket.status == 'resolved',
     }
     return _send(
-        subject=f"[Crefio] Ticket #{ticket.id} Update – {ticket.get_status_display()}",
+        subject=f"[Crefio] Ticket #{ticket.id} Update — {ticket.get_status_display()}",
         to=employee_email,
         template='attendance/emails/ticket_updated.html',
         context=context,
     )
 
 
-def send_test_email(to: str) -> bool:
-    """Send a test email to verify SMTP is working."""
+# ─── CORRECTION NOTIFICATIONS ────────────────────────────────────────────────
+
+def notify_admin_correction_raised(correction) -> int:
+    context = {
+        'correction':  correction,
+        'employee':    correction.employee,
+        'app_name':    'Crefio',
+        'approve_url': _action_url(_make_token('correction', correction.id, 'approved')),
+        'reject_url':  _action_url(_make_token('correction', correction.id, 'rejected')),
+    }
+    return _send_to_all_admins(
+        subject=f"[Crefio] Correction Request — {correction.employee.user.get_full_name()} · Action Required",
+        template='attendance/emails/correction_raised.html',
+        context=context,
+    )
+
+
+def notify_employee_correction_decision(correction) -> bool:
+    employee_email = correction.employee.user.email
+    if not employee_email:
+        return False
+    context = {
+        'correction': correction,
+        'employee':   correction.employee,
+        'app_name':   'Crefio',
+        'approved':   correction.status == 'approved',
+    }
+    status_label = 'Approved' if correction.status == 'approved' else 'Rejected'
     return _send(
-        subject="[Crefio] ✅ Email Test – Setup Working",
+        subject=f"[Crefio] Your Attendance Correction has been {status_label}",
+        to=employee_email,
+        template='attendance/emails/correction_decision.html',
+        context=context,
+    )
+
+
+# ─── TEST EMAIL ──────────────────────────────────────────────────────────────
+
+def send_test_email(to: str) -> bool:
+    return _send(
+        subject="[Crefio] Email Test — Setup Working",
         to=to,
         template='attendance/emails/test_email.html',
         context={'app_name': 'Crefio', 'recipient': to},

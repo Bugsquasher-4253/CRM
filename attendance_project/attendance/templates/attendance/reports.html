@@ -92,6 +92,7 @@
           <th class="px-4 py-3">Employee</th>
           <th class="py-3">ID</th>
           <th class="py-3 text-center text-success">Present</th>
+          <th class="py-3 text-center" style="color:#1e40af;">Half Day</th>
           <th class="py-3 text-center text-danger">Absent</th>
           <th class="py-3 text-center" style="color:#856404;">Leave</th>
           <th class="py-3 text-center">Total Hours</th>
@@ -101,7 +102,7 @@
       </thead>
       <tbody>
         {% for row in report_data %}
-        {% with total=row.present|add:row.absent|add:row.leave %}
+        {% with total=row.present|add:row.half_day|add:row.absent|add:row.leave %}
         <tr>
           <td class="px-4 py-3">
             <div class="fw-semibold">{{ row.employee.user.get_full_name }}</div>
@@ -109,6 +110,9 @@
           </td>
           <td class="py-3"><code>{{ row.employee.employee_id }}</code></td>
           <td class="py-3 text-center"><span class="badge badge-present px-3 py-2">{{ row.present }}</span></td>
+          <td class="py-3 text-center">
+            <span class="badge px-3 py-2" style="background:#dbeafe;color:#1e40af;">{{ row.half_day }}</span>
+          </td>
           <td class="py-3 text-center"><span class="badge badge-absent px-3 py-2">{{ row.absent }}</span></td>
           <td class="py-3 text-center"><span class="badge badge-leave px-3 py-2">{{ row.leave }}</span></td>
           <td class="py-3 text-center fw-semibold">{{ row.total_hours }} hrs</td>
@@ -121,6 +125,7 @@
                 </div>
                 <small class="fw-bold">{{ pct }}%</small>
               </div>
+              <div class="text-muted" style="font-size:0.68rem;">{{ row.half_day }} half day{% if row.half_day != 1 %}s{% endif %}</div>
             {% else %}
               <span class="text-muted small">No records</span>
             {% endif %}
@@ -148,7 +153,7 @@
   <!-- Mobile card layout -->
   <div class="d-block d-md-none p-3">
     {% for row in report_data %}
-    {% with total=row.present|add:row.absent|add:row.leave %}
+    {% with total=row.present|add:row.half_day|add:row.absent|add:row.leave %}
     <div class="card mb-3 border" style="border-radius:12px;overflow:hidden;">
       <div class="d-flex align-items-center gap-3 p-3" style="background:#f8f9fa;border-bottom:1px solid #E5E7EB;">
         <div style="width:40px;height:40px;border-radius:50%;background:#111827;display:flex;align-items:center;justify-content:center;color:white;font-weight:700;flex-shrink:0;">
@@ -168,15 +173,19 @@
       </div>
       <div class="p-3">
         <div class="row g-2 mb-3">
-          <div class="col-4 text-center">
+          <div class="col-3 text-center">
             <span class="badge badge-present d-block py-2" style="font-size:0.9rem;">{{ row.present }}</span>
             <div class="text-muted mt-1" style="font-size:0.7rem;">Present</div>
           </div>
-          <div class="col-4 text-center">
+          <div class="col-3 text-center">
+            <span class="badge d-block py-2" style="font-size:0.9rem;background:#dbeafe;color:#1e40af;">{{ row.half_day }}</span>
+            <div class="text-muted mt-1" style="font-size:0.7rem;">Half Day</div>
+          </div>
+          <div class="col-3 text-center">
             <span class="badge badge-absent d-block py-2" style="font-size:0.9rem;">{{ row.absent }}</span>
             <div class="text-muted mt-1" style="font-size:0.7rem;">Absent</div>
           </div>
-          <div class="col-4 text-center">
+          <div class="col-3 text-center">
             <span class="badge badge-leave d-block py-2" style="font-size:0.9rem;">{{ row.leave }}</span>
             <div class="text-muted mt-1" style="font-size:0.7rem;">Leave</div>
           </div>

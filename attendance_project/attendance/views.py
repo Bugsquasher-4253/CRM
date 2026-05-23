@@ -137,16 +137,17 @@ def dashboard(request):
         date__year=today.year
     )
 
-    show_doc_reminder = not employee.has_seen_document_reminder
+    show_doc_reminder = not (employee.aadhaar_card and employee.pan_card)
 
     context = {
         'employee': employee,
         'today': today,
         'today_attendance': today_attendance,
         'recent_attendance': recent_attendance,
-        'present_days': monthly_records.filter(status='present').count(),
-        'absent_days': monthly_records.filter(status='absent').count(),
-        'leave_days': monthly_records.filter(status='leave').count(),
+        'present_days': monthly_records.filter(status='present',  date__week_day__gt=1).count(),
+        'half_days':    monthly_records.filter(status='half_day', date__week_day__gt=1).count(),
+        'absent_days':  monthly_records.filter(status='absent',   date__week_day__gt=1).count(),
+        'leave_days':   monthly_records.filter(status='leave',    date__week_day__gt=1).count(),
         'show_doc_reminder': show_doc_reminder,
     }
     return render(request, 'attendance/dashboard.html', context)
@@ -226,11 +227,19 @@ def check_out(request):
             else:
                 attendance.check_out_time = now_time
                 attendance.save()
-                attendance.calculate_hours()
-                messages.success(
-                    request,
-                    f'Check-out at {now_time.strftime("%I:%M %p")}. Total: {attendance.total_hours} hrs'
-                )
+                attendance.calculate_hours()  # auto-sets status + total_hours
+                status_label = attendance.get_status_display()
+                if attendance.total_hours:
+                    messages.success(
+                        request,
+                        f'Check-out at {now_time.strftime("%I:%M %p")}. '
+                        f'Total: {attendance.total_hours} hrs — {status_label}'
+                    )
+                else:
+                    messages.success(
+                        request,
+                        f'Check-out at {now_time.strftime("%I:%M %p")}. Status: {status_label}'
+                    )
     except AttendanceRecord.DoesNotExist:
         messages.error(request, 'No check-in found for today. Please check in first.')
 
@@ -258,9 +267,10 @@ def my_attendance(request):
         'month': month,
         'year': year,
         'month_name': calendar.month_name[month],
-        'present': records.filter(status='present').count(),
-        'absent': records.filter(status='absent').count(),
-        'leave': records.filter(status='leave').count(),
+        'present':  records.filter(status='present',  date__week_day__gt=1).count(),
+        'half_day': records.filter(status='half_day', date__week_day__gt=1).count(),
+        'absent':   records.filter(status='absent',   date__week_day__gt=1).count(),
+        'leave':    records.filter(status='leave',    date__week_day__gt=1).count(),
         'months': [(i, calendar.month_name[i]) for i in range(1, 13)],
         'years': range(2023, timezone.now().year + 1),
     }
@@ -613,8 +623,14 @@ def add_attendance_record(request):
     if request.method == 'POST':
         form = AttendanceRecordForm(request.POST)
         if form.is_valid():
-            record = form.save()
-            record.calculate_hours()
+            record = form.save(commit=False)
+            # If check-in exists, ensure status is at least 'present' before recalc
+            if record.check_in_time and not record.check_out_time:
+                record.status = 'present'
+                record.save()
+            else:
+                record.save()
+                record.calculate_hours()  # auto-sets status based on hours
             messages.success(request, 'Attendance record added.')
             return redirect('admin_attendance_records')
     else:
@@ -634,8 +650,15 @@ def edit_attendance_record(request, record_id):
     if request.method == 'POST':
         form = AttendanceRecordForm(request.POST, instance=record)
         if form.is_valid():
-            saved = form.save()
-            saved.calculate_hours()
+            saved = form.save(commit=False)
+            if saved.check_in_time and not saved.check_out_time:
+                # Check-in only → present (no recalc needed, just ensure status)
+                saved.status = 'present'
+                saved.total_hours = None
+                saved.save()
+            else:
+                saved.save()
+                saved.calculate_hours()  # auto-sets status based on hours
             messages.success(request, 'Attendance record updated.')
             return redirect('admin_attendance_records')
     else:
@@ -733,9 +756,10 @@ def reports(request):
         total_hours = sum([float(r.total_hours or 0) for r in records])
         report_data.append({
             'employee': emp,
-            'present': records.filter(status='present').count(),
-            'absent': records.filter(status='absent').count(),
-            'leave': records.filter(status='leave').count(),
+            'present':  records.filter(status='present',  date__week_day__gt=1).count(),
+            'half_day': records.filter(status='half_day', date__week_day__gt=1).count(),
+            'absent':   records.filter(status='absent',   date__week_day__gt=1).count(),
+            'leave':    records.filter(status='leave',    date__week_day__gt=1).count(),
             'total_hours': round(total_hours, 2),
         })
 
@@ -766,54 +790,103 @@ def export_monthly_report_excel(request):
 
     employees = Employee.objects.filter(is_active=True).select_related('user', 'department')
 
+    # Bulk-fetch salary records to avoid N+1 queries
+    salary_map = {
+        s.employee_id: s
+        for s in SalaryRecord.objects.filter(month=month, year=year)
+    }
+
     wb = openpyxl.Workbook()
     ws = wb.active
     ws.title = f"{month_name_str[:3]} {year}"
 
-    # Title row
-    ws.merge_cells('A1:J1')
-    ws['A1'] = f"Crefio — Monthly Attendance Report: {month_name_str} {year}"
+    # Title row — spans 15 columns (A:O)
+    ws.merge_cells('A1:O1')
+    ws['A1'] = f"Crefio — Monthly Attendance & Salary Report: {month_name_str} {year}"
     ws['A1'].font = Font(bold=True, size=13, color='FFFFFF')
     ws['A1'].fill = PatternFill(start_color='111827', end_color='111827', fill_type='solid')
     ws['A1'].alignment = Alignment(horizontal='center', vertical='center')
     ws.row_dimensions[1].height = 32
 
     # Header row
-    headers = ['Emp ID', 'Full Name', 'Department', 'Designation',
-               'Present', 'Absent', 'Leave', 'Half Day', 'Total Hours', 'Attendance %']
+    headers = [
+        'Emp ID', 'Full Name', 'Department', 'Designation',          # 1-4
+        'Present', 'Half Day', 'Absent', 'Leave', 'Total Hours',     # 5-9
+        'Attendance %',                                                # 10
+        'Basic Salary (₹)', 'Deductions (₹)', 'Net Salary (₹)',      # 11-13
+        'Payment Status', 'Paid Date',                                # 14-15
+    ]
     for col, h in enumerate(headers, 1):
         cell = ws.cell(row=2, column=col, value=h)
         cell.font = Font(bold=True, color='111827', size=10)
-        cell.fill = PatternFill(start_color='BAF2BF', end_color='BAF2BF', fill_type='solid')
+        if col >= 11:   # salary columns — teal header
+            cell.fill = PatternFill(start_color='A7F3D0', end_color='A7F3D0', fill_type='solid')
+        else:
+            cell.fill = PatternFill(start_color='BAF2BF', end_color='BAF2BF', fill_type='solid')
         cell.alignment = Alignment(horizontal='center', vertical='center')
     ws.row_dimensions[2].height = 22
 
     # Data rows
     for row_idx, emp in enumerate(employees, 3):
-        records  = AttendanceRecord.objects.filter(employee=emp, date__month=month, date__year=year)
-        present  = records.filter(status='present').count()
-        absent   = records.filter(status='absent').count()
-        leave    = records.filter(status='leave').count()
-        half_day = records.filter(status='half_day').count()
+        records   = AttendanceRecord.objects.filter(employee=emp, date__month=month, date__year=year)
+        present   = records.filter(status='present',  date__week_day__gt=1).count()
+        half_day  = records.filter(status='half_day', date__week_day__gt=1).count()
+        absent    = records.filter(status='absent',   date__week_day__gt=1).count()
+        leave     = records.filter(status='leave',    date__week_day__gt=1).count()
         total_hrs = round(sum(float(r.total_hours or 0) for r in records), 2)
-        total    = present + absent + leave + half_day
-        pct      = f"{round(present / total * 100, 1)}%" if total > 0 else "N/A"
+        total     = present + half_day + absent + leave
+        pct       = f"{round(present / total * 100, 1)}%" if total > 0 else "N/A"
+
+        salary         = salary_map.get(emp.id)
+        basic_salary   = float(salary.basic_salary)  if salary else None
+        deductions     = float(salary.deductions)    if salary else None
+        net_salary     = float(salary.net_salary)    if salary else None
+        payment_status = ('Paid' if salary and salary.is_paid
+                          else 'Pending' if salary
+                          else 'Not Set')
+        paid_date      = (salary.paid_date.strftime('%d %b %Y')
+                          if salary and salary.is_paid and salary.paid_date
+                          else '—')
 
         row_data = [
             emp.employee_id,
             emp.user.get_full_name() or emp.user.username,
             emp.department.name if emp.department else '-',
             emp.designation,
-            present, absent, leave, half_day, total_hrs, pct,
+            present, half_day, absent, leave, total_hrs, pct,
+            basic_salary   if basic_salary  is not None else 'Not Set',
+            deductions     if deductions    is not None else 'Not Set',
+            net_salary     if net_salary    is not None else 'Not Set',
+            payment_status,
+            paid_date,
         ]
+
         fill_color = 'FFFFFF' if row_idx % 2 == 0 else 'F7F8FA'
         for col, val in enumerate(row_data, 1):
             cell = ws.cell(row=row_idx, column=col, value=val)
             cell.fill = PatternFill(start_color=fill_color, end_color=fill_color, fill_type='solid')
-            cell.alignment = Alignment(horizontal='center' if col > 4 else 'left', vertical='center')
+            cell.alignment = Alignment(
+                horizontal='center' if col > 4 else 'left',
+                vertical='center',
+            )
+
+            if col in (11, 12, 13) and isinstance(val, float):   # money columns
+                cell.number_format = '₹#,##0.00'
+                cell.font = Font(bold=(col == 13), size=10)       # net salary bold
+
+            elif col == 14:   # Payment Status
+                if payment_status == 'Paid':
+                    cell.fill = PatternFill(start_color='D1FAE5', end_color='D1FAE5', fill_type='solid')
+                    cell.font = Font(bold=True, color='065F46', size=10)
+                elif payment_status == 'Pending':
+                    cell.fill = PatternFill(start_color='FEF9C3', end_color='FEF9C3', fill_type='solid')
+                    cell.font = Font(bold=True, color='854D0E', size=10)
+                else:
+                    cell.font = Font(color='6B7280', size=10)
 
     # Column widths
-    for col, width in enumerate([13, 24, 18, 18, 10, 10, 10, 10, 14, 14], 1):
+    col_widths = [13, 24, 18, 18, 10, 10, 10, 10, 14, 13, 16, 16, 16, 15, 14]
+    for col, width in enumerate(col_widths, 1):
         ws.column_dimensions[get_column_letter(col)].width = width
 
     response = HttpResponse(
@@ -867,10 +940,10 @@ def employee_monthly_detail(request, emp_id):
             'record':      record,
         })
 
-    present = records_qs.filter(status='present').count()
-    absent  = records_qs.filter(status='absent').count()
-    leave   = records_qs.filter(status='leave').count()
-    half    = records_qs.filter(status='half_day').count()
+    present  = records_qs.filter(status='present',  date__week_day__gt=1).count()
+    half_day = records_qs.filter(status='half_day', date__week_day__gt=1).count()
+    absent   = records_qs.filter(status='absent',   date__week_day__gt=1).count()
+    leave    = records_qs.filter(status='leave',    date__week_day__gt=1).count()
     total_hours = sum(float(r.total_hours or 0) for r in records_qs)
     avg_checkin  = None
     avg_checkout = None
@@ -892,9 +965,9 @@ def employee_monthly_detail(request, emp_id):
         'year':         year,
         'month_name':   calendar.month_name[month],
         'present':      present,
+        'half_day':     half_day,
         'absent':       absent,
         'leave':        leave,
-        'half':         half,
         'total_hours':  round(total_hours, 2),
         'avg_checkin':  avg_checkin,
         'avg_checkout': avg_checkout,
@@ -1075,6 +1148,7 @@ def request_correction(request):
             correction = form.save(commit=False)
             correction.employee = employee
             correction.save()
+            email_service.notify_admin_correction_raised(correction)
             messages.success(request, 'Correction request submitted! Admin will review it soon.')
             return redirect('my_corrections')
     else:
@@ -1131,8 +1205,36 @@ def admin_leave_action(request, leave_id):
         if form.is_valid():
             prev_status = leave.status
             updated_leave = form.save()
-            if updated_leave.status != prev_status and updated_leave.status in ('approved', 'rejected'):
-                email_service.notify_employee_leave_decision(updated_leave)
+
+            if updated_leave.status != prev_status:
+                if updated_leave.status in ('approved', 'rejected'):
+                    email_service.notify_employee_leave_decision(updated_leave)
+
+                if updated_leave.status == 'approved':
+                    # Create leave attendance records for every Mon–Sat in the range
+                    cur = updated_leave.from_date
+                    while cur <= updated_leave.to_date:
+                        if cur.weekday() != 6:   # skip Sunday
+                            AttendanceRecord.objects.get_or_create(
+                                employee=updated_leave.employee,
+                                date=cur,
+                                defaults={'status': 'leave'},
+                            )
+                        cur += datetime.timedelta(days=1)
+
+                elif prev_status == 'approved':
+                    # Leave was revoked — remove auto-created leave records (only those with no check-in)
+                    cur = updated_leave.from_date
+                    while cur <= updated_leave.to_date:
+                        if cur.weekday() != 6:   # skip Sunday (was never created, but be consistent)
+                            AttendanceRecord.objects.filter(
+                                employee=updated_leave.employee,
+                                date=cur,
+                                status='leave',
+                                check_in_time__isnull=True,
+                            ).delete()
+                        cur += datetime.timedelta(days=1)
+
             messages.success(request, f'Leave request {updated_leave.get_status_display()} successfully.')
             return redirect('admin_leaves')
     else:
@@ -1212,11 +1314,11 @@ def admin_correction_action(request, correction_id):
                 )
                 if saved.requested_check_in:
                     record.check_in_time = saved.requested_check_in
-                    record.status = 'present'
                 if saved.requested_check_out:
                     record.check_out_time = saved.requested_check_out
+                # Persist times first, then recalculate status automatically
                 record.save()
-                record.calculate_hours()
+                record.calculate_hours()  # auto-sets status: present / half_day
                 messages.success(
                     request,
                     f'Approved — attendance for {saved.employee.user.get_full_name()} '
@@ -1227,6 +1329,7 @@ def admin_correction_action(request, correction_id):
                     request,
                     f'Correction request for {saved.employee.user.get_full_name()} rejected.'
                 )
+            email_service.notify_employee_correction_decision(saved)
             return redirect('admin_corrections')
     else:
         form = AdminCorrectionResponseForm(instance=correction)
@@ -1299,7 +1402,9 @@ def update_salary(request, emp_id):
             defaults={'basic_salary': 0, 'allowances': 0, 'absent_days': 0}
         )
 
-    # Auto-calculate absent, half-day, and leave days from attendance (exclude Sundays)
+    # Auto-calculate attendance counts from records (exclude Sundays)
+    # Rules: present (check-in only or >=5h) = full day; half_day (<5h) = half day;
+    #        absent/leave = 0% pay.
     month_records = AttendanceRecord.objects.filter(
         employee=employee, date__month=month, date__year=year
     )
@@ -1403,4 +1508,147 @@ def salary_slip(request, salary_id):
         'total_earnings':     total_earnings,
         'absent_deduction':   absent_deduction,
         'half_day_deduction': half_day_deduction,
+    })
+
+
+# ─── EMAIL ONE-CLICK ACTION ──────────────────────────────────────────────────
+
+def email_action(request, token):
+    """
+    Handle approve/reject/resolve actions triggered from email buttons.
+    No login required — the signed token is the authentication.
+    Token expires after 7 days.
+    """
+    from django.core import signing
+
+    try:
+        data = email_service.decode_action_token(token)
+    except signing.SignatureExpired:
+        return render(request, 'attendance/email_action_result.html', {
+            'success': False,
+            'title': 'Link Expired',
+            'message': 'This action link has expired (valid for 7 days). Please log in to the admin panel to take action.',
+        })
+    except signing.BadSignature:
+        return render(request, 'attendance/email_action_result.html', {
+            'success': False,
+            'title': 'Invalid Link',
+            'message': 'This link is invalid or has been tampered with.',
+        })
+
+    obj_type = data['t']
+    obj_id   = data['id']
+    action   = data['a']
+
+    # ── Leave ────────────────────────────────────────────────────────────────
+    if obj_type == 'leave':
+        leave = get_object_or_404(LeaveRequest, id=obj_id)
+
+        if leave.status != 'pending':
+            return render(request, 'attendance/email_action_result.html', {
+                'success': False,
+                'title': 'Already Actioned',
+                'message': f'This leave request was already {leave.status}. No changes made.',
+                'employee_name': leave.employee.user.get_full_name(),
+            })
+
+        leave.status = action   # 'approved' or 'rejected'
+        leave.save()
+
+        if action == 'approved':
+            cur = leave.from_date
+            while cur <= leave.to_date:
+                if cur.weekday() != 6:
+                    AttendanceRecord.objects.get_or_create(
+                        employee=leave.employee,
+                        date=cur,
+                        defaults={'status': 'leave'},
+                    )
+                cur += datetime.timedelta(days=1)
+
+        email_service.notify_employee_leave_decision(leave)
+
+        action_label = 'Approved' if action == 'approved' else 'Rejected'
+        return render(request, 'attendance/email_action_result.html', {
+            'success': True,
+            'title': f'Leave {action_label}',
+            'action_label': action_label,
+            'obj_type': 'Leave Request',
+            'employee_name': leave.employee.user.get_full_name(),
+            'detail': f'{leave.from_date.strftime("%d %b %Y")} → {leave.to_date.strftime("%d %b %Y")} · {leave.total_days} working day(s)',
+            'message': f'Leave has been {action_label.lower()}. The employee has been notified by email.',
+        })
+
+    # ── Ticket ───────────────────────────────────────────────────────────────
+    elif obj_type == 'ticket':
+        ticket = get_object_or_404(SupportTicket, id=obj_id)
+
+        if ticket.status in ('resolved', 'closed'):
+            return render(request, 'attendance/email_action_result.html', {
+                'success': False,
+                'title': 'Already Actioned',
+                'message': f'Ticket #{ticket.id} is already {ticket.status}. No changes made.',
+                'employee_name': ticket.employee.user.get_full_name(),
+            })
+
+        ticket.status = action   # 'resolved' or 'in_progress'
+        ticket.save()
+        email_service.notify_employee_ticket_updated(ticket)
+
+        action_label = 'Resolved' if action == 'resolved' else 'Marked In Progress'
+        return render(request, 'attendance/email_action_result.html', {
+            'success': True,
+            'title': f'Ticket {action_label}',
+            'action_label': action_label,
+            'obj_type': f'Ticket #{ticket.id}',
+            'employee_name': ticket.employee.user.get_full_name(),
+            'detail': ticket.subject,
+            'message': f'Ticket #{ticket.id} has been {action_label.lower()}. The employee has been notified by email.',
+        })
+
+    # ── Correction ───────────────────────────────────────────────────────────
+    elif obj_type == 'correction':
+        correction = get_object_or_404(AttendanceCorrectionRequest, id=obj_id)
+
+        if correction.status != 'pending':
+            return render(request, 'attendance/email_action_result.html', {
+                'success': False,
+                'title': 'Already Actioned',
+                'message': f'This correction request was already {correction.status}. No changes made.',
+                'employee_name': correction.employee.user.get_full_name(),
+            })
+
+        correction.status = action   # 'approved' or 'rejected'
+        correction.save()
+
+        if action == 'approved':
+            record, _ = AttendanceRecord.objects.get_or_create(
+                employee=correction.employee,
+                date=correction.date,
+                defaults={'status': 'present'},
+            )
+            if correction.requested_check_in:
+                record.check_in_time = correction.requested_check_in
+            if correction.requested_check_out:
+                record.check_out_time = correction.requested_check_out
+            record.save()
+            record.calculate_hours()
+
+        email_service.notify_employee_correction_decision(correction)
+
+        action_label = 'Approved' if action == 'approved' else 'Rejected'
+        return render(request, 'attendance/email_action_result.html', {
+            'success': True,
+            'title': f'Correction {action_label}',
+            'action_label': action_label,
+            'obj_type': 'Correction Request',
+            'employee_name': correction.employee.user.get_full_name(),
+            'detail': f'Date: {correction.date.strftime("%d %b %Y")}',
+            'message': f'Correction request has been {action_label.lower()}. The employee has been notified by email.',
+        })
+
+    return render(request, 'attendance/email_action_result.html', {
+        'success': False,
+        'title': 'Unknown Action',
+        'message': 'Unrecognised action type in this link.',
     })
