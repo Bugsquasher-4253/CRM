@@ -33,58 +33,126 @@
       font-size: 0.9rem;
     }
 
-    /* ── SIDEBAR ─────────────────────────────────── */
+    /* ══════════════════════════════════════════════
+       SIDEBAR — single-column, full-height, scrollable
+       Root cause fix: Bootstrap .nav has flex-wrap:wrap
+       which creates multiple columns with flex-direction:column.
+       We override every flex/wrap rule explicitly.
+    ══════════════════════════════════════════════ */
+
+    /* 1. Sidebar shell — fixed, full height, flex column */
     .sidebar {
-      width: 250px; height: 100vh;
+      width: 250px;
+      height: 100vh;
+      max-height: 100vh;
       background: var(--dark);
-      position: fixed; top: 0; left: 0; z-index: 100;
-      padding-top: 0;
-      display: flex; flex-direction: column;
-      overflow: hidden;
+      position: fixed;
+      top: 0; left: 0;
+      z-index: 200;
+      display: flex;
+      flex-direction: column;
+      flex-wrap: nowrap;        /* never allow horizontal wrapping  */
+      overflow: hidden;         /* clip — children control their own scroll */
     }
-    /* Scrollable nav area between brand header and bottom switcher */
-    .sidebar nav {
-      flex: 1 1 0;
-      min-height: 0;
-      overflow-y: auto;
-      overflow-x: hidden;
-      -webkit-overflow-scrolling: touch;
-    }
-    /* Thin custom scrollbar (desktop) */
-    .sidebar nav::-webkit-scrollbar { width: 4px; }
-    .sidebar nav::-webkit-scrollbar-track { background: transparent; }
-    .sidebar nav::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 4px; }
-    .sidebar nav::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.4); }
+
+    /* 2. Brand header — fixed at top, never shrinks */
     .sidebar .brand {
-      display: flex; align-items: center; gap: 10px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
       padding: 22px 20px 18px;
       border-bottom: 1px solid rgba(255,255,255,0.07);
-      margin-bottom: 8px;
+      flex-shrink: 0;           /* stick to top, never compress */
+      width: 100%;
     }
     .sidebar .crefio-logo {
       font-size: 1.35rem; font-weight: 700; color: var(--accent);
       letter-spacing: -0.5px; line-height: 1;
+      white-space: nowrap;
     }
     .sidebar .brand-sub {
       font-size: 0.6rem; color: rgba(255,255,255,0.3);
       text-transform: uppercase; letter-spacing: 0.8px; margin-top: 2px;
     }
 
+    /* 3. Scrollable nav — takes all remaining height between brand and bottom */
+    .sidebar-nav {
+      /* Fill remaining space */
+      flex: 1 1 0;
+      min-height: 0;            /* required: lets flex child shrink below content size */
+
+      /* Single vertical column — OVERRIDE Bootstrap .nav */
+      display: flex !important;
+      flex-direction: column !important;
+      flex-wrap: nowrap !important;   /* ← kills the multi-column bug */
+      align-items: stretch !important;/* every item = full width */
+
+      /* Scroll */
+      overflow-y: auto;
+      overflow-x: hidden;
+      -webkit-overflow-scrolling: touch; /* iOS momentum scroll */
+      overscroll-behavior: contain;
+
+      width: 100%;
+      padding-bottom: 8px;
+    }
+
+    /* Thin scrollbar — visible on hover (desktop) */
+    .sidebar-nav::-webkit-scrollbar        { width: 3px; }
+    .sidebar-nav::-webkit-scrollbar-track  { background: transparent; }
+    .sidebar-nav::-webkit-scrollbar-thumb  {
+      background: rgba(255,255,255,0.18);
+      border-radius: 3px;
+    }
+    .sidebar-nav::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.38); }
+
+    /* 4. Section labels — always full width, block element */
     .sidebar-section-label {
+      display: block;
+      width: 100%;
       color: rgba(255,255,255,0.25);
-      font-size: 0.6rem; text-transform: uppercase;
-      letter-spacing: 1.8px; padding: 14px 20px 5px;
+      font-size: 0.6rem;
+      text-transform: uppercase;
+      letter-spacing: 1.8px;
+      padding: 14px 20px 5px;
       font-weight: 600;
+      flex-shrink: 0;
+      white-space: nowrap;
     }
+
+    /* 5. Nav links — full width, single row, never wrap */
     .sidebar .nav-link {
+      display: flex !important;
+      flex-direction: row !important;
+      flex-wrap: nowrap !important;
+      align-items: center;
+      width: calc(100% - 20px); /* account for 10px margin each side */
+      min-width: 0;
       color: rgba(255,255,255,0.58);
-      padding: 9px 14px;
-      border-radius: 8px; margin: 1px 10px;
+      padding: 10px 14px;
+      border-radius: 8px;
+      margin: 1px 10px;
       transition: background 0.18s, color 0.18s;
-      display: flex; align-items: center;
-      font-size: 0.855rem; font-weight: 500;
+      font-size: 0.855rem;
+      font-weight: 500;
+      text-decoration: none;
+      white-space: nowrap;
+      overflow: hidden;
+      flex-shrink: 0;
     }
-    .sidebar .nav-link i { margin-right: 10px; width: 18px; font-size: 0.95rem; flex-shrink: 0; }
+    .sidebar .nav-link i {
+      margin-right: 10px;
+      width: 18px;
+      min-width: 18px;
+      font-size: 0.95rem;
+      flex-shrink: 0;
+      text-align: center;
+    }
+    .sidebar .nav-link span,
+    .sidebar .nav-link > *:not(i):not(.badge-notify) {
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
     .sidebar .nav-link:hover {
       background: rgba(186,242,191,0.1);
       color: rgba(255,255,255,0.9);
@@ -97,14 +165,18 @@
     .badge-notify {
       background: var(--accent); color: var(--dark);
       font-size: 0.6rem; padding: 2px 7px;
-      border-radius: 10px; margin-left: auto; font-weight: 700;
+      border-radius: 10px;
+      margin-left: auto;
+      font-weight: 700;
+      flex-shrink: 0;
     }
 
-    /* ── PANEL SWITCHER ──────────────────────────── */
+    /* 6. Bottom panel — fixed at bottom, never shrinks */
     .sidebar-bottom {
       padding: 14px 10px;
       border-top: 1px solid rgba(255,255,255,0.07);
       flex-shrink: 0;
+      width: 100%;
     }
     .panel-switcher {
       background: rgba(255,255,255,0.05);
@@ -112,8 +184,12 @@
       border-radius: 9px; padding: 9px 14px;
       margin: 0 0 6px; cursor: pointer;
       color: rgba(255,255,255,0.7); text-decoration: none;
-      display: flex; align-items: center; gap: 8px;
+      display: flex; align-items: center;
+      flex-wrap: nowrap;
+      gap: 8px;
+      width: 100%;
       font-size: 0.82rem; font-weight: 500; transition: all 0.18s;
+      white-space: nowrap;
     }
     .panel-switcher:hover { background: rgba(186,242,191,0.1); color: #fff; }
     .panel-switcher.employee-mode { border-color: rgba(186,242,191,0.45); color: var(--accent); }
@@ -121,7 +197,7 @@
     .mode-badge {
       font-size: 0.58rem; padding: 2px 8px; border-radius: 20px;
       margin-left: auto; font-weight: 700; letter-spacing: 0.4px;
-      text-transform: uppercase;
+      text-transform: uppercase; flex-shrink: 0;
     }
 
     /* ── MAIN CONTENT ────────────────────────────── */
@@ -277,23 +353,28 @@
     }
     .sidebar-overlay.open { display: block; }
 
-    /* ── RESPONSIVE ──────────────────────────────── */
+    /* ══════════════════════════════════════════════
+       RESPONSIVE BREAKPOINTS
+    ══════════════════════════════════════════════ */
+
+    /* Tablet + Mobile (<= 900px) — slide-in drawer */
     @media (max-width: 900px) {
       .sidebar {
+        width: 270px;
         transform: translateX(-100%);
-        transition: transform 0.26s cubic-bezier(.4,0,.2,1);
+        transition: transform 0.28s cubic-bezier(.4,0,.2,1);
         z-index: 200;
+        box-shadow: 4px 0 24px rgba(0,0,0,0.18);
       }
       .sidebar.open { transform: translateX(0); }
-      .main-content { margin-left: 0; }
+      .main-content { margin-left: 0 !important; padding: 16px 14px; }
       .hamburger-btn { display: inline-flex; align-items: center; }
-      .main-content { padding: 16px 14px; }
       .top-bar { padding: 11px 14px; }
     }
 
+    /* Phone (< 576px) — full-width drawer, nothing peeks through */
     @media (max-width: 576px) {
-      /* Sidebar full-width on phones — no main content peeking through */
-      .sidebar { width: 100vw; }
+      .sidebar { width: 100vw; max-width: 100vw; }
       .main-content { padding: 10px 8px; }
       .top-bar { padding: 9px 10px; gap: 6px; }
       .top-bar h5 { font-size: 0.86rem; }
@@ -301,6 +382,9 @@
       .top-bar .badge { font-size: 0.65rem !important; padding: 3px 8px !important; }
       .stat-card { padding: 14px; }
       .stat-card .icon { width: 38px; height: 38px; font-size: 1rem; margin-bottom: 8px; }
+      /* Bigger tap targets on mobile */
+      .sidebar .nav-link { padding: 12px 14px; font-size: 0.9rem; }
+      .sidebar-section-label { padding: 16px 20px 6px; }
     }
 
     /* ── BODY: allow full-page scroll on mobile ─── */
@@ -350,7 +434,7 @@
     </div>
   </div>
 
-  <nav class="nav flex-column mt-1 pb-2">
+  <nav class="sidebar-nav">
     {% if request.user.is_staff and panel_mode == 'admin' %}
       <!-- ── ADMIN SIDEBAR ── -->
       <div class="sidebar-section-label">Overview</div>
