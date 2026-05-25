@@ -40,13 +40,21 @@
       position: fixed; top: 0; left: 0; z-index: 100;
       padding-top: 0;
       display: flex; flex-direction: column;
-      overflow-x: hidden;
+      overflow: hidden;
     }
-    /* Thin scrollbar for sidebar nav */
+    /* Scrollable nav area between brand header and bottom switcher */
+    .sidebar nav {
+      flex: 1 1 0;
+      min-height: 0;
+      overflow-y: auto;
+      overflow-x: hidden;
+      -webkit-overflow-scrolling: touch;
+    }
+    /* Thin custom scrollbar (desktop) */
     .sidebar nav::-webkit-scrollbar { width: 4px; }
     .sidebar nav::-webkit-scrollbar-track { background: transparent; }
-    .sidebar nav::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 4px; }
-    .sidebar nav::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.3); }
+    .sidebar nav::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 4px; }
+    .sidebar nav::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.4); }
     .sidebar .brand {
       display: flex; align-items: center; gap: 10px;
       padding: 22px 20px 18px;
@@ -342,7 +350,7 @@
     </div>
   </div>
 
-  <nav class="nav flex-column mt-1 flex-fill pb-2" style="min-height:0; overflow-y:auto; overflow-x:hidden;">
+  <nav class="nav flex-column mt-1 pb-2">
     {% if request.user.is_staff and panel_mode == 'admin' %}
       <!-- ── ADMIN SIDEBAR ── -->
       <div class="sidebar-section-label">Overview</div>
