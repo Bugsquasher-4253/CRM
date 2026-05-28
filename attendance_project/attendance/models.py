@@ -76,9 +76,11 @@ class AttendanceRecord(models.Model):
         if self.check_in_time and self.check_out_time:
             check_in  = datetime.datetime.combine(self.date, self.check_in_time)
             check_out = datetime.datetime.combine(self.date, self.check_out_time)
+            # Midnight crossover: checkout is next calendar day (e.g. in 10:56 PM, out 01:02 AM)
+            if check_out <= check_in:
+                check_out += datetime.timedelta(days=1)
             duration  = check_out - check_in
-            # Guard against negative durations (bad data / midnight crossover)
-            hours = max(duration.total_seconds() / 3600, 0)
+            hours = duration.total_seconds() / 3600
             self.total_hours = round(hours, 2)
             # ≥5 hours → full day present; <5 → half day
             if hours >= 5:

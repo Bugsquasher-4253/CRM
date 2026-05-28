@@ -103,7 +103,7 @@
   </div>
 </div>
 
-<!-- Recent Attendance Table -->
+<!-- Last 7 Days Attendance -->
 <div class="card">
   <div class="card-header d-flex justify-content-between align-items-center py-3">
     <span><i class="bi bi-calendar3 me-2"></i>Last 7 Days Attendance</span>
@@ -114,29 +114,115 @@
       <thead style="background:#f8f9fa;">
         <tr>
           <th class="px-4 py-3">Date</th>
-          <th class="py-3">Check In</th>
-          <th class="py-3">Check Out</th>
-          <th class="py-3">Hours</th>
+          <th class="py-3 d-none d-sm-table-cell">Check In</th>
+          <th class="py-3 d-none d-sm-table-cell">Check Out</th>
+          <th class="py-3 d-none d-md-table-cell">Hours</th>
           <th class="py-3">Status</th>
         </tr>
       </thead>
       <tbody>
-        {% for record in recent_attendance %}
-        <tr>
-          <td class="px-4 py-3">{{ record.date|date:"d M Y" }} <small class="text-muted">({{ record.date|date:"D" }})</small></td>
-          <td class="py-3">{{ record.check_in_time|time:"h:i A"|default:"-" }}</td>
-          <td class="py-3">{{ record.check_out_time|time:"h:i A"|default:"-" }}</td>
-          <td class="py-3">{{ record.total_hours|default:"-" }}</td>
+        {% for day in week_days %}
+
+        {% if day.is_sunday %}
+        {# ── Sunday ── #}
+        <tr style="background:#f9fafb; opacity:0.7;">
+          <td class="px-4 py-3">
+            {{ day.date|date:"d M Y" }}
+            <small class="text-muted ms-1">(Sun)</small>
+          </td>
+          <td class="py-3 d-none d-sm-table-cell text-muted">—</td>
+          <td class="py-3 d-none d-sm-table-cell text-muted">—</td>
+          <td class="py-3 d-none d-md-table-cell text-muted">—</td>
           <td class="py-3">
-            <span class="badge badge-{{ record.status }} px-3 py-2 rounded-pill">
-              {{ record.get_status_display }}
+            <span class="badge rounded-pill px-3 py-2" style="background:#e5e7eb;color:#6b7280;">
+              <i class="bi bi-moon-stars me-1"></i>Weekly Off
             </span>
           </td>
         </tr>
-        {% empty %}
-        <tr>
-          <td colspan="5" class="text-center py-4 text-muted">No attendance records found</td>
+
+        {% elif day.is_saturday %}
+        {# ── Saturday ── #}
+        <tr style="background:#f9fafb; opacity:0.75;">
+          <td class="px-4 py-3">
+            {{ day.date|date:"d M Y" }}
+            <small class="text-muted ms-1">(Sat)</small>
+          </td>
+          {% if day.record %}
+            <td class="py-3 d-none d-sm-table-cell">{{ day.record.check_in_time|time:"h:i A"|default:"—" }}</td>
+            <td class="py-3 d-none d-sm-table-cell">{{ day.record.check_out_time|time:"h:i A"|default:"—" }}</td>
+            <td class="py-3 d-none d-md-table-cell">{{ day.record.total_hours|default:"—" }}</td>
+            <td class="py-3">
+              <span class="badge badge-{{ day.record.status }} rounded-pill px-3 py-2">{{ day.record.get_status_display }}</span>
+            </td>
+          {% else %}
+            <td class="py-3 d-none d-sm-table-cell text-muted">—</td>
+            <td class="py-3 d-none d-sm-table-cell text-muted">—</td>
+            <td class="py-3 d-none d-md-table-cell text-muted">—</td>
+            <td class="py-3">
+              <span class="badge rounded-pill px-3 py-2" style="background:#e5e7eb;color:#6b7280;">
+                <i class="bi bi-moon-stars me-1"></i>Weekly Off
+              </span>
+            </td>
+          {% endif %}
         </tr>
+
+        {% elif day.on_leave %}
+        {# ── Approved leave (no check-in record) ── #}
+        <tr style="background:#fefce8;">
+          <td class="px-4 py-3">
+            {{ day.date|date:"d M Y" }}
+            <small class="text-muted ms-1">({{ day.date|date:"D" }})</small>
+            {% if day.is_today %}<span class="badge ms-1" style="background:#BAF2BF;color:#111827;font-size:0.6rem;">Today</span>{% endif %}
+          </td>
+          <td class="py-3 d-none d-sm-table-cell text-muted">—</td>
+          <td class="py-3 d-none d-sm-table-cell text-muted">—</td>
+          <td class="py-3 d-none d-md-table-cell text-muted">—</td>
+          <td class="py-3">
+            <span class="badge badge-leave rounded-pill px-3 py-2">
+              <i class="bi bi-calendar-x me-1"></i>On Leave
+            </span>
+          </td>
+        </tr>
+
+        {% elif day.record %}
+        {# ── Normal attendance record ── #}
+        <tr {% if day.is_today %}style="background:#f0fdf4;"{% endif %}>
+          <td class="px-4 py-3">
+            {{ day.date|date:"d M Y" }}
+            <small class="text-muted ms-1">({{ day.date|date:"D" }})</small>
+            {% if day.is_today %}<span class="badge ms-1" style="background:#BAF2BF;color:#111827;font-size:0.6rem;">Today</span>{% endif %}
+          </td>
+          <td class="py-3 d-none d-sm-table-cell">{{ day.record.check_in_time|time:"h:i A"|default:"—" }}</td>
+          <td class="py-3 d-none d-sm-table-cell">{{ day.record.check_out_time|time:"h:i A"|default:"—" }}</td>
+          <td class="py-3 d-none d-md-table-cell">{{ day.record.total_hours|default:"—" }}</td>
+          <td class="py-3">
+            <span class="badge badge-{{ day.record.status }} rounded-pill px-3 py-2">
+              {{ day.record.get_status_display }}
+            </span>
+          </td>
+        </tr>
+
+        {% else %}
+        {# ── No record (weekday, no check-in) ── #}
+        <tr {% if day.is_today %}style="background:#f0fdf4;"{% endif %}>
+          <td class="px-4 py-3">
+            {{ day.date|date:"d M Y" }}
+            <small class="text-muted ms-1">({{ day.date|date:"D" }})</small>
+            {% if day.is_today %}<span class="badge ms-1" style="background:#BAF2BF;color:#111827;font-size:0.6rem;">Today</span>{% endif %}
+          </td>
+          <td class="py-3 d-none d-sm-table-cell text-muted">—</td>
+          <td class="py-3 d-none d-sm-table-cell text-muted">—</td>
+          <td class="py-3 d-none d-md-table-cell text-muted">—</td>
+          <td class="py-3">
+            {% if day.is_today %}
+              <span class="badge rounded-pill px-3 py-2" style="background:#dbeafe;color:#1e40af;">Not Checked In</span>
+            {% else %}
+              <span class="badge rounded-pill px-3 py-2" style="background:#fee2e2;color:#991b1b;">Absent</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endif %}
+
         {% endfor %}
       </tbody>
     </table>

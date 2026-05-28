@@ -126,10 +126,50 @@ def dashboard(request):
     today = timezone.now().date()
     today_attendance = employee.get_today_attendance()
 
-    week_ago = today - datetime.timedelta(days=7)
-    recent_attendance = AttendanceRecord.objects.filter(
-        employee=employee, date__gte=week_ago
-    ).order_by('-date')
+    # ── Build full 7-day view (today back to 6 days ago) ──────────────────
+    week_start = today - datetime.timedelta(days=6)
+
+    # Fetch attendance records for the week in one query
+    attendance_map = {
+        r.date: r for r in AttendanceRecord.objects.filter(
+            employee=employee, date__range=(week_start, today)
+        )
+    }
+
+    # Fetch approved leaves that overlap this week in one query
+    approved_leaves = LeaveRequest.objects.filter(
+        employee=employee,
+        status='approved',
+        from_date__lte=today,
+        to_date__gte=week_start,
+    )
+    leave_dates = set()
+    for lv in approved_leaves:
+        cur = lv.from_date
+        while cur <= lv.to_date:
+            if week_start <= cur <= today:
+                leave_dates.add(cur)
+            cur += datetime.timedelta(days=1)
+
+    # Build day-by-day list newest first
+    week_days = []
+    for i in range(6, -1, -1):
+        d = today - datetime.timedelta(days=i)
+        record     = attendance_map.get(d)
+        is_sunday  = d.weekday() == 6
+        is_saturday= d.weekday() == 5
+        is_weekend = is_sunday or is_saturday
+        on_leave   = d in leave_dates and not record  # leave shown only if no check-in
+        week_days.append({
+            'date':        d,
+            'record':      record,
+            'is_weekend':  is_weekend,
+            'is_sunday':   is_sunday,
+            'is_saturday': is_saturday,
+            'on_leave':    on_leave,
+            'is_today':    d == today,
+        })
+    week_days.reverse()   # newest first for display
 
     monthly_records = AttendanceRecord.objects.filter(
         employee=employee,
@@ -137,17 +177,22 @@ def dashboard(request):
         date__year=today.year
     )
 
+    # Count leave days from both AttendanceRecord AND approved LeaveRequests
+    leave_record_days = monthly_records.filter(
+        status='leave', date__week_day__gt=1
+    ).count()
+
     show_doc_reminder = not (employee.aadhaar_card and employee.pan_card)
 
     context = {
-        'employee': employee,
-        'today': today,
+        'employee':    employee,
+        'today':       today,
         'today_attendance': today_attendance,
-        'recent_attendance': recent_attendance,
+        'week_days':   week_days,
         'present_days': monthly_records.filter(status='present',  date__week_day__gt=1).count(),
         'half_days':    monthly_records.filter(status='half_day', date__week_day__gt=1).count(),
         'absent_days':  monthly_records.filter(status='absent',   date__week_day__gt=1).count(),
-        'leave_days':   monthly_records.filter(status='leave',    date__week_day__gt=1).count(),
+        'leave_days':   leave_record_days,
         'show_doc_reminder': show_doc_reminder,
     }
     return render(request, 'attendance/dashboard.html', context)
