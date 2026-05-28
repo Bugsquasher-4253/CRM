@@ -175,41 +175,43 @@ def dashboard(request):
 
     # ── Monthly summary ────────────────────────────────────────────────────
     import calendar as _cal
-    month_start    = today.replace(day=1)
+    month_start   = today.replace(day=1)
+    last_day      = _cal.monthrange(today.year, today.month)[1]
+    month_end     = datetime.date(today.year, today.month, last_day)
+
     monthly_records = AttendanceRecord.objects.filter(
         employee=employee,
         date__month=today.month,
         date__year=today.year
     ).order_by('date')
 
-    present_qs  = monthly_records.filter(status='present',  date__week_day__gt=1)
-    half_day_qs = monthly_records.filter(status='half_day', date__week_day__gt=1)
-    leave_rec_qs = monthly_records.filter(status='leave',   date__week_day__gt=1)
+    present_qs   = monthly_records.filter(status='present',  date__week_day__gt=1)
+    half_day_qs  = monthly_records.filter(status='half_day', date__week_day__gt=1)
+    leave_rec_qs = monthly_records.filter(status='leave',    date__week_day__gt=1)
 
     present_days  = present_qs.count()
     half_days_cnt = half_day_qs.count()
 
-    # record_dates: all days that have ANY attendance record
+    # All dates that have ANY attendance record this month
     record_dates = set(monthly_records.values_list('date', flat=True))
 
-    # Approved leave dates for this month (from LeaveRequest, exclude Sunday)
+    # ALL approved leave days this month (full month range, not capped at today)
+    # so future approved leaves are also reflected in the stat card
     month_leaves_qs = LeaveRequest.objects.filter(
         employee=employee,
         status='approved',
-        from_date__lte=today,
-        to_date__gte=month_start,
+        from_date__lte=month_end,   # leave starts before month ends
+        to_date__gte=month_start,   # leave ends after month starts
     )
     month_leave_dates = set(
-        d for d in _expand_leaves(month_leaves_qs, month_start, today)
-        if d.weekday() != 6
+        d for d in _expand_leaves(month_leaves_qs, month_start, month_end)
+        if d.weekday() != 6          # exclude Sunday
     )
 
-    # Leave days = attendance records with status=leave + approved leaves with no record
-    leave_days = leave_rec_qs.count() + len(
-        month_leave_dates - record_dates
-    )
+    # Leave days = records with status=leave  +  approved leave days with NO record
+    leave_days = leave_rec_qs.count() + len(month_leave_dates - record_dates)
 
-    # Absent = working days (Mon–Sat) up to today, no record AND not on approved leave
+    # Absent = past working days (Mon–Sat) up to today, no record AND not on approved leave
     absent_list = []
     d = month_start
     while d <= today:
@@ -237,21 +239,24 @@ def dashboard(request):
             for r in half_day_qs.order_by('-date')
         ]
     elif stat_filter == 'leave':
-        # Combine: attendance records with status=leave + approved leaves with no record
-        leave_from_records = [
-            {'date': r.date, 'check_in': None, 'check_out': None,
-             'hours': None, 'status': 'leave', 'label': 'On Leave'}
-            for r in leave_rec_qs.order_by('-date')
-        ]
-        leave_from_requests = [
-            {'date': d, 'check_in': None, 'check_out': None,
-             'hours': None, 'status': 'leave', 'label': 'On Leave (Approved)'}
-            for d in sorted(month_leave_dates - record_dates, reverse=True)
-        ]
-        filtered_rows = sorted(
-            leave_from_records + leave_from_requests,
-            key=lambda x: x['date'], reverse=True
+        # Attendance records with status=leave
+        leave_from_records = {r.date: r for r in leave_rec_qs}
+        # Approved leave days — build unified list (record takes priority over request)
+        all_leave_dates = sorted(
+            month_leave_dates | set(leave_from_records.keys()),
+            reverse=True
         )
+        filtered_rows = []
+        for ld in all_leave_dates:
+            rec = leave_from_records.get(ld)
+            filtered_rows.append({
+                'date':      ld,
+                'check_in':  rec.check_in_time  if rec else None,
+                'check_out': rec.check_out_time if rec else None,
+                'hours':     rec.total_hours    if rec else None,
+                'status':    'leave',
+                'label':     'On Leave',
+            })
     elif stat_filter == 'absent':
         filtered_rows = [
             {'date': d, 'check_in': None, 'check_out': None,
