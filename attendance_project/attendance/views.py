@@ -175,24 +175,72 @@ def dashboard(request):
         employee=employee,
         date__month=today.month,
         date__year=today.year
-    )
+    ).order_by('date')
 
-    # Count leave days from both AttendanceRecord AND approved LeaveRequests
-    leave_record_days = monthly_records.filter(
-        status='leave', date__week_day__gt=1
-    ).count()
+    # ── Attendance counts (exclude Sunday) ────────────────────────────────
+    present_qs  = monthly_records.filter(status='present',  date__week_day__gt=1)
+    half_day_qs = monthly_records.filter(status='half_day', date__week_day__gt=1)
+    leave_qs    = monthly_records.filter(status='leave',    date__week_day__gt=1)
+
+    present_days  = present_qs.count()
+    half_days_cnt = half_day_qs.count()
+    leave_days    = leave_qs.count()
+
+    # Absent = working days (Mon–Sat) up to today with no attendance record
+    month_start       = today.replace(day=1)
+    record_dates      = set(monthly_records.values_list('date', flat=True))
+    absent_list       = []
+    d = month_start
+    while d <= today:
+        if d.weekday() != 6 and d not in record_dates:
+            absent_list.append(d)
+        d += datetime.timedelta(days=1)
+    absent_days = len(absent_list)
+
+    # ── Stat-card filter ──────────────────────────────────────────────────
+    stat_filter   = request.GET.get('filter', '')
+    filtered_rows = None  # list of dicts shown below stat cards
+
+    if stat_filter == 'present':
+        filtered_rows = [
+            {'date': r.date, 'check_in': r.check_in_time,
+             'check_out': r.check_out_time, 'hours': r.total_hours,
+             'status': r.status, 'label': r.get_status_display()}
+            for r in present_qs.order_by('-date')
+        ]
+    elif stat_filter == 'half_day':
+        filtered_rows = [
+            {'date': r.date, 'check_in': r.check_in_time,
+             'check_out': r.check_out_time, 'hours': r.total_hours,
+             'status': r.status, 'label': r.get_status_display()}
+            for r in half_day_qs.order_by('-date')
+        ]
+    elif stat_filter == 'leave':
+        filtered_rows = [
+            {'date': r.date, 'check_in': None, 'check_out': None,
+             'hours': None, 'status': 'leave', 'label': 'On Leave'}
+            for r in leave_qs.order_by('-date')
+        ]
+    elif stat_filter == 'absent':
+        filtered_rows = [
+            {'date': d, 'check_in': None, 'check_out': None,
+             'hours': None, 'status': 'absent', 'label': 'Absent'}
+            for d in sorted(absent_list, reverse=True)
+        ]
 
     show_doc_reminder = not (employee.aadhaar_card and employee.pan_card)
 
     context = {
-        'employee':    employee,
-        'today':       today,
+        'employee':         employee,
+        'today':            today,
         'today_attendance': today_attendance,
-        'week_days':   week_days,
-        'present_days': monthly_records.filter(status='present',  date__week_day__gt=1).count(),
-        'half_days':    monthly_records.filter(status='half_day', date__week_day__gt=1).count(),
-        'absent_days':  monthly_records.filter(status='absent',   date__week_day__gt=1).count(),
-        'leave_days':   leave_record_days,
+        'week_days':        week_days,
+        'present_days':     present_days,
+        'half_days':        half_days_cnt,
+        'absent_days':      absent_days,
+        'leave_days':       leave_days,
+        'stat_filter':      stat_filter,
+        'filtered_rows':    filtered_rows,
         'show_doc_reminder': show_doc_reminder,
     }
     return render(request, 'attendance/dashboard.html', context)

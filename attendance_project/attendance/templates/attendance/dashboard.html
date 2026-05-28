@@ -48,60 +48,170 @@
   <!-- Monthly Stats -->
   <div class="col-md-6">
     <div class="stat-card h-100">
-      <h5 class="fw-bold mb-4"><i class="bi bi-bar-chart me-2 text-success"></i>This Month's Summary</h5>
-      <div class="row g-3 mt-2">
-        <div class="col-3 text-center">
-          <div class="p-2 p-sm-3 rounded-3" style="background:#d4edda;">
-            <div class="fs-resp-num" style="color:#155724;">{{ present_days }}</div>
-            <div class="text-muted small">Present</div>
-          </div>
+      <h5 class="fw-bold mb-3"><i class="bi bi-bar-chart me-2 text-success"></i>This Month's Summary</h5>
+      <p class="text-muted mb-3" style="font-size:0.78rem;">Click a card to see the details</p>
+
+      <div class="row g-2">
+
+        <!-- Present -->
+        <div class="col-6">
+          <a href="?filter=present" class="text-decoration-none">
+            <div class="rounded-3 p-3 d-flex align-items-center gap-3 h-100"
+                 style="background:#d4edda; cursor:pointer; transition:transform .15s,box-shadow .15s;
+                        {% if stat_filter == 'present' %}outline:2.5px solid #2e7d32;{% endif %}"
+                 onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 4px 14px rgba(0,0,0,.10)'"
+                 onmouseout="this.style.transform='';this.style.boxShadow=''">
+              <div style="width:38px;height:38px;border-radius:9px;background:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                <i class="bi bi-person-check-fill" style="color:#2e7d32;font-size:1.1rem;"></i>
+              </div>
+              <div>
+                <div class="fw-bold" style="font-size:1.5rem;color:#155724;line-height:1;">{{ present_days }}</div>
+                <div style="font-size:0.72rem;color:#2e7d32;font-weight:600;">Present</div>
+              </div>
+            </div>
+          </a>
         </div>
-        <div class="col-3 text-center">
-          <div class="p-2 p-sm-3 rounded-3" style="background:#dbeafe;">
-            <div class="fs-resp-num" style="color:#1e40af;">{{ half_days }}</div>
-            <div class="text-muted small">Half Day</div>
-          </div>
+
+        <!-- Half Day -->
+        <div class="col-6">
+          <a href="?filter=half_day" class="text-decoration-none">
+            <div class="rounded-3 p-3 d-flex align-items-center gap-3 h-100"
+                 style="background:#dbeafe; cursor:pointer; transition:transform .15s,box-shadow .15s;
+                        {% if stat_filter == 'half_day' %}outline:2.5px solid #1e40af;{% endif %}"
+                 onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 4px 14px rgba(0,0,0,.10)'"
+                 onmouseout="this.style.transform='';this.style.boxShadow=''">
+              <div style="width:38px;height:38px;border-radius:9px;background:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                <i class="bi bi-clock-history" style="color:#1e40af;font-size:1.1rem;"></i>
+              </div>
+              <div>
+                <div class="fw-bold" style="font-size:1.5rem;color:#1e40af;line-height:1;">{{ half_days }}</div>
+                <div style="font-size:0.72rem;color:#1e40af;font-weight:600;">Half Day</div>
+              </div>
+            </div>
+          </a>
         </div>
-        <div class="col-3 text-center">
-          <div class="p-2 p-sm-3 rounded-3" style="background:#f8d7da;">
-            <div class="fs-resp-num" style="color:#721c24;">{{ absent_days }}</div>
-            <div class="text-muted small">Absent</div>
-          </div>
+
+        <!-- Absent -->
+        <div class="col-6">
+          <a href="?filter=absent" class="text-decoration-none">
+            <div class="rounded-3 p-3 d-flex align-items-center gap-3 h-100"
+                 style="background:#fee2e2; cursor:pointer; transition:transform .15s,box-shadow .15s;
+                        {% if stat_filter == 'absent' %}outline:2.5px solid #991b1b;{% endif %}"
+                 onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 4px 14px rgba(0,0,0,.10)'"
+                 onmouseout="this.style.transform='';this.style.boxShadow=''">
+              <div style="width:38px;height:38px;border-radius:9px;background:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                <i class="bi bi-person-x-fill" style="color:#991b1b;font-size:1.1rem;"></i>
+              </div>
+              <div>
+                <div class="fw-bold" style="font-size:1.5rem;color:#721c24;line-height:1;">{{ absent_days }}</div>
+                <div style="font-size:0.72rem;color:#991b1b;font-weight:600;">Absent</div>
+              </div>
+            </div>
+          </a>
         </div>
-        <div class="col-3 text-center">
-          <div class="p-2 p-sm-3 rounded-3" style="background:#fff3cd;">
-            <div class="fs-resp-num" style="color:#856404;">{{ leave_days }}</div>
-            <div class="text-muted small">Leave</div>
-          </div>
+
+        <!-- Leave -->
+        <div class="col-6">
+          <a href="?filter=leave" class="text-decoration-none">
+            <div class="rounded-3 p-3 d-flex align-items-center gap-3 h-100"
+                 style="background:#fef9c3; cursor:pointer; transition:transform .15s,box-shadow .15s;
+                        {% if stat_filter == 'leave' %}outline:2.5px solid #856404;{% endif %}"
+                 onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 4px 14px rgba(0,0,0,.10)'"
+                 onmouseout="this.style.transform='';this.style.boxShadow=''">
+              <div style="width:38px;height:38px;border-radius:9px;background:#fff;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                <i class="bi bi-calendar2-x" style="color:#856404;font-size:1.1rem;"></i>
+              </div>
+              <div>
+                <div class="fw-bold" style="font-size:1.5rem;color:#856404;line-height:1;">{{ leave_days }}</div>
+                <div style="font-size:0.72rem;color:#856404;font-weight:600;">On Leave</div>
+              </div>
+            </div>
+          </a>
         </div>
+
       </div>
-      <div class="mt-4">
-        <div class="d-flex justify-content-between mb-1">
-          <small>Attendance Rate</small>
-          {% with total=present_days|add:half_days|add:absent_days|add:leave_days %}
-            {% if total > 0 %}
-              <small>{{ present_days }} full + {{ half_days }} half / {{ total }} days</small>
-            {% else %}
-              <small>No records yet</small>
-            {% endif %}
-          {% endwith %}
-        </div>
+
+      <!-- Attendance Rate Progress Bar -->
+      <div class="mt-3">
         {% with total=present_days|add:half_days|add:absent_days|add:leave_days %}
+        <div class="d-flex justify-content-between mb-1">
+          <small class="text-muted">Attendance Rate</small>
           {% if total > 0 %}
-            <div class="progress" style="height:10px; border-radius:5px;">
-              <div class="progress-bar bg-success" style="width:{% widthratio present_days total 100 %}%"></div>
-              <div class="progress-bar bg-info" style="width:{% widthratio half_days total 50 %}%; opacity:0.7;"></div>
-            </div>
-            <div class="d-flex gap-3 mt-1">
-              <small class="text-success"><i class="bi bi-circle-fill me-1" style="font-size:0.5rem;"></i>Full Day</small>
-              <small class="text-info"><i class="bi bi-circle-fill me-1" style="font-size:0.5rem;"></i>Half Day (50%)</small>
-            </div>
+            <small class="text-muted">{{ present_days }}P + {{ half_days }}H / {{ total }} days</small>
+          {% else %}
+            <small class="text-muted">No records yet</small>
           {% endif %}
+        </div>
+        {% if total > 0 %}
+          <div class="progress" style="height:8px;border-radius:4px;">
+            <div class="progress-bar bg-success" style="width:{% widthratio present_days total 100 %}%"></div>
+            <div class="progress-bar bg-info" style="width:{% widthratio half_days total 50 %}%;opacity:0.75;"></div>
+          </div>
+          <div class="d-flex gap-3 mt-1">
+            <small class="text-success" style="font-size:0.7rem;"><i class="bi bi-circle-fill me-1" style="font-size:0.45rem;"></i>Full Day</small>
+            <small class="text-info" style="font-size:0.7rem;"><i class="bi bi-circle-fill me-1" style="font-size:0.45rem;"></i>Half Day</small>
+          </div>
+        {% endif %}
         {% endwith %}
       </div>
+
     </div>
   </div>
 </div>
+
+<!-- ── Filtered Detail Panel (shown when stat card clicked) ── -->
+{% if filtered_rows is not None %}
+<div class="card mb-4">
+  <div class="card-header d-flex justify-content-between align-items-center py-3">
+    <span>
+      {% if stat_filter == 'present' %}
+        <i class="bi bi-person-check-fill me-2 text-success"></i>Present Days
+        <span class="badge bg-success ms-2">{{ present_days }}</span>
+      {% elif stat_filter == 'half_day' %}
+        <i class="bi bi-clock-history me-2" style="color:#1e40af;"></i>Half Days
+        <span class="badge ms-2" style="background:#dbeafe;color:#1e40af;">{{ half_days }}</span>
+      {% elif stat_filter == 'absent' %}
+        <i class="bi bi-person-x-fill me-2 text-danger"></i>Absent Days
+        <span class="badge bg-danger ms-2">{{ absent_days }}</span>
+      {% elif stat_filter == 'leave' %}
+        <i class="bi bi-calendar2-x me-2" style="color:#856404;"></i>Leave Days
+        <span class="badge ms-2" style="background:#fef9c3;color:#856404;">{{ leave_days }}</span>
+      {% endif %}
+      <span class="text-muted ms-2" style="font-size:0.78rem;">— {{ today|date:"F Y" }}</span>
+    </span>
+    <a href="{% url 'dashboard' %}" class="btn btn-sm btn-outline-secondary">
+      <i class="bi bi-x-lg me-1"></i>Close
+    </a>
+  </div>
+  <div class="card-body p-0">
+    {% if filtered_rows %}
+    <ul class="list-group list-group-flush">
+      {% for row in filtered_rows %}
+      <li class="list-group-item px-4 py-3">
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
+            <div class="fw-semibold">{{ row.date|date:"d M Y" }}</div>
+            <small class="text-muted">
+              {{ row.date|date:"l" }}
+              {% if row.check_in %}· In: {{ row.check_in|time:"h:i A" }}{% endif %}
+              {% if row.check_out %}· Out: {{ row.check_out|time:"h:i A" }}{% endif %}
+              {% if row.hours %}· {{ row.hours }} hrs{% endif %}
+            </small>
+          </div>
+          <span class="badge badge-{{ row.status }} rounded-pill px-3 py-2">{{ row.label }}</span>
+        </div>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <div class="text-center py-5 text-muted">
+      <i class="bi bi-calendar-check display-6 d-block mb-2"></i>
+      No records found for this category this month.
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endif %}
 
 <!-- Last 7 Days Attendance -->
 <div class="card">
