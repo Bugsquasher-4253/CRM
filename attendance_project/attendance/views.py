@@ -136,63 +136,84 @@ def dashboard(request):
         )
     }
 
-    # Fetch approved leaves that overlap this week in one query
-    approved_leaves = LeaveRequest.objects.filter(
+    # Fetch ALL approved leaves that overlap this week
+    def _expand_leaves(qs, from_d, to_d):
+        """Expand LeaveRequest querysets into a set of individual dates."""
+        dates = set()
+        for lv in qs:
+            cur = lv.from_date
+            while cur <= lv.to_date:
+                if from_d <= cur <= to_d:
+                    dates.add(cur)
+                cur += datetime.timedelta(days=1)
+        return dates
+
+    week_leaves_qs = LeaveRequest.objects.filter(
         employee=employee,
         status='approved',
         from_date__lte=today,
         to_date__gte=week_start,
     )
-    leave_dates = set()
-    for lv in approved_leaves:
-        cur = lv.from_date
-        while cur <= lv.to_date:
-            if week_start <= cur <= today:
-                leave_dates.add(cur)
-            cur += datetime.timedelta(days=1)
+    week_leave_dates = _expand_leaves(week_leaves_qs, week_start, today)
 
-    # Build day-by-day list newest first
+    # Build day-by-day list (newest first after reverse)
     week_days = []
     for i in range(6, -1, -1):
-        d = today - datetime.timedelta(days=i)
-        record     = attendance_map.get(d)
-        is_sunday  = d.weekday() == 6
-        is_saturday= d.weekday() == 5
-        is_weekend = is_sunday or is_saturday
-        on_leave   = d in leave_dates and not record  # leave shown only if no check-in
+        d       = today - datetime.timedelta(days=i)
+        record  = attendance_map.get(d)
+        is_sunday = d.weekday() == 6
+        # on_leave: approved leave AND no actual check-in record
+        on_leave  = d in week_leave_dates and not record
         week_days.append({
-            'date':        d,
-            'record':      record,
-            'is_weekend':  is_weekend,
-            'is_sunday':   is_sunday,
-            'is_saturday': is_saturday,
-            'on_leave':    on_leave,
-            'is_today':    d == today,
+            'date':      d,
+            'record':    record,
+            'is_sunday': is_sunday,
+            'on_leave':  on_leave,
+            'is_today':  d == today,
         })
     week_days.reverse()   # newest first for display
 
+    # ── Monthly summary ────────────────────────────────────────────────────
+    import calendar as _cal
+    month_start    = today.replace(day=1)
     monthly_records = AttendanceRecord.objects.filter(
         employee=employee,
         date__month=today.month,
         date__year=today.year
     ).order_by('date')
 
-    # ── Attendance counts (exclude Sunday) ────────────────────────────────
     present_qs  = monthly_records.filter(status='present',  date__week_day__gt=1)
     half_day_qs = monthly_records.filter(status='half_day', date__week_day__gt=1)
-    leave_qs    = monthly_records.filter(status='leave',    date__week_day__gt=1)
+    leave_rec_qs = monthly_records.filter(status='leave',   date__week_day__gt=1)
 
     present_days  = present_qs.count()
     half_days_cnt = half_day_qs.count()
-    leave_days    = leave_qs.count()
 
-    # Absent = working days (Mon–Sat) up to today with no attendance record
-    month_start       = today.replace(day=1)
-    record_dates      = set(monthly_records.values_list('date', flat=True))
-    absent_list       = []
+    # record_dates: all days that have ANY attendance record
+    record_dates = set(monthly_records.values_list('date', flat=True))
+
+    # Approved leave dates for this month (from LeaveRequest, exclude Sunday)
+    month_leaves_qs = LeaveRequest.objects.filter(
+        employee=employee,
+        status='approved',
+        from_date__lte=today,
+        to_date__gte=month_start,
+    )
+    month_leave_dates = set(
+        d for d in _expand_leaves(month_leaves_qs, month_start, today)
+        if d.weekday() != 6
+    )
+
+    # Leave days = attendance records with status=leave + approved leaves with no record
+    leave_days = leave_rec_qs.count() + len(
+        month_leave_dates - record_dates
+    )
+
+    # Absent = working days (Mon–Sat) up to today, no record AND not on approved leave
+    absent_list = []
     d = month_start
     while d <= today:
-        if d.weekday() != 6 and d not in record_dates:
+        if d.weekday() != 6 and d not in record_dates and d not in month_leave_dates:
             absent_list.append(d)
         d += datetime.timedelta(days=1)
     absent_days = len(absent_list)
@@ -216,11 +237,21 @@ def dashboard(request):
             for r in half_day_qs.order_by('-date')
         ]
     elif stat_filter == 'leave':
-        filtered_rows = [
+        # Combine: attendance records with status=leave + approved leaves with no record
+        leave_from_records = [
             {'date': r.date, 'check_in': None, 'check_out': None,
              'hours': None, 'status': 'leave', 'label': 'On Leave'}
-            for r in leave_qs.order_by('-date')
+            for r in leave_rec_qs.order_by('-date')
         ]
+        leave_from_requests = [
+            {'date': d, 'check_in': None, 'check_out': None,
+             'hours': None, 'status': 'leave', 'label': 'On Leave (Approved)'}
+            for d in sorted(month_leave_dates - record_dates, reverse=True)
+        ]
+        filtered_rows = sorted(
+            leave_from_records + leave_from_requests,
+            key=lambda x: x['date'], reverse=True
+        )
     elif stat_filter == 'absent':
         filtered_rows = [
             {'date': d, 'check_in': None, 'check_out': None,
