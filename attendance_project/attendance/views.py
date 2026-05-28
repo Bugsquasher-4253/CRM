@@ -347,25 +347,74 @@ def my_attendance(request):
         return redirect('login')
 
     import calendar
-    month = int(request.GET.get('month', timezone.now().month))
-    year = int(request.GET.get('year', timezone.now().year))
+    today       = timezone.now().date()
+    month       = int(request.GET.get('month', today.month))
+    year        = int(request.GET.get('year',  today.year))
+    stat_filter = request.GET.get('filter', '')
 
     records = AttendanceRecord.objects.filter(
         employee=employee, date__month=month, date__year=year
     ).order_by('-date')
 
+    present_qs  = records.filter(status='present',  date__week_day__gt=1)
+    half_day_qs = records.filter(status='half_day', date__week_day__gt=1)
+    leave_qs    = records.filter(status='leave',    date__week_day__gt=1)
+
+    # Absent = working days (Mon–Sat) up to today (or end of month) with no record
+    record_dates  = set(records.values_list('date', flat=True))
+    month_start   = datetime.date(year, month, 1)
+    last_day      = calendar.monthrange(year, month)[1]
+    month_end     = datetime.date(year, month, last_day)
+    cutoff        = min(month_end, today)   # don't count future days as absent
+    absent_dates  = []
+    d = month_start
+    while d <= cutoff:
+        if d.weekday() != 6 and d not in record_dates:   # skip Sunday + days with records
+            absent_dates.append(d)
+        d += datetime.timedelta(days=1)
+
+    # Filtered detail list
+    filtered_rows = None
+    if stat_filter == 'present':
+        filtered_rows = [
+            {'date': r.date, 'check_in': r.check_in_time, 'check_out': r.check_out_time,
+             'hours': r.total_hours, 'status': 'present', 'label': r.get_status_display()}
+            for r in present_qs.order_by('-date')
+        ]
+    elif stat_filter == 'half_day':
+        filtered_rows = [
+            {'date': r.date, 'check_in': r.check_in_time, 'check_out': r.check_out_time,
+             'hours': r.total_hours, 'status': 'half_day', 'label': r.get_status_display()}
+            for r in half_day_qs.order_by('-date')
+        ]
+    elif stat_filter == 'leave':
+        filtered_rows = [
+            {'date': r.date, 'check_in': None, 'check_out': None,
+             'hours': None, 'status': 'leave', 'label': 'On Leave'}
+            for r in leave_qs.order_by('-date')
+        ]
+    elif stat_filter == 'absent':
+        filtered_rows = [
+            {'date': d, 'check_in': None, 'check_out': None,
+             'hours': None, 'status': 'absent', 'label': 'Absent'}
+            for d in sorted(absent_dates, reverse=True)
+        ]
+
     context = {
-        'employee': employee,
-        'records': records,
-        'month': month,
-        'year': year,
-        'month_name': calendar.month_name[month],
-        'present':  records.filter(status='present',  date__week_day__gt=1).count(),
-        'half_day': records.filter(status='half_day', date__week_day__gt=1).count(),
-        'absent':   records.filter(status='absent',   date__week_day__gt=1).count(),
-        'leave':    records.filter(status='leave',    date__week_day__gt=1).count(),
-        'months': [(i, calendar.month_name[i]) for i in range(1, 13)],
-        'years': range(2023, timezone.now().year + 1),
+        'employee':      employee,
+        'records':       records,
+        'month':         month,
+        'year':          year,
+        'month_name':    calendar.month_name[month],
+        'present':       present_qs.count(),
+        'half_day':      half_day_qs.count(),
+        'absent':        len(absent_dates),
+        'leave':         leave_qs.count(),
+        'stat_filter':   stat_filter,
+        'filtered_rows': filtered_rows,
+        'today':         today,
+        'months':  [(i, calendar.month_name[i]) for i in range(1, 13)],
+        'years':   range(2023, today.year + 1),
     }
     return render(request, 'attendance/my_attendance.html', context)
 

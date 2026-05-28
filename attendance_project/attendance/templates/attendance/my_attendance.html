@@ -1,81 +1,172 @@
 {% extends 'attendance/base.html' %}
 {% block title %}My Attendance – Crefio{% endblock %}
-{% block page_title %}My Attendance History{% endblock %}
+{% block page_title %}My Attendance{% endblock %}
 
 {% block content %}
-<!-- Filter Bar -->
+
+<!-- ── Month / Year Filter ───────────────────────────────────────── -->
 <div class="card mb-4">
-  <div class="card-body">
-    <form method="GET" class="row g-3 align-items-end filter-form">
-      <div class="col-7 col-md-4">
-        <label class="form-label fw-semibold">Month</label>
-        <select name="month" class="form-select">
+  <div class="card-body py-3">
+    <form method="GET" class="row g-2 align-items-end filter-form">
+      <div class="col-5 col-md-3">
+        <label class="form-label fw-semibold mb-1" style="font-size:0.78rem;">Month</label>
+        <select name="month" class="form-select form-select-sm">
           {% for m, mname in months %}
             <option value="{{ m }}" {% if m == month %}selected{% endif %}>{{ mname }}</option>
           {% endfor %}
         </select>
       </div>
-      <div class="col-5 col-md-4">
-        <label class="form-label fw-semibold">Year</label>
-        <select name="year" class="form-select">
+      <div class="col-4 col-md-2">
+        <label class="form-label fw-semibold mb-1" style="font-size:0.78rem;">Year</label>
+        <select name="year" class="form-select form-select-sm">
           {% for y in years %}
             <option value="{{ y }}" {% if y == year %}selected{% endif %}>{{ y }}</option>
           {% endfor %}
         </select>
       </div>
-      <div class="col-12 col-md-4">
-        <button type="submit" class="btn btn-primary w-100">
-          <i class="bi bi-search me-2"></i>Filter
+      <div class="col-3 col-md-2">
+        <button type="submit" class="btn btn-primary btn-sm w-100">
+          <i class="bi bi-search me-1"></i>Go
         </button>
       </div>
     </form>
   </div>
 </div>
 
-<!-- Stats Row -->
+<!-- ── Clickable Stat Cards ───────────────────────────────────────── -->
 <div class="row g-3 mb-4">
+
+  <!-- Present -->
   <div class="col-6 col-md-3">
-    <div class="stat-card dash-stat text-center">
-      <div class="dash-stat-icon mx-auto" style="background:#d4edda;">
-        <i class="bi bi-check-circle-fill text-success"></i>
+    <a href="?month={{ month }}&year={{ year }}&filter=present" class="text-decoration-none">
+      <div class="stat-card dash-stat text-center h-100"
+           style="cursor:pointer; transition:transform .15s,box-shadow .15s;
+                  {% if stat_filter == 'present' %}outline:2.5px solid #2e7d32;{% endif %}"
+           onmouseover="this.style.transform='translateY(-3px)';this.style.boxShadow='0 6px 20px rgba(0,0,0,.1)'"
+           onmouseout="this.style.transform='';this.style.boxShadow=''">
+        <div class="dash-stat-icon mx-auto" style="background:#d4edda;">
+          <i class="bi bi-person-check-fill" style="color:#2e7d32;"></i>
+        </div>
+        <div class="dash-stat-num" style="color:#155724;">{{ present }}</div>
+        <div class="dash-stat-label">Present</div>
       </div>
-      <div class="dash-stat-num" style="color:#155724;">{{ present }}</div>
-      <div class="dash-stat-label">Present</div>
-    </div>
+    </a>
   </div>
+
+  <!-- Half Day -->
   <div class="col-6 col-md-3">
-    <div class="stat-card dash-stat text-center">
-      <div class="dash-stat-icon mx-auto" style="background:#dbeafe;">
-        <i class="bi bi-clock-history" style="color:#1e40af;"></i>
+    <a href="?month={{ month }}&year={{ year }}&filter=half_day" class="text-decoration-none">
+      <div class="stat-card dash-stat text-center h-100"
+           style="cursor:pointer; transition:transform .15s,box-shadow .15s;
+                  {% if stat_filter == 'half_day' %}outline:2.5px solid #1e40af;{% endif %}"
+           onmouseover="this.style.transform='translateY(-3px)';this.style.boxShadow='0 6px 20px rgba(0,0,0,.1)'"
+           onmouseout="this.style.transform='';this.style.boxShadow=''">
+        <div class="dash-stat-icon mx-auto" style="background:#dbeafe;">
+          <i class="bi bi-clock-history" style="color:#1e40af;"></i>
+        </div>
+        <div class="dash-stat-num" style="color:#1e40af;">{{ half_day }}</div>
+        <div class="dash-stat-label">Half Day</div>
       </div>
-      <div class="dash-stat-num" style="color:#1e40af;">{{ half_day }}</div>
-      <div class="dash-stat-label">Half Day</div>
-    </div>
+    </a>
   </div>
+
+  <!-- Absent -->
   <div class="col-6 col-md-3">
-    <div class="stat-card dash-stat text-center">
-      <div class="dash-stat-icon mx-auto" style="background:#f8d7da;">
-        <i class="bi bi-x-circle-fill text-danger"></i>
+    <a href="?month={{ month }}&year={{ year }}&filter=absent" class="text-decoration-none">
+      <div class="stat-card dash-stat text-center h-100"
+           style="cursor:pointer; transition:transform .15s,box-shadow .15s;
+                  {% if stat_filter == 'absent' %}outline:2.5px solid #991b1b;{% endif %}"
+           onmouseover="this.style.transform='translateY(-3px)';this.style.boxShadow='0 6px 20px rgba(0,0,0,.1)'"
+           onmouseout="this.style.transform='';this.style.boxShadow=''">
+        <div class="dash-stat-icon mx-auto" style="background:#fee2e2;">
+          <i class="bi bi-person-x-fill" style="color:#991b1b;"></i>
+        </div>
+        <div class="dash-stat-num" style="color:#721c24;">{{ absent }}</div>
+        <div class="dash-stat-label">Absent</div>
       </div>
-      <div class="dash-stat-num" style="color:#721c24;">{{ absent }}</div>
-      <div class="dash-stat-label">Absent</div>
-    </div>
+    </a>
   </div>
+
+  <!-- Leave -->
   <div class="col-6 col-md-3">
-    <div class="stat-card dash-stat text-center">
-      <div class="dash-stat-icon mx-auto" style="background:#fff3cd;">
-        <i class="bi bi-calendar-x-fill" style="color:#856404;"></i>
+    <a href="?month={{ month }}&year={{ year }}&filter=leave" class="text-decoration-none">
+      <div class="stat-card dash-stat text-center h-100"
+           style="cursor:pointer; transition:transform .15s,box-shadow .15s;
+                  {% if stat_filter == 'leave' %}outline:2.5px solid #856404;{% endif %}"
+           onmouseover="this.style.transform='translateY(-3px)';this.style.boxShadow='0 6px 20px rgba(0,0,0,.1)'"
+           onmouseout="this.style.transform='';this.style.boxShadow=''">
+        <div class="dash-stat-icon mx-auto" style="background:#fff3cd;">
+          <i class="bi bi-calendar2-x" style="color:#856404;"></i>
+        </div>
+        <div class="dash-stat-num" style="color:#856404;">{{ leave }}</div>
+        <div class="dash-stat-label">On Leave</div>
       </div>
-      <div class="dash-stat-num" style="color:#856404;">{{ leave }}</div>
-      <div class="dash-stat-label">Leave</div>
-    </div>
+    </a>
   </div>
+
 </div>
 
-<!-- Attendance List -->
+<!-- ── Filtered Detail Panel ───────────────────────────────────────── -->
+{% if filtered_rows is not None %}
+<div class="card mb-4">
+  <div class="card-header d-flex justify-content-between align-items-center py-3">
+    <span>
+      {% if stat_filter == 'present' %}
+        <i class="bi bi-person-check-fill me-2 text-success"></i>Present Days
+        <span class="badge bg-success ms-2">{{ present }}</span>
+      {% elif stat_filter == 'half_day' %}
+        <i class="bi bi-clock-history me-2" style="color:#1e40af;"></i>Half Days
+        <span class="badge ms-2" style="background:#dbeafe;color:#1e40af;">{{ half_day }}</span>
+      {% elif stat_filter == 'absent' %}
+        <i class="bi bi-person-x-fill me-2 text-danger"></i>Absent Days
+        <span class="badge bg-danger ms-2">{{ absent }}</span>
+      {% elif stat_filter == 'leave' %}
+        <i class="bi bi-calendar2-x me-2" style="color:#856404;"></i>Leave Days
+        <span class="badge ms-2" style="background:#fef9c3;color:#856404;">{{ leave }}</span>
+      {% endif %}
+      <span class="text-muted ms-1" style="font-size:0.78rem;">— {{ month_name }} {{ year }}</span>
+    </span>
+    <a href="?month={{ month }}&year={{ year }}" class="btn btn-sm btn-outline-secondary">
+      <i class="bi bi-x-lg me-1"></i>Clear
+    </a>
+  </div>
+  <div class="card-body p-0">
+    {% if filtered_rows %}
+    <ul class="list-group list-group-flush">
+      {% for row in filtered_rows %}
+      <li class="list-group-item px-4 py-3">
+        <div class="d-flex justify-content-between align-items-center">
+          <div>
+            <div class="fw-semibold">{{ row.date|date:"d M Y" }}</div>
+            <small class="text-muted">
+              {{ row.date|date:"l" }}
+              {% if row.check_in %}· In: <span class="text-success">{{ row.check_in|time:"h:i A" }}</span>{% endif %}
+              {% if row.check_out %}· Out: <span class="text-danger">{{ row.check_out|time:"h:i A" }}</span>{% endif %}
+              {% if row.hours %}· <strong>{{ row.hours }} hrs</strong>{% endif %}
+            </small>
+          </div>
+          <span class="badge badge-{{ row.status }} rounded-pill px-3 py-2">{{ row.label }}</span>
+        </div>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <div class="text-center py-5 text-muted">
+      <i class="bi bi-calendar-check display-6 d-block mb-2"></i>
+      No {{ stat_filter }} days in {{ month_name }} {{ year }}.
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endif %}
+
+<!-- ── Full Month Records ───────────────────────────────────────────── -->
 <div class="card">
-  <div class="card-header py-3">
-    <i class="bi bi-table me-2"></i>Attendance for {{ month_name }} {{ year }}
+  <div class="card-header py-3 d-flex justify-content-between align-items-center">
+    <span><i class="bi bi-table me-2"></i>All Records — {{ month_name }} {{ year }}</span>
+    <span class="badge" style="background:#f3f4f6;color:#374151;font-weight:600;">
+      {{ records.count }} record{{ records.count|pluralize }}
+    </span>
   </div>
 
   {% if records %}
@@ -89,26 +180,33 @@
           <th class="py-3">Day</th>
           <th class="py-3">Check In</th>
           <th class="py-3">Check Out</th>
-          <th class="py-3">Total Hours</th>
+          <th class="py-3">Hours</th>
           <th class="py-3">Status</th>
         </tr>
       </thead>
       <tbody>
         {% for record in records %}
-        <tr>
-          <td class="px-4 py-3 fw-semibold">{{ record.date|date:"d M Y" }}</td>
-          <td class="py-3 text-muted">{{ record.date|date:"D" }}</td>
+        <tr {% if record.date == today %}style="background:#f0fdf4;"{% endif %}>
+          <td class="px-4 py-3 fw-semibold">
+            {{ record.date|date:"d M Y" }}
+            {% if record.date == today %}<span class="badge ms-1" style="background:#BAF2BF;color:#111827;font-size:0.6rem;">Today</span>{% endif %}
+          </td>
+          <td class="py-3 text-muted">{{ record.date|date:"l" }}</td>
           <td class="py-3">
             {% if record.check_in_time %}
-              <span class="text-success">{{ record.check_in_time|time:"h:i A" }}</span>
+              <span class="text-success fw-semibold">{{ record.check_in_time|time:"h:i A" }}</span>
             {% else %}<span class="text-muted">—</span>{% endif %}
           </td>
           <td class="py-3">
             {% if record.check_out_time %}
-              <span class="text-danger">{{ record.check_out_time|time:"h:i A" }}</span>
+              <span class="text-danger fw-semibold">{{ record.check_out_time|time:"h:i A" }}</span>
             {% else %}<span class="text-muted">—</span>{% endif %}
           </td>
-          <td class="py-3">{{ record.total_hours|default:"—" }} {% if record.total_hours %}hrs{% endif %}</td>
+          <td class="py-3">
+            {% if record.total_hours %}
+              <span class="fw-semibold">{{ record.total_hours }}</span> <small class="text-muted">hrs</small>
+            {% else %}—{% endif %}
+          </td>
           <td class="py-3">
             <span class="badge badge-{{ record.status }} px-3 py-2 rounded-pill">
               {{ record.get_status_display }}
@@ -120,13 +218,17 @@
     </table>
   </div>
 
-  <!-- Mobile card layout -->
+  <!-- Mobile cards -->
   <div class="d-block d-md-none p-3">
     {% for record in records %}
     <div class="card mb-2 border" style="border-radius:10px;">
-      <div class="d-flex align-items-center justify-content-between px-3 py-2" style="background:#f8f9fa;border-bottom:1px solid #E5E7EB;border-radius:10px 10px 0 0;">
+      <div class="d-flex align-items-center justify-content-between px-3 py-2"
+           style="background:#f8f9fa;border-bottom:1px solid #E5E7EB;border-radius:10px 10px 0 0;">
         <div>
-          <div class="fw-semibold" style="font-size:0.88rem;">{{ record.date|date:"d M Y" }}</div>
+          <div class="fw-semibold" style="font-size:0.88rem;">
+            {{ record.date|date:"d M Y" }}
+            {% if record.date == today %}<span class="badge ms-1" style="background:#BAF2BF;color:#111827;font-size:0.58rem;">Today</span>{% endif %}
+          </div>
           <small class="text-muted">{{ record.date|date:"l" }}</small>
         </div>
         <span class="badge badge-{{ record.status }} px-2 py-1 rounded-pill">{{ record.get_status_display }}</span>
@@ -134,20 +236,22 @@
       <div class="px-3 py-2">
         <div class="row g-2">
           <div class="col-4">
-            <div class="text-muted" style="font-size:0.7rem;">Check In</div>
-            <div style="font-size:0.82rem;" class="{% if record.check_in_time %}text-success{% endif %}">
+            <div class="text-muted" style="font-size:0.68rem;font-weight:600;text-transform:uppercase;letter-spacing:.5px;">Check In</div>
+            <div style="font-size:0.82rem;" class="{% if record.check_in_time %}text-success fw-semibold{% else %}text-muted{% endif %}">
               {% if record.check_in_time %}{{ record.check_in_time|time:"h:i A" }}{% else %}—{% endif %}
             </div>
           </div>
           <div class="col-4">
-            <div class="text-muted" style="font-size:0.7rem;">Check Out</div>
-            <div style="font-size:0.82rem;" class="{% if record.check_out_time %}text-danger{% endif %}">
+            <div class="text-muted" style="font-size:0.68rem;font-weight:600;text-transform:uppercase;letter-spacing:.5px;">Check Out</div>
+            <div style="font-size:0.82rem;" class="{% if record.check_out_time %}text-danger fw-semibold{% else %}text-muted{% endif %}">
               {% if record.check_out_time %}{{ record.check_out_time|time:"h:i A" }}{% else %}—{% endif %}
             </div>
           </div>
           <div class="col-4">
-            <div class="text-muted" style="font-size:0.7rem;">Hours</div>
-            <div style="font-size:0.82rem;">{{ record.total_hours|default:"—" }}{% if record.total_hours %} h{% endif %}</div>
+            <div class="text-muted" style="font-size:0.68rem;font-weight:600;text-transform:uppercase;letter-spacing:.5px;">Hours</div>
+            <div style="font-size:0.82rem;">
+              {% if record.total_hours %}<strong>{{ record.total_hours }}</strong> h{% else %}—{% endif %}
+            </div>
           </div>
         </div>
       </div>
@@ -158,7 +262,7 @@
   {% else %}
   <div class="card-body text-center py-5 text-muted">
     <i class="bi bi-calendar-x display-6 d-block mb-2"></i>
-    No attendance records for this month
+    <p class="mb-0">No attendance records for {{ month_name }} {{ year }}</p>
   </div>
   {% endif %}
 
