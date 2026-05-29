@@ -1,115 +1,384 @@
 {% extends 'attendance/base.html' %}
-{% block title %}My Tickets – Crefio{% endblock %}
+{% block title %}My Support Tickets – Crefio{% endblock %}
 {% block page_title %}My Support Tickets{% endblock %}
 
 {% block content %}
 
-<!-- Stats -->
+<!-- ── Clickable Stat Cards ─────────────────────────────────────────── -->
 <div class="row g-3 mb-4">
   <div class="col-6">
-    <div class="stat-card dash-stat text-center">
-      <div class="dash-stat-icon mx-auto" style="background:#fff3cd;">
-        <i class="bi bi-ticket-perforated" style="color:#856404;"></i>
+    <a href="?filter=open{% if search_q %}&search={{ search_q }}{% endif %}" class="text-decoration-none">
+      <div class="stat-card dash-stat text-center h-100"
+           style="cursor:pointer;transition:transform .15s,box-shadow .15s;
+                  {% if filter_status == 'open' %}outline:2.5px solid #856404;{% endif %}"
+           onmouseover="this.style.transform='translateY(-3px)';this.style.boxShadow='0 6px 20px rgba(0,0,0,.1)'"
+           onmouseout="this.style.transform='';this.style.boxShadow=''">
+        <div class="dash-stat-icon mx-auto" style="background:#fff3cd;">
+          <i class="bi bi-ticket-perforated" style="color:#856404;"></i>
+        </div>
+        <div class="dash-stat-num" id="count-open" style="color:#856404;">{{ open_count }}</div>
+        <div class="dash-stat-label">Open Tickets</div>
       </div>
-      <div class="dash-stat-num" style="color:#856404;">{{ open_count }}</div>
-      <div class="dash-stat-label">Open Tickets</div>
-    </div>
+    </a>
   </div>
   <div class="col-6">
-    <div class="stat-card dash-stat text-center">
-      <div class="dash-stat-icon mx-auto" style="background:#d4edda;">
-        <i class="bi bi-check-all text-success"></i>
-      </div>
-      <div class="dash-stat-num" style="color:#155724;">{{ resolved_count }}</div>
-      <div class="dash-stat-label">Resolved</div>
-    </div>
-  </div>
-</div>
-
-<!-- Header -->
-<div class="d-flex justify-content-between align-items-center mb-3">
-  <h5 class="fw-bold mb-0">All My Tickets</h5>
-  <a href="{% url 'raise_ticket' %}" class="btn btn-warning text-dark fw-semibold">
-    <i class="bi bi-plus-circle me-2"></i>New Ticket
-  </a>
-</div>
-
-<!-- Ticket List -->
-<div class="d-flex flex-column gap-3">
-  {% for ticket in tickets %}
-  <div class="card">
-    <div class="card-body p-4">
-      <div class="d-flex justify-content-between align-items-start gap-3">
-        <div class="flex-fill min-w-0">
-
-          <!-- Badges row -->
-          <div class="d-flex align-items-center gap-2 mb-2 flex-wrap">
-            <span class="text-muted small">#{{ ticket.id }}</span>
-            {% if ticket.priority == 'high' %}
-              <span class="badge bg-danger">🔴 High</span>
-            {% elif ticket.priority == 'medium' %}
-              <span class="badge bg-warning text-dark">🟡 Medium</span>
-            {% else %}
-              <span class="badge bg-success">🟢 Low</span>
-            {% endif %}
-            {% if ticket.status == 'open' %}
-              <span class="badge" style="background:#fff3cd;color:#856404;">Open</span>
-            {% elif ticket.status == 'in_progress' %}
-              <span class="badge bg-primary">In Progress</span>
-            {% elif ticket.status == 'resolved' %}
-              <span class="badge" style="background:#d4edda;color:#155724;">Resolved</span>
-            {% else %}
-              <span class="badge bg-secondary">Closed</span>
-            {% endif %}
-          </div>
-
-          <!-- Subject + description -->
-          <h6 class="fw-bold mb-1">{{ ticket.subject }}</h6>
-          <p class="text-muted mb-2" style="font-size:0.9rem;">{{ ticket.description }}</p>
-
-          <!-- Admin response -->
-          {% if ticket.admin_response %}
-            <div class="p-3 rounded-3 mt-2" style="background:#f0f7ff;border-left:3px solid #1a5fa8;">
-              <small class="fw-bold text-primary d-block mb-1">
-                <i class="bi bi-reply me-1"></i>Admin Response:
-              </small>
-              <span style="color:#333;font-size:0.9rem;">{{ ticket.admin_response }}</span>
-            </div>
-          {% else %}
-            <small class="text-muted fst-italic">Waiting for admin response...</small>
-          {% endif %}
-
-          <!-- Timestamps + edit button -->
-          <div class="d-flex align-items-center gap-3 mt-3 flex-wrap">
-            <div>
-              <span class="text-muted" style="font-size:0.75rem;">
-                <i class="bi bi-calendar-plus me-1"></i>{{ ticket.created_at|date:"d M Y, h:i A" }}
-              </span>
-              {% if ticket.updated_at != ticket.created_at %}
-              <span class="text-muted ms-3" style="font-size:0.75rem;">
-                <i class="bi bi-pencil me-1"></i>Edited: {{ ticket.updated_at|date:"d M Y, h:i A" }}
-              </span>
-              {% endif %}
-            </div>
-            {% if ticket.status == 'open' or ticket.status == 'in_progress' %}
-            <a href="{% url 'edit_ticket' ticket.id %}" class="btn btn-sm btn-outline-secondary ms-auto">
-              <i class="bi bi-pencil me-1"></i>Edit
-            </a>
-            {% endif %}
-          </div>
-
+    <a href="?filter=resolved{% if search_q %}&search={{ search_q }}{% endif %}" class="text-decoration-none">
+      <div class="stat-card dash-stat text-center h-100"
+           style="cursor:pointer;transition:transform .15s,box-shadow .15s;
+                  {% if filter_status == 'resolved' %}outline:2.5px solid #2e7d32;{% endif %}"
+           onmouseover="this.style.transform='translateY(-3px)';this.style.boxShadow='0 6px 20px rgba(0,0,0,.1)'"
+           onmouseout="this.style.transform='';this.style.boxShadow=''">
+        <div class="dash-stat-icon mx-auto" style="background:#d4edda;">
+          <i class="bi bi-check-all text-success"></i>
         </div>
+        <div class="dash-stat-num" id="count-resolved" style="color:#155724;">{{ resolved_count }}</div>
+        <div class="dash-stat-label">Resolved</div>
+      </div>
+    </a>
+  </div>
+</div>
+
+<!-- ── Card with table ────────────────────────────────────────────────── -->
+<div class="card">
+  <div class="card-header py-3">
+    <div class="d-flex flex-wrap gap-2 align-items-center justify-content-between">
+      <div class="d-flex align-items-center gap-2 flex-wrap">
+        <span class="fw-semibold"><i class="bi bi-ticket-perforated me-2"></i>All My Tickets</span>
+        {% if filter_status %}
+          <span class="badge rounded-pill {% if filter_status == 'open' %}bg-warning text-dark{% else %}bg-success{% endif %}">
+            {{ filter_status|capfirst }}
+          </span>
+          <a href="{% url 'my_tickets' %}{% if search_q %}?search={{ search_q }}{% endif %}"
+             class="btn btn-sm btn-outline-secondary py-0 px-2" style="font-size:.72rem;">
+            <i class="bi bi-x me-1"></i>Clear
+          </a>
+        {% endif %}
+      </div>
+      <div class="d-flex gap-2 flex-wrap">
+        <form method="GET" class="d-flex gap-1">
+          {% if filter_status %}<input type="hidden" name="filter" value="{{ filter_status }}">{% endif %}
+          <input type="text" name="search" value="{{ search_q }}" placeholder="Search tickets…"
+                 class="form-control form-control-sm" style="width:180px;">
+          <button type="submit" class="btn btn-sm btn-outline-primary"><i class="bi bi-search"></i></button>
+          {% if search_q %}
+          <a href="{% url 'my_tickets' %}{% if filter_status %}?filter={{ filter_status }}{% endif %}"
+             class="btn btn-sm btn-outline-secondary"><i class="bi bi-x"></i></a>
+          {% endif %}
+        </form>
+        <button type="button" class="btn btn-primary btn-sm fw-semibold"
+                data-bs-toggle="modal" data-bs-target="#newTicketModal">
+          <i class="bi bi-plus-circle me-1"></i>New Ticket
+        </button>
       </div>
     </div>
   </div>
-  {% empty %}
-  <div class="card">
-    <div class="card-body text-center py-5 text-muted">
-      <i class="bi bi-ticket-perforated display-6 d-block mb-3"></i>
-      <p>No tickets raised yet.</p>
-      <a href="{% url 'raise_ticket' %}" class="btn btn-warning text-dark fw-semibold">Raise Your First Ticket</a>
+
+  <!-- Desktop table -->
+  <div class="card-body p-0 d-none d-md-block">
+    <table class="table table-hover mb-0" style="min-width:780px;">
+      <thead style="background:#f8f9fa;">
+        <tr>
+          <th class="px-4 py-3">Ticket ID</th>
+          <th class="py-3">Subject</th>
+          <th class="py-3">Category</th>
+          <th class="py-3 text-center">Priority</th>
+          <th class="py-3 text-center">Status</th>
+          <th class="py-3">Created</th>
+          <th class="py-3 text-center">Action</th>
+        </tr>
+      </thead>
+      <tbody id="ticketTableBody">
+        {% for ticket in tickets %}
+        <tr>
+          <td class="px-4 py-3">
+            <span class="fw-semibold text-muted" style="font-size:.8rem;">TK{{ ticket.id|stringformat:"04d" }}</span>
+          </td>
+          <td class="py-3" style="max-width:220px;">
+            <div class="fw-semibold" style="font-size:.88rem;">{{ ticket.subject|truncatechars:50 }}</div>
+            {% if ticket.admin_response %}
+              <small class="text-primary"><i class="bi bi-reply me-1"></i>Admin responded</small>
+            {% endif %}
+          </td>
+          <td class="py-3">
+            <span class="badge bg-light text-dark border" style="font-size:.72rem;">
+              {{ ticket.get_category_display }}
+            </span>
+          </td>
+          <td class="py-3 text-center">
+            {% if ticket.priority == 'low' %}
+              <span class="badge bg-success rounded-pill">Low</span>
+            {% elif ticket.priority == 'medium' %}
+              <span class="badge bg-warning text-dark rounded-pill">Medium</span>
+            {% elif ticket.priority == 'high' %}
+              <span class="badge rounded-pill" style="background:#f97316;color:#fff;">High</span>
+            {% else %}
+              <span class="badge bg-danger rounded-pill">Critical</span>
+            {% endif %}
+          </td>
+          <td class="py-3 text-center">
+            {% if ticket.status == 'open' %}
+              <span class="badge rounded-pill px-2 py-1" style="background:#fff3cd;color:#856404;">Open</span>
+            {% elif ticket.status == 'in_progress' %}
+              <span class="badge bg-primary rounded-pill px-2 py-1">In Progress</span>
+            {% elif ticket.status == 'waiting' %}
+              <span class="badge rounded-pill px-2 py-1" style="background:#fed7aa;color:#9a3412;">Waiting</span>
+            {% elif ticket.status == 'resolved' %}
+              <span class="badge bg-success rounded-pill px-2 py-1">Resolved</span>
+            {% else %}
+              <span class="badge bg-secondary rounded-pill px-2 py-1">Closed</span>
+            {% endif %}
+          </td>
+          <td class="py-3" style="font-size:.82rem;color:#6B7280;">
+            {{ ticket.created_at|date:"d M Y" }}
+          </td>
+          <td class="py-3 text-center">
+            {% if ticket.status == 'open' or ticket.status == 'in_progress' %}
+              <a href="{% url 'edit_ticket' ticket.id %}" class="btn btn-sm btn-outline-primary">
+                <i class="bi bi-pencil me-1"></i>Edit
+              </a>
+            {% else %}
+              <span class="text-muted" style="font-size:.78rem;">—</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="7" class="text-center py-5 text-muted">
+            <i class="bi bi-ticket-perforated display-6 d-block mb-2"></i>
+            {% if search_q %}No tickets matching "{{ search_q }}"
+            {% elif filter_status == 'open' %}No open tickets
+            {% elif filter_status == 'resolved' %}No resolved tickets yet
+            {% else %}No tickets yet. Click "New Ticket" to raise one.{% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Mobile cards -->
+  <div class="d-block d-md-none p-3">
+    {% for ticket in tickets %}
+    <div class="card mb-2 border" style="border-radius:10px;">
+      <div class="d-flex align-items-center justify-content-between px-3 py-2"
+           style="background:#f8f9fa;border-bottom:1px solid #E5E7EB;border-radius:10px 10px 0 0;">
+        <div>
+          <span class="text-muted" style="font-size:.72rem;">TK{{ ticket.id|stringformat:"04d" }}</span>
+          <div class="fw-semibold" style="font-size:.88rem;">{{ ticket.subject|truncatechars:40 }}</div>
+        </div>
+        {% if ticket.status == 'open' %}
+          <span class="badge rounded-pill" style="background:#fff3cd;color:#856404;">Open</span>
+        {% elif ticket.status == 'in_progress' %}
+          <span class="badge bg-primary rounded-pill">In Progress</span>
+        {% elif ticket.status == 'waiting' %}
+          <span class="badge rounded-pill" style="background:#fed7aa;color:#9a3412;">Waiting</span>
+        {% elif ticket.status == 'resolved' %}
+          <span class="badge bg-success rounded-pill">Resolved</span>
+        {% else %}
+          <span class="badge bg-secondary rounded-pill">Closed</span>
+        {% endif %}
+      </div>
+      <div class="px-3 py-2">
+        <div class="row g-2 mb-2">
+          <div class="col-6">
+            <div class="text-muted" style="font-size:.68rem;font-weight:600;text-transform:uppercase;">Category</div>
+            <div style="font-size:.82rem;">{{ ticket.get_category_display }}</div>
+          </div>
+          <div class="col-6">
+            <div class="text-muted" style="font-size:.68rem;font-weight:600;text-transform:uppercase;">Priority</div>
+            <div>
+              {% if ticket.priority == 'critical' %}<span class="badge bg-danger">Critical</span>
+              {% elif ticket.priority == 'high' %}<span class="badge" style="background:#f97316;color:#fff;">High</span>
+              {% elif ticket.priority == 'medium' %}<span class="badge bg-warning text-dark">Medium</span>
+              {% else %}<span class="badge bg-success">Low</span>{% endif %}
+            </div>
+          </div>
+          <div class="col-12">
+            <div class="text-muted" style="font-size:.68rem;font-weight:600;text-transform:uppercase;">Created</div>
+            <div style="font-size:.82rem;">{{ ticket.created_at|date:"d M Y, h:i A" }}</div>
+          </div>
+        </div>
+        {% if ticket.status == 'open' or ticket.status == 'in_progress' %}
+          <a href="{% url 'edit_ticket' ticket.id %}" class="btn btn-sm btn-outline-primary w-100">
+            <i class="bi bi-pencil me-1"></i>Edit Ticket
+          </a>
+        {% endif %}
+      </div>
+    </div>
+    {% empty %}
+    <div class="text-center py-5 text-muted">
+      <i class="bi bi-ticket-perforated display-6 d-block mb-2"></i>
+      No tickets yet.
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════════════════════════
+     NEW TICKET MODAL
+══════════════════════════════════════════════════════════════════════ -->
+<div class="modal fade" id="newTicketModal" tabindex="-1" aria-labelledby="newTicketModalLabel">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content" style="border:none;border-radius:16px;overflow:hidden;">
+
+      <div class="modal-header" style="background:#111827;border:none;">
+        <h5 class="modal-title fw-bold" id="newTicketModalLabel" style="color:#fff;">
+          <i class="bi bi-ticket-perforated me-2" style="color:#BAF2BF;"></i>Raise a Support Ticket
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body p-4">
+        <div id="ticketFormError" class="alert alert-danger d-none mb-3" role="alert">
+          <i class="bi bi-exclamation-circle me-2"></i>
+          <span id="ticketFormErrorText">Please fix the errors below.</span>
+        </div>
+
+        <form id="newTicketForm" novalidate>
+          {% csrf_token %}
+          <div class="row g-3">
+            <div class="col-12">
+              <label class="form-label fw-semibold">Subject <span class="text-danger">*</span></label>
+              {{ form.subject }}
+              <div class="invalid-feedback" id="err-subject"></div>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Category <span class="text-danger">*</span></label>
+              {{ form.category }}
+              <div class="invalid-feedback" id="err-category"></div>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Priority <span class="text-danger">*</span></label>
+              {{ form.priority }}
+              <small class="text-muted d-block mt-1" style="font-size:.72rem;">
+                Low → Medium → High → Critical
+              </small>
+              <div class="invalid-feedback" id="err-priority"></div>
+            </div>
+            <div class="col-12">
+              <label class="form-label fw-semibold">Description <span class="text-danger">*</span></label>
+              {{ form.description }}
+              <div class="invalid-feedback" id="err-description"></div>
+              <small class="text-muted">Be specific so admin can help faster.</small>
+            </div>
+            <div class="col-12">
+              <div class="p-3 rounded-2" style="background:#f8f9fa;">
+                <small class="text-muted fw-semibold d-block mb-1">Submitting as:</small>
+                <div class="fw-bold">{{ employee.user.get_full_name }}</div>
+                <div class="text-muted small">{{ employee.employee_id }} · {{ employee.designation }}</div>
+              </div>
+            </div>
+          </div>
+        </form>
+      </div>
+
+      <div class="modal-footer" style="border-top:1px solid #E5E7EB;">
+        <button type="button" class="btn btn-outline-secondary px-4" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-primary px-5 fw-semibold" id="submitTicketBtn">
+          <i class="bi bi-send me-2"></i>Submit Ticket
+        </button>
+      </div>
     </div>
   </div>
-  {% endfor %}
 </div>
+
+
+<script>
+// Reset modal on open
+document.getElementById('newTicketModal').addEventListener('show.bs.modal', function() {
+  document.getElementById('newTicketForm').reset();
+  document.getElementById('ticketFormError').classList.add('d-none');
+  document.querySelectorAll('#newTicketForm .is-invalid').forEach(el => el.classList.remove('is-invalid'));
+});
+
+// Priority badge colours map for new row
+const PRIORITY_BADGES = {
+  low:      '<span class="badge bg-success rounded-pill">Low</span>',
+  medium:   '<span class="badge bg-warning text-dark rounded-pill">Medium</span>',
+  high:     '<span class="badge rounded-pill" style="background:#f97316;color:#fff;">High</span>',
+  critical: '<span class="badge bg-danger rounded-pill">Critical</span>',
+};
+const OPEN_BADGE = '<span class="badge rounded-pill px-2 py-1" style="background:#fff3cd;color:#856404;">Open</span>';
+
+document.getElementById('submitTicketBtn').addEventListener('click', function() {
+  const btn  = this;
+  const form = document.getElementById('newTicketForm');
+  const data = new FormData(form);
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Submitting…';
+
+  fetch('{% url "raise_ticket" %}', {
+    method: 'POST',
+    headers: { 'X-Requested-With': 'XMLHttpRequest' },
+    body: data,
+  })
+  .then(r => r.json())
+  .then(res => {
+    if (res.success) {
+      bootstrap.Modal.getInstance(document.getElementById('newTicketModal')).hide();
+
+      // Update counts
+      document.getElementById('count-open').textContent     = res.counts.open_count;
+      document.getElementById('count-resolved').textContent = res.counts.resolved_count;
+
+      // Prepend row to desktop table
+      const tbody = document.getElementById('ticketTableBody');
+      // Remove empty-state row if present
+      tbody.querySelectorAll('tr td[colspan]').forEach(td => td.parentElement.remove());
+
+      const t = res.ticket;
+      const tr = document.createElement('tr');
+      const editBtn = (t.status === 'open' || t.status === 'in_progress')
+        ? `<a href="/tickets/${t.id}/edit/" class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil me-1"></i>Edit</a>`
+        : '<span class="text-muted" style="font-size:.78rem;">—</span>';
+      tr.innerHTML = `
+        <td class="px-4 py-3"><span class="fw-semibold text-muted" style="font-size:.8rem;">${t.ticket_id}</span></td>
+        <td class="py-3 fw-semibold" style="font-size:.88rem;">${t.subject}</td>
+        <td class="py-3"><span class="badge bg-light text-dark border" style="font-size:.72rem;">${t.category_display}</span></td>
+        <td class="py-3 text-center">${PRIORITY_BADGES[t.priority] || t.priority_display}</td>
+        <td class="py-3 text-center">${OPEN_BADGE}</td>
+        <td class="py-3" style="font-size:.82rem;color:#6B7280;">${t.created_at}</td>
+        <td class="py-3 text-center">${editBtn}</td>`;
+      tbody.insertBefore(tr, tbody.firstChild);
+
+      showTicketToast('Ticket submitted successfully! Admin will respond soon.', 'success');
+    } else {
+      document.querySelectorAll('#newTicketForm .is-invalid').forEach(el => el.classList.remove('is-invalid'));
+      let hasTopError = false;
+      for (const [field, errs] of Object.entries(res.errors || {})) {
+        if (field === '__all__') { hasTopError = true; continue; }
+        const inp = form.querySelector(`[name="${field}"]`);
+        const err = document.getElementById(`err-${field}`);
+        if (inp) inp.classList.add('is-invalid');
+        if (err) err.textContent = errs.join(' ');
+      }
+      if (hasTopError || Object.keys(res.errors || {}).length === 0) {
+        document.getElementById('ticketFormError').classList.remove('d-none');
+        document.getElementById('ticketFormErrorText').textContent =
+          (res.errors?.__all__ || ['Please fix the errors below.']).join(' ');
+      }
+    }
+  })
+  .catch(() => {
+    document.getElementById('ticketFormError').classList.remove('d-none');
+    document.getElementById('ticketFormErrorText').textContent = 'Network error. Please try again.';
+  })
+  .finally(() => {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="bi bi-send me-2"></i>Submit Ticket';
+  });
+});
+
+function showTicketToast(msg, type) {
+  const el = document.createElement('div');
+  el.className = `alert alert-${type === 'success' ? 'success' : 'danger'}`;
+  el.style.cssText = 'position:fixed;top:20px;right:20px;z-index:9999;min-width:300px;box-shadow:0 4px 16px rgba(0,0,0,.12);';
+  el.innerHTML = `<i class="bi bi-${type === 'success' ? 'check-circle' : 'exclamation-circle'} me-2"></i>${msg}`;
+  document.body.appendChild(el);
+  setTimeout(() => { el.style.opacity = '0'; el.style.transition = 'opacity .4s'; }, 4000);
+  setTimeout(() => el.remove(), 4500);
+}
+</script>
 {% endblock %}

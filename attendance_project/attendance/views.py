@@ -6,6 +6,7 @@ from django.contrib import messages
 from django.utils import timezone
 from django.db import transaction, IntegrityError
 from django.db.models import Q, Count
+from django.http import JsonResponse
 from .models import Employee, AttendanceRecord, Department, LeaveRequest, SupportTicket, SalaryRecord, AttendanceCorrectionRequest
 from .forms import (
     LoginForm, EmployeeForm, UserForm,
@@ -1296,6 +1297,8 @@ def raise_ticket(request):
     except Employee.DoesNotExist:
         return redirect('dashboard')
 
+    is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+
     if request.method == 'POST':
         form = SupportTicketForm(request.POST)
         if form.is_valid():
@@ -1303,8 +1306,32 @@ def raise_ticket(request):
             ticket.employee = employee
             ticket.save()
             email_service.notify_admin_ticket_raised(ticket)
+            if is_ajax:
+                all_tickets  = SupportTicket.objects.filter(employee=employee)
+                open_count   = all_tickets.filter(status__in=['open', 'in_progress', 'waiting']).count()
+                resolved_count = all_tickets.filter(status__in=['resolved', 'closed']).count()
+                return JsonResponse({
+                    'success': True,
+                    'ticket': {
+                        'id':               ticket.id,
+                        'ticket_id':        f'TK{ticket.id:04d}',
+                        'subject':          ticket.subject,
+                        'category_display': ticket.get_category_display(),
+                        'priority':         ticket.priority,
+                        'priority_display': ticket.get_priority_display(),
+                        'status':           ticket.status,
+                        'created_at':       ticket.created_at.strftime('%d %b %Y'),
+                    },
+                    'counts': {
+                        'open_count':     open_count,
+                        'resolved_count': resolved_count,
+                    },
+                })
             messages.success(request, f'Ticket #{ticket.id} raised successfully! Admin will respond soon.')
             return redirect('my_tickets')
+        else:
+            if is_ajax:
+                return JsonResponse({'success': False, 'errors': form.errors})
     else:
         form = SupportTicketForm()
 
@@ -1347,12 +1374,33 @@ def my_tickets(request):
     except Employee.DoesNotExist:
         return redirect('dashboard')
 
-    tickets = SupportTicket.objects.filter(employee=employee)
+    filter_status = request.GET.get('filter', '')
+    search_q      = request.GET.get('search', '').strip()
+
+    all_tickets = SupportTicket.objects.filter(employee=employee)
+    tickets     = all_tickets.order_by('-created_at')
+
+    if filter_status == 'open':
+        tickets = tickets.filter(status__in=['open', 'in_progress', 'waiting'])
+    elif filter_status == 'resolved':
+        tickets = tickets.filter(status__in=['resolved', 'closed'])
+
+    if search_q:
+        tickets = tickets.filter(
+            Q(subject__icontains=search_q) |
+            Q(description__icontains=search_q) |
+            Q(category__icontains=search_q)
+        )
+
+    form = SupportTicketForm()
     return render(request, 'attendance/my_tickets.html', {
-        'tickets': tickets,
-        'open_count': tickets.filter(status='open').count(),
-        'resolved_count': tickets.filter(status='resolved').count(),
-        'employee': employee,
+        'tickets':        tickets,
+        'open_count':     all_tickets.filter(status__in=['open', 'in_progress', 'waiting']).count(),
+        'resolved_count': all_tickets.filter(status__in=['resolved', 'closed']).count(),
+        'filter_status':  filter_status,
+        'search_q':       search_q,
+        'form':           form,
+        'employee':       employee,
     })
 
 

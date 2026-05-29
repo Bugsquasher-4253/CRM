@@ -139,25 +139,36 @@ class LeaveRequest(models.Model):
 
 class SupportTicket(models.Model):
     PRIORITY_CHOICES = [
-        ('low', 'Low'),
-        ('medium', 'Medium'),
-        ('high', 'High'),
+        ('low',      'Low'),
+        ('medium',   'Medium'),
+        ('high',     'High'),
+        ('critical', 'Critical'),
     ]
     STATUS_CHOICES = [
-        ('open', 'Open'),
+        ('open',        'Open'),
         ('in_progress', 'In Progress'),
-        ('resolved', 'Resolved'),
-        ('closed', 'Closed'),
+        ('waiting',     'Waiting for Response'),
+        ('resolved',    'Resolved'),
+        ('closed',      'Closed'),
+    ]
+    CATEGORY_CHOICES = [
+        ('technical', 'Technical Issue'),
+        ('hr',        'HR'),
+        ('payroll',   'Payroll'),
+        ('leave',     'Leave'),
+        ('general',   'General Query'),
+        ('other',     'Other'),
     ]
 
-    employee = models.ForeignKey(Employee, on_delete=models.CASCADE, related_name='tickets')
-    subject = models.CharField(max_length=200)
-    description = models.TextField()
-    priority = models.CharField(max_length=20, choices=PRIORITY_CHOICES, default='medium')
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='open')
+    employee     = models.ForeignKey(Employee, on_delete=models.CASCADE, related_name='tickets')
+    subject      = models.CharField(max_length=200)
+    category     = models.CharField(max_length=20, choices=CATEGORY_CHOICES, default='general')
+    description  = models.TextField()
+    priority     = models.CharField(max_length=20, choices=PRIORITY_CHOICES, default='medium')
+    status       = models.CharField(max_length=20, choices=STATUS_CHOICES, default='open')
     admin_response = models.TextField(blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    created_at   = models.DateTimeField(auto_now_add=True)
+    updated_at   = models.DateTimeField(auto_now=True)
 
     class Meta:
         ordering = ['-created_at']

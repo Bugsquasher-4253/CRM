@@ -69,12 +69,13 @@ class LeaveRequestForm(forms.ModelForm):
 class SupportTicketForm(forms.ModelForm):
     class Meta:
         model = SupportTicket
-        fields = ['subject', 'priority', 'description']
+        fields = ['subject', 'category', 'priority', 'description']
         widgets = {
             'subject': forms.TextInput(attrs={
                 'class': 'form-control',
                 'placeholder': 'Brief summary of your issue...',
             }),
+            'category': forms.Select(attrs={'class': 'form-select'}),
             'priority': forms.Select(attrs={'class': 'form-select'}),
             'description': forms.Textarea(attrs={
                 'class': 'form-control',
