@@ -1205,6 +1205,7 @@ def date_wise_report(request):
 
 @login_required
 def apply_leave(request):
+    from django.http import JsonResponse
     try:
         employee = request.user.employee
     except Employee.DoesNotExist:
@@ -1212,13 +1213,38 @@ def apply_leave(request):
 
     if request.method == 'POST':
         form = LeaveRequestForm(request.POST)
+        is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
         if form.is_valid():
             leave = form.save(commit=False)
             leave.employee = employee
             leave.save()
             email_service.notify_admin_leave_applied(leave)
+            if is_ajax:
+                all_leaves = LeaveRequest.objects.filter(employee=employee)
+                return JsonResponse({
+                    'success': True,
+                    'leave': {
+                        'id':                 leave.id,
+                        'leave_id':           f'LV{leave.id:04d}',
+                        'type_display':       leave.get_leave_type_display(),
+                        'from_date':          leave.from_date.strftime('%d %b %Y'),
+                        'to_date':            leave.to_date.strftime('%d %b %Y'),
+                        'total_days':         leave.total_days,
+                        'reason':             leave.reason[:120],
+                        'status':             leave.status,
+                        'applied_on':         leave.applied_on.strftime('%d %b %Y'),
+                    },
+                    'counts': {
+                        'pending':  all_leaves.filter(status='pending').count(),
+                        'approved': all_leaves.filter(status='approved').count(),
+                        'rejected': all_leaves.filter(status='rejected').count(),
+                    },
+                })
             messages.success(request, 'Leave request submitted! Admin will review it soon.')
             return redirect('my_leaves')
+        else:
+            if is_ajax:
+                return JsonResponse({'success': False, 'errors': form.errors})
     else:
         form = LeaveRequestForm()
 
@@ -1232,13 +1258,32 @@ def my_leaves(request):
     except Employee.DoesNotExist:
         return redirect('dashboard')
 
-    leaves = LeaveRequest.objects.filter(employee=employee)
+    filter_status = request.GET.get('filter', '')
+    search_q      = request.GET.get('search', '').strip()
+
+    all_leaves = LeaveRequest.objects.filter(employee=employee)
+    leaves     = all_leaves.order_by('-applied_on')
+
+    if filter_status in ('pending', 'approved', 'rejected'):
+        leaves = leaves.filter(status=filter_status)
+
+    if search_q:
+        leaves = leaves.filter(
+            Q(leave_type__icontains=search_q) |
+            Q(reason__icontains=search_q)
+        )
+
+    form = LeaveRequestForm()   # for the inline modal
     return render(request, 'attendance/my_leaves.html', {
-        'leaves': leaves,
-        'pending': leaves.filter(status='pending').count(),
-        'approved': leaves.filter(status='approved').count(),
-        'rejected': leaves.filter(status='rejected').count(),
-        'employee': employee,
+        'leaves':        leaves,
+        'pending':       all_leaves.filter(status='pending').count(),
+        'approved':      all_leaves.filter(status='approved').count(),
+        'rejected':      all_leaves.filter(status='rejected').count(),
+        'filter_status': filter_status,
+        'search_q':      search_q,
+        'form':          form,
+        'employee':      employee,
+        'apply_url':     '/leave/apply/',
     })
 
 

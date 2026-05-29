@@ -1,92 +1,472 @@
 {% extends 'attendance/base.html' %}
-{% block title %}My Leaves – Crefio{% endblock %}
+{% block title %}My Leave Requests – Crefio{% endblock %}
 {% block page_title %}My Leave Requests{% endblock %}
 
 {% block content %}
 
-<!-- Stats -->
+<!-- ── Clickable Stat Cards ─────────────────────────────────────────────── -->
 <div class="row g-3 mb-4">
-  <div class="col-4 col-sm-4">
-    <div class="stat-card dash-stat text-center">
-      <div class="dash-stat-icon mx-auto" style="background:#fff3cd;">
-        <i class="bi bi-hourglass-split" style="color:#856404;"></i>
+
+  <div class="col-4">
+    <a href="?filter=pending{% if search_q %}&search={{ search_q }}{% endif %}" class="text-decoration-none">
+      <div class="stat-card dash-stat text-center h-100"
+           style="cursor:pointer;transition:transform .15s,box-shadow .15s;
+                  {% if filter_status == 'pending' %}outline:2.5px solid #856404;{% endif %}"
+           onmouseover="this.style.transform='translateY(-3px)';this.style.boxShadow='0 6px 20px rgba(0,0,0,.1)'"
+           onmouseout="this.style.transform='';this.style.boxShadow=''">
+        <div class="dash-stat-icon mx-auto" style="background:#fff3cd;">
+          <i class="bi bi-hourglass-split" style="color:#856404;"></i>
+        </div>
+        <div class="dash-stat-num" id="count-pending" style="color:#856404;">{{ pending }}</div>
+        <div class="dash-stat-label">Pending</div>
       </div>
-      <div class="dash-stat-num" style="color:#856404;">{{ pending }}</div>
-      <div class="dash-stat-label">Pending</div>
-    </div>
+    </a>
   </div>
-  <div class="col-4 col-sm-4">
-    <div class="stat-card dash-stat text-center">
-      <div class="dash-stat-icon mx-auto" style="background:#d4edda;">
-        <i class="bi bi-check-circle-fill text-success"></i>
+
+  <div class="col-4">
+    <a href="?filter=approved{% if search_q %}&search={{ search_q }}{% endif %}" class="text-decoration-none">
+      <div class="stat-card dash-stat text-center h-100"
+           style="cursor:pointer;transition:transform .15s,box-shadow .15s;
+                  {% if filter_status == 'approved' %}outline:2.5px solid #2e7d32;{% endif %}"
+           onmouseover="this.style.transform='translateY(-3px)';this.style.boxShadow='0 6px 20px rgba(0,0,0,.1)'"
+           onmouseout="this.style.transform='';this.style.boxShadow=''">
+        <div class="dash-stat-icon mx-auto" style="background:#d4edda;">
+          <i class="bi bi-check-circle-fill text-success"></i>
+        </div>
+        <div class="dash-stat-num" id="count-approved" style="color:#155724;">{{ approved }}</div>
+        <div class="dash-stat-label">Approved</div>
       </div>
-      <div class="dash-stat-num" style="color:#155724;">{{ approved }}</div>
-      <div class="dash-stat-label">Approved</div>
-    </div>
+    </a>
   </div>
-  <div class="col-4 col-sm-4">
-    <div class="stat-card dash-stat text-center">
-      <div class="dash-stat-icon mx-auto" style="background:#f8d7da;">
-        <i class="bi bi-x-circle-fill text-danger"></i>
+
+  <div class="col-4">
+    <a href="?filter=rejected{% if search_q %}&search={{ search_q }}{% endif %}" class="text-decoration-none">
+      <div class="stat-card dash-stat text-center h-100"
+           style="cursor:pointer;transition:transform .15s,box-shadow .15s;
+                  {% if filter_status == 'rejected' %}outline:2.5px solid #991b1b;{% endif %}"
+           onmouseover="this.style.transform='translateY(-3px)';this.style.boxShadow='0 6px 20px rgba(0,0,0,.1)'"
+           onmouseout="this.style.transform='';this.style.boxShadow=''">
+        <div class="dash-stat-icon mx-auto" style="background:#fee2e2;">
+          <i class="bi bi-x-circle-fill text-danger"></i>
+        </div>
+        <div class="dash-stat-num" id="count-rejected" style="color:#721c24;">{{ rejected }}</div>
+        <div class="dash-stat-label">Rejected</div>
       </div>
-      <div class="dash-stat-num" style="color:#721c24;">{{ rejected }}</div>
-      <div class="dash-stat-label">Rejected</div>
-    </div>
+    </a>
   </div>
+
 </div>
 
-<!-- Apply Button -->
-<div class="d-flex justify-content-between align-items-center mb-3">
-  <h5 class="fw-bold mb-0">All Leave Requests</h5>
-  <a href="{% url 'apply_leave' %}" class="btn btn-primary">
-    <i class="bi bi-plus-circle me-2"></i>Apply New Leave
-  </a>
-</div>
-
-<!-- Leave List -->
+<!-- ── Table Header: search + filter label + action buttons ─────────────── -->
 <div class="card">
-  <div class="card-body p-0">
-    {% for leave in leaves %}
-    <div class="p-4 border-bottom">
-      <div class="d-flex justify-content-between align-items-start">
-        <div>
-          <div class="d-flex align-items-center gap-2 mb-1">
-            <span class="fw-bold">{{ leave.get_leave_type_display }}</span>
-            {% if leave.status == 'pending' %}
-              <span class="badge" style="background:#fff3cd; color:#856404;"><i class='bi bi-hourglass-split me-1'></i>Pending</span>
-            {% elif leave.status == 'approved' %}
-              <span class="badge" style="background:#d4edda; color:#155724;"><i class='bi bi-check-circle-fill me-1'></i>Approved</span>
-            {% else %}
-              <span class="badge" style="background:#f8d7da; color:#721c24;"><i class='bi bi-x-circle-fill me-1'></i>Rejected</span>
+  <div class="card-header py-3">
+    <div class="d-flex flex-wrap gap-2 align-items-center justify-content-between">
+
+      <!-- Left: title + filter badge -->
+      <div class="d-flex align-items-center gap-2 flex-wrap">
+        <span class="fw-semibold">
+          <i class="bi bi-calendar2-week me-2"></i>All Leave Requests
+        </span>
+        {% if filter_status %}
+          <span class="badge rounded-pill
+            {% if filter_status == 'approved' %}bg-success
+            {% elif filter_status == 'rejected' %}bg-danger
+            {% else %}bg-warning text-dark{% endif %}">
+            {{ filter_status|capfirst }}
+          </span>
+          <a href="{% url 'my_leaves' %}{% if search_q %}?search={{ search_q }}{% endif %}"
+             class="btn btn-sm btn-outline-secondary py-0 px-2" style="font-size:0.72rem;">
+            <i class="bi bi-x me-1"></i>Clear
+          </a>
+        {% endif %}
+      </div>
+
+      <!-- Right: search + apply button -->
+      <div class="d-flex gap-2 flex-wrap">
+        <form method="GET" class="d-flex gap-1">
+          {% if filter_status %}<input type="hidden" name="filter" value="{{ filter_status }}">{% endif %}
+          <input type="text" name="search" value="{{ search_q }}"
+                 placeholder="Search leaves…"
+                 class="form-control form-control-sm" style="width:180px;">
+          <button type="submit" class="btn btn-sm btn-outline-primary">
+            <i class="bi bi-search"></i>
+          </button>
+          {% if search_q %}
+          <a href="{% url 'my_leaves' %}{% if filter_status %}?filter={{ filter_status }}{% endif %}"
+             class="btn btn-sm btn-outline-secondary"><i class="bi bi-x"></i></a>
+          {% endif %}
+        </form>
+        <button type="button" class="btn btn-primary btn-sm fw-semibold" data-bs-toggle="modal" data-bs-target="#applyLeaveModal">
+          <i class="bi bi-plus-circle me-1"></i>Apply New Leave
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Desktop table -->
+  <div class="card-body p-0 d-none d-md-block">
+    <table class="table table-hover mb-0" style="min-width:700px;" id="leaveTable">
+      <thead style="background:#f8f9fa;">
+        <tr>
+          <th class="px-4 py-3">Leave ID</th>
+          <th class="py-3">Type</th>
+          <th class="py-3">From</th>
+          <th class="py-3">To</th>
+          <th class="py-3 text-center">Days</th>
+          <th class="py-3">Reason</th>
+          <th class="py-3 text-center">Status</th>
+          <th class="py-3">Applied On</th>
+        </tr>
+      </thead>
+      <tbody id="leaveTableBody">
+        {% for leave in leaves %}
+        <tr>
+          <td class="px-4 py-3">
+            <span class="fw-semibold text-muted" style="font-size:0.8rem;">LV{{ leave.id|stringformat:"04d" }}</span>
+          </td>
+          <td class="py-3 fw-semibold">{{ leave.get_leave_type_display }}</td>
+          <td class="py-3">{{ leave.from_date|date:"d M Y" }}</td>
+          <td class="py-3">{{ leave.to_date|date:"d M Y" }}</td>
+          <td class="py-3 text-center">
+            <span class="badge bg-light text-dark border">{{ leave.total_days }}d</span>
+          </td>
+          <td class="py-3" style="max-width:220px;">
+            <span style="font-size:0.85rem;">{{ leave.reason|truncatechars:60 }}</span>
+            {% if leave.admin_note %}
+              <div class="mt-1" style="font-size:0.75rem;color:#1a5fa8;">
+                <i class="bi bi-reply me-1"></i>{{ leave.admin_note|truncatechars:50 }}
+              </div>
             {% endif %}
+          </td>
+          <td class="py-3 text-center">
+            {% if leave.status == 'pending' %}
+              <span class="badge rounded-pill px-3 py-2" style="background:#fff3cd;color:#856404;">
+                <i class="bi bi-hourglass-split me-1"></i>Pending
+              </span>
+            {% elif leave.status == 'approved' %}
+              <span class="badge bg-success rounded-pill px-3 py-2">
+                <i class="bi bi-check-circle me-1"></i>Approved
+              </span>
+            {% else %}
+              <span class="badge bg-danger rounded-pill px-3 py-2">
+                <i class="bi bi-x-circle me-1"></i>Rejected
+              </span>
+            {% endif %}
+          </td>
+          <td class="py-3" style="font-size:0.82rem;color:#6B7280;">
+            {{ leave.applied_on|date:"d M Y" }}
+          </td>
+        </tr>
+        {% empty %}
+        <tr id="emptyRow">
+          <td colspan="8" class="text-center py-5 text-muted">
+            <i class="bi bi-calendar-x display-6 d-block mb-2"></i>
+            {% if search_q %}
+              No leaves matching "{{ search_q }}"
+            {% elif filter_status %}
+              No {{ filter_status }} leave requests
+            {% else %}
+              No leave requests yet. Click "Apply New Leave" to get started.
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Mobile cards -->
+  <div class="d-block d-md-none p-3" id="mobileLeaveCards">
+    {% for leave in leaves %}
+    <div class="card mb-2 border" style="border-radius:10px;">
+      <div class="d-flex align-items-center justify-content-between px-3 py-2"
+           style="background:#f8f9fa;border-bottom:1px solid #E5E7EB;border-radius:10px 10px 0 0;">
+        <div>
+          <span class="text-muted" style="font-size:0.72rem;">LV{{ leave.id|stringformat:"04d" }}</span>
+          <div class="fw-semibold" style="font-size:0.88rem;">{{ leave.get_leave_type_display }}</div>
+        </div>
+        {% if leave.status == 'pending' %}
+          <span class="badge rounded-pill" style="background:#fff3cd;color:#856404;">Pending</span>
+        {% elif leave.status == 'approved' %}
+          <span class="badge bg-success rounded-pill">Approved</span>
+        {% else %}
+          <span class="badge bg-danger rounded-pill">Rejected</span>
+        {% endif %}
+      </div>
+      <div class="px-3 py-2">
+        <div class="row g-2">
+          <div class="col-6">
+            <div class="text-muted" style="font-size:0.68rem;font-weight:600;text-transform:uppercase;">From</div>
+            <div style="font-size:0.82rem;">{{ leave.from_date|date:"d M Y" }}</div>
           </div>
-          <div class="text-muted small mb-1">
-            <i class="bi bi-calendar3 me-1"></i>
-            {{ leave.from_date|date:"d M Y" }}
-            {% if leave.from_date != leave.to_date %}→ {{ leave.to_date|date:"d M Y" }}{% endif %}
-            &nbsp;·&nbsp; {{ leave.total_days }} day{{ leave.total_days|pluralize }}
+          <div class="col-6">
+            <div class="text-muted" style="font-size:0.68rem;font-weight:600;text-transform:uppercase;">To</div>
+            <div style="font-size:0.82rem;">{{ leave.to_date|date:"d M Y" }}</div>
           </div>
-          <div class="mt-2" style="color:#555;">
-            <strong>Reason:</strong> {{ leave.reason|truncatechars:150 }}
+          <div class="col-6">
+            <div class="text-muted" style="font-size:0.68rem;font-weight:600;text-transform:uppercase;">Days</div>
+            <div class="fw-semibold">{{ leave.total_days }} day{{ leave.total_days|pluralize }}</div>
+          </div>
+          <div class="col-6">
+            <div class="text-muted" style="font-size:0.68rem;font-weight:600;text-transform:uppercase;">Applied</div>
+            <div style="font-size:0.82rem;">{{ leave.applied_on|date:"d M Y" }}</div>
+          </div>
+          <div class="col-12">
+            <div class="text-muted" style="font-size:0.68rem;font-weight:600;text-transform:uppercase;">Reason</div>
+            <div style="font-size:0.82rem;">{{ leave.reason|truncatechars:80 }}</div>
           </div>
           {% if leave.admin_note %}
-            <div class="mt-2 p-2 rounded-2" style="background:#f0f7ff; color:#1a5fa8; font-size:0.9rem;">
-              <i class="bi bi-chat-left-text me-1"></i><strong>Admin Note:</strong> {{ leave.admin_note }}
+          <div class="col-12">
+            <div class="p-2 rounded-2" style="background:#f0f7ff;font-size:0.78rem;color:#1a5fa8;">
+              <i class="bi bi-reply me-1"></i><strong>Admin:</strong> {{ leave.admin_note|truncatechars:80 }}
             </div>
+          </div>
           {% endif %}
-        </div>
-        <div class="text-muted small text-end">
-          Applied on<br>{{ leave.applied_on|date:"d M Y" }}
         </div>
       </div>
     </div>
     {% empty %}
     <div class="text-center py-5 text-muted">
-      <i class="bi bi-calendar-x display-6 d-block mb-3"></i>
-      <p>No leave requests yet.</p>
-      <a href="{% url 'apply_leave' %}" class="btn btn-primary">Apply for Leave</a>
+      <i class="bi bi-calendar-x display-6 d-block mb-2"></i>
+      No leave requests yet.
     </div>
     {% endfor %}
   </div>
+
 </div>
+
+
+<!-- ══════════════════════════════════════════════════════════════════════════
+     APPLY LEAVE MODAL
+══════════════════════════════════════════════════════════════════════════ -->
+<div class="modal fade" id="applyLeaveModal" tabindex="-1" aria-labelledby="applyLeaveModalLabel">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content" style="border:none;border-radius:16px;overflow:hidden;">
+
+      <!-- Header -->
+      <div class="modal-header" style="background:#111827;border:none;">
+        <h5 class="modal-title fw-bold" id="applyLeaveModalLabel" style="color:#fff;">
+          <i class="bi bi-calendar-plus me-2" style="color:#BAF2BF;"></i>Apply for Leave
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+
+      <!-- Body -->
+      <div class="modal-body p-4">
+
+        <!-- Error banner (hidden by default) -->
+        <div id="leaveFormError" class="alert alert-danger d-none mb-3" role="alert">
+          <i class="bi bi-exclamation-circle me-2"></i>
+          <span id="leaveFormErrorText">Please fix the errors below.</span>
+        </div>
+
+        <form id="applyLeaveForm" novalidate>
+          {% csrf_token %}
+
+          <div class="row g-3">
+            <!-- Leave Type -->
+            <div class="col-12">
+              <label class="form-label fw-semibold">Leave Type <span class="text-danger">*</span></label>
+              {{ form.leave_type }}
+              <div class="invalid-feedback" id="err-leave_type"></div>
+            </div>
+
+            <!-- From Date -->
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Start Date <span class="text-danger">*</span></label>
+              {{ form.from_date }}
+              <div class="invalid-feedback" id="err-from_date"></div>
+            </div>
+
+            <!-- To Date -->
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">End Date <span class="text-danger">*</span></label>
+              {{ form.to_date }}
+              <div class="invalid-feedback" id="err-to_date"></div>
+            </div>
+
+            <!-- Duration preview -->
+            <div class="col-12">
+              <div id="durationPreview" class="d-none p-2 rounded-2 text-center"
+                   style="background:#f0fdf4;border:1px solid #BAF2BF;font-size:0.85rem;color:#155724;">
+                <i class="bi bi-calendar-check me-1"></i>
+                <span id="durationText"></span>
+              </div>
+            </div>
+
+            <!-- Reason -->
+            <div class="col-12">
+              <label class="form-label fw-semibold">Reason <span class="text-danger">*</span></label>
+              {{ form.reason }}
+              <div class="invalid-feedback" id="err-reason"></div>
+              <small class="text-muted">Be specific so the admin can review your request quickly.</small>
+            </div>
+
+            <!-- Submitting as -->
+            <div class="col-12">
+              <div class="p-3 rounded-2" style="background:#f8f9fa;">
+                <small class="text-muted fw-semibold d-block mb-1">Submitting as:</small>
+                <div class="fw-bold">{{ employee.user.get_full_name }}</div>
+                <div class="text-muted small">{{ employee.employee_id }} · {{ employee.designation }}</div>
+              </div>
+            </div>
+          </div>
+
+        </form>
+      </div>
+
+      <!-- Footer -->
+      <div class="modal-footer" style="border-top:1px solid #E5E7EB;">
+        <button type="button" class="btn btn-outline-secondary px-4" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-primary px-5 fw-semibold" id="submitLeaveBtn">
+          <i class="bi bi-send me-2"></i>Submit Request
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+
+<script>
+// ── Duration preview ──────────────────────────────────────────────────────────
+function updateDuration() {
+  const from = document.getElementById('{{ form.from_date.id_for_label }}').value;
+  const to   = document.getElementById('{{ form.to_date.id_for_label }}').value;
+  const preview = document.getElementById('durationPreview');
+  const text    = document.getElementById('durationText');
+
+  if (from && to) {
+    const f = new Date(from), t = new Date(to);
+    if (t >= f) {
+      // Count working days (Mon–Sat, excluding Sunday)
+      let days = 0, cur = new Date(f);
+      while (cur <= t) {
+        if (cur.getDay() !== 0) days++;   // 0 = Sunday
+        cur.setDate(cur.getDate() + 1);
+      }
+      text.textContent = days + ' working day' + (days !== 1 ? 's' : '') +
+                         ' (' + f.toLocaleDateString('en-IN', {day:'numeric',month:'short'}) +
+                         ' → ' + t.toLocaleDateString('en-IN', {day:'numeric',month:'short',year:'numeric'}) + ')';
+      preview.classList.remove('d-none');
+      preview.style.background = '#f0fdf4';
+      preview.style.borderColor = '#BAF2BF';
+      preview.style.color = '#155724';
+    } else {
+      text.textContent = 'End date cannot be before start date';
+      preview.classList.remove('d-none');
+      preview.style.background = '#fef2f2';
+      preview.style.borderColor = '#fca5a5';
+      preview.style.color = '#991b1b';
+    }
+  } else {
+    preview.classList.add('d-none');
+  }
+}
+
+document.getElementById('{{ form.from_date.id_for_label }}').addEventListener('change', updateDuration);
+document.getElementById('{{ form.to_date.id_for_label }}').addEventListener('change',   updateDuration);
+
+// ── Modal reset on open ───────────────────────────────────────────────────────
+document.getElementById('applyLeaveModal').addEventListener('show.bs.modal', function() {
+  document.getElementById('applyLeaveForm').reset();
+  document.getElementById('leaveFormError').classList.add('d-none');
+  document.getElementById('durationPreview').classList.add('d-none');
+  document.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
+});
+
+// ── AJAX form submission ──────────────────────────────────────────────────────
+document.getElementById('submitLeaveBtn').addEventListener('click', function() {
+  const btn  = this;
+  const form = document.getElementById('applyLeaveForm');
+  const data = new FormData(form);
+
+  // Basic client-side check
+  const from = document.getElementById('{{ form.from_date.id_for_label }}').value;
+  const to   = document.getElementById('{{ form.to_date.id_for_label }}').value;
+  if (from && to && new Date(to) < new Date(from)) {
+    document.getElementById('leaveFormError').classList.remove('d-none');
+    document.getElementById('leaveFormErrorText').textContent = 'End date cannot be before start date.';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Submitting…';
+
+  fetch('{% url "apply_leave" %}', {
+    method: 'POST',
+    headers: { 'X-Requested-With': 'XMLHttpRequest' },
+    body: data,
+  })
+  .then(r => r.json())
+  .then(res => {
+    if (res.success) {
+      // Close modal
+      bootstrap.Modal.getInstance(document.getElementById('applyLeaveModal')).hide();
+
+      // Update stat card counts
+      document.getElementById('count-pending').textContent  = res.counts.pending;
+      document.getElementById('count-approved').textContent = res.counts.approved;
+      document.getElementById('count-rejected').textContent = res.counts.rejected;
+
+      // Prepend new row to desktop table
+      const tbody = document.getElementById('leaveTableBody');
+      const empty = document.getElementById('emptyRow');
+      if (empty) empty.remove();
+      const statusBadge = `<span class="badge rounded-pill px-3 py-2" style="background:#fff3cd;color:#856404;">
+        <i class="bi bi-hourglass-split me-1"></i>Pending</span>`;
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td class="px-4 py-3"><span class="fw-semibold text-muted" style="font-size:.8rem;">${res.leave.leave_id}</span></td>
+        <td class="py-3 fw-semibold">${res.leave.type_display}</td>
+        <td class="py-3">${res.leave.from_date}</td>
+        <td class="py-3">${res.leave.to_date}</td>
+        <td class="py-3 text-center"><span class="badge bg-light text-dark border">${res.leave.total_days}d</span></td>
+        <td class="py-3" style="max-width:220px;font-size:.85rem;">${res.leave.reason}</td>
+        <td class="py-3 text-center">${statusBadge}</td>
+        <td class="py-3" style="font-size:.82rem;color:#6B7280;">${res.leave.applied_on}</td>`;
+      tbody.insertBefore(tr, tbody.firstChild);
+
+      // Show success toast
+      showToast('Leave request submitted successfully! Admin will review it soon.', 'success');
+    } else {
+      // Show field errors
+      document.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
+      let hasErrors = false;
+      for (const [field, errors] of Object.entries(res.errors || {})) {
+        const input = form.querySelector(`[name="${field}"]`);
+        const errEl = document.getElementById(`err-${field}`);
+        if (input)  { input.classList.add('is-invalid'); }
+        if (errEl)  { errEl.textContent = errors.join(' '); }
+        hasErrors = true;
+      }
+      if (!hasErrors || res.errors.__all__) {
+        document.getElementById('leaveFormError').classList.remove('d-none');
+        document.getElementById('leaveFormErrorText').textContent =
+          (res.errors.__all__ || ['Please fix the errors below.']).join(' ');
+      }
+    }
+  })
+  .catch(() => {
+    document.getElementById('leaveFormError').classList.remove('d-none');
+    document.getElementById('leaveFormErrorText').textContent = 'Network error. Please try again.';
+  })
+  .finally(() => {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="bi bi-send me-2"></i>Submit Request';
+  });
+});
+
+// ── Toast helper ─────────────────────────────────────────────────────────────
+function showToast(msg, type) {
+  const toast = document.createElement('div');
+  toast.className = `alert alert-${type === 'success' ? 'success' : 'danger'} auto-dismiss`;
+  toast.style.cssText = 'position:fixed;top:20px;right:20px;z-index:9999;min-width:280px;box-shadow:0 4px 16px rgba(0,0,0,.12);';
+  toast.innerHTML = `<i class="bi bi-${type === 'success' ? 'check-circle' : 'exclamation-circle'} me-2"></i>${msg}`;
+  document.body.appendChild(toast);
+  setTimeout(() => { toast.style.opacity = '0'; toast.style.transition = 'opacity .4s'; }, 4000);
+  setTimeout(() => toast.remove(), 4500);
+}
+</script>
 {% endblock %}
