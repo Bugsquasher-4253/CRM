@@ -53,7 +53,7 @@ def _get_all_admin_emails() -> list[str]:
                     .exclude(email='')
                     .values_list('email', flat=True)
     )
-    env_email = getattr(settings, 'ADMIN_NOTIFICATION_EMAIL', '').strip()
+    _email = getattr(settings, 'ADMIN_NOTIFICATION_EMAIL', '').strip()
     if env_email:
         db_emails.add(env_email)
     return list(db_emails)

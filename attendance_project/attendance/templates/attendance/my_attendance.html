@@ -153,7 +153,7 @@
     {% else %}
     <div class="text-center py-5 text-muted">
       <i class="bi bi-calendar-check display-6 d-block mb-2"></i>
-      No {{ stat_filter }} days in {{ month_name }} {{ year }}.
+      No {% if stat_filter == 'half_day' %}Half Day{% elif stat_filter == 'present' %}Present{% elif stat_filter == 'absent' %}Absent{% else %}Leave{% endif %} days in {{ month_name }} {{ year }}.
     </div>
     {% endif %}
   </div>

@@ -6,7 +6,7 @@
 
 <!-- Current Month Highlight -->
 {% if current_salary %}
-<div class="card mb-4" style="background:linear-gradient(135deg,#111827,#1f2937);color:white;border:none;">
+<div class="card mb-4" style="background:linear-gradient(135deg,#111827,#1f2937);color:white;border:none;box-shadow:0 4px 24px rgba(0,0,0,0.28);">
   <div class="card-body p-4">
     <div class="row align-items-center g-3">
       <div class="col-12 col-md-8">
@@ -34,10 +34,12 @@
             <div class="fw-semibold" style="color:#93c5fd;">{{ current_salary.half_days }}d</div>
           </div>
           {% endif %}
+          {% if current_salary.deductions > 0 %}
           <div class="col-6 col-sm-3">
             <div style="color:#ef4444;font-size:0.75rem;">-Deductions</div>
             <div class="fw-semibold" style="color:#ef4444;">₹{{ current_salary.deductions|floatformat:0 }}</div>
           </div>
+          {% endif %}
         </div>
       </div>
       <div class="col-12 col-md-4 text-md-end">
@@ -85,15 +87,15 @@
 
   <!-- Desktop table -->
   <div class="card-body p-0 d-none d-md-block">
-    <table class="table table-hover mb-0">
+    <table class="table table-hover mb-0" style="min-width:680px;">
       <thead style="background:#f8f9fa;">
         <tr>
           <th class="px-4 py-3">Period</th>
           <th class="py-3 text-end">Basic</th>
-          <th class="py-3 text-center" style="color:#1e40af;">Half Days</th>
-          <th class="py-3 text-center" style="color:#991b1b;">Absent</th>
-          <th class="py-3 text-end text-danger">Deductions</th>
-          <th class="py-3 text-end fw-bold">Net Salary</th>
+          <th class="py-3 text-center">Half Days</th>
+          <th class="py-3 text-center">Absent</th>
+          <th class="py-3 text-end">Deductions</th>
+          <th class="py-3 text-end">Net Salary</th>
           <th class="py-3 text-center">Status</th>
           <th class="py-3 text-center">Slip</th>
         </tr>

@@ -1,12 +1,12 @@
 {% extends 'attendance/base.html' %}
-{% block title %}My Leaves - AttendTrack{% endblock %}
+{% block title %}My Leaves – Crefio{% endblock %}
 {% block page_title %}My Leave Requests{% endblock %}
 
 {% block content %}
 
 <!-- Stats -->
 <div class="row g-3 mb-4">
-  <div class="col-4">
+  <div class="col-4 col-sm-4">
     <div class="stat-card dash-stat text-center">
       <div class="dash-stat-icon mx-auto" style="background:#fff3cd;">
         <i class="bi bi-hourglass-split" style="color:#856404;"></i>
@@ -15,7 +15,7 @@
       <div class="dash-stat-label">Pending</div>
     </div>
   </div>
-  <div class="col-4">
+  <div class="col-4 col-sm-4">
     <div class="stat-card dash-stat text-center">
       <div class="dash-stat-icon mx-auto" style="background:#d4edda;">
         <i class="bi bi-check-circle-fill text-success"></i>
@@ -24,7 +24,7 @@
       <div class="dash-stat-label">Approved</div>
     </div>
   </div>
-  <div class="col-4">
+  <div class="col-4 col-sm-4">
     <div class="stat-card dash-stat text-center">
       <div class="dash-stat-icon mx-auto" style="background:#f8d7da;">
         <i class="bi bi-x-circle-fill text-danger"></i>
@@ -53,11 +53,11 @@
           <div class="d-flex align-items-center gap-2 mb-1">
             <span class="fw-bold">{{ leave.get_leave_type_display }}</span>
             {% if leave.status == 'pending' %}
-              <span class="badge" style="background:#fff3cd; color:#856404;">⏳ Pending</span>
+              <span class="badge" style="background:#fff3cd; color:#856404;"><i class='bi bi-hourglass-split me-1'></i>Pending</span>
             {% elif leave.status == 'approved' %}
-              <span class="badge" style="background:#d4edda; color:#155724;">✅ Approved</span>
+              <span class="badge" style="background:#d4edda; color:#155724;"><i class='bi bi-check-circle-fill me-1'></i>Approved</span>
             {% else %}
-              <span class="badge" style="background:#f8d7da; color:#721c24;">❌ Rejected</span>
+              <span class="badge" style="background:#f8d7da; color:#721c24;"><i class='bi bi-x-circle-fill me-1'></i>Rejected</span>
             {% endif %}
           </div>
           <div class="text-muted small mb-1">
@@ -67,7 +67,7 @@
             &nbsp;·&nbsp; {{ leave.total_days }} day{{ leave.total_days|pluralize }}
           </div>
           <div class="mt-2" style="color:#555;">
-            <strong>Reason:</strong> {{ leave.reason }}
+            <strong>Reason:</strong> {{ leave.reason|truncatechars:150 }}
           </div>
           {% if leave.admin_note %}
             <div class="mt-2 p-2 rounded-2" style="background:#f0f7ff; color:#1a5fa8; font-size:0.9rem;">

@@ -98,24 +98,6 @@
                 <i class="bi bi-trash"></i>
               </button>
             </div>
-            <div class="modal fade" id="del{{ record.id }}" tabindex="-1">
-              <div class="modal-dialog modal-sm">
-                <div class="modal-content">
-                  <div class="modal-header border-0">
-                    <h6 class="modal-title text-danger fw-bold"><i class="bi bi-exclamation-triangle me-1"></i>Delete Record?</h6>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                  </div>
-                  <div class="modal-body pt-0 text-muted small">{{ record.employee.user.get_full_name }} · {{ record.date|date:"d M Y" }}</div>
-                  <div class="modal-footer border-0 pt-0">
-                    <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <form method="POST" action="{% url 'delete_attendance_record' record.id %}" style="display:inline;">
-                      {% csrf_token %}
-                      <button type="submit" class="btn btn-sm btn-danger">Delete</button>
-                    </form>
-                  </div>
-                </div>
-              </div>
-            </div>
           </td>
         </tr>
         {% endfor %}
@@ -166,6 +148,29 @@
     </div>
     {% endfor %}
   </div>
+
+  <!-- Delete confirmation modals — outside both desktop and mobile layout containers
+       so they are always present in the DOM at all viewport sizes -->
+  {% for record in records %}
+  <div class="modal fade" id="del{{ record.id }}" tabindex="-1">
+    <div class="modal-dialog modal-sm">
+      <div class="modal-content">
+        <div class="modal-header border-0">
+          <h6 class="modal-title text-danger fw-bold"><i class="bi bi-exclamation-triangle me-1"></i>Delete Record?</h6>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body pt-0 text-muted small">{{ record.employee.user.get_full_name }} · {{ record.date|date:"d M Y" }}</div>
+        <div class="modal-footer border-0 pt-0">
+          <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+          <form method="POST" action="{% url 'delete_attendance_record' record.id %}" style="display:inline;">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
 
   {% else %}
   <div class="card-body text-center py-5 text-muted">

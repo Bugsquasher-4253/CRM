@@ -141,18 +141,18 @@
       <form method="POST">
         {% csrf_token %}
         <div class="mb-3">
-          <label class="form-label">Email or Username</label>
+          <label class="form-label" for="id_email">Email or Username</label>
           <div class="input-group">
             <span class="input-group-text"><i class="bi bi-person-circle"></i></span>
             {{ form.email }}
           </div>
         </div>
         <div class="mb-4">
-          <label class="form-label">Password</label>
+          <label class="form-label" for="id_password">Password</label>
           <div class="input-group">
             <span class="input-group-text"><i class="bi bi-lock"></i></span>
             {{ form.password }}
-            <button type="button" class="eye-btn" id="togglePassword" tabindex="-1" aria-label="Show password">
+            <button type="button" class="eye-btn" id="togglePassword" aria-label="Show password">
               <i class="bi bi-eye" id="eyeIcon"></i>
             </button>
           </div>
