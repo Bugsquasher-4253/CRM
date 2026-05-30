@@ -1,0 +1,87 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+    branches: ["**"]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint-and-check:
+    name: Lint · Format · Security · Django Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12.3"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install \
+            flake8==7.1.1 \
+            flake8-django==1.4 \
+            black==24.10.0 \
+            isort==5.13.2 \
+            bandit==1.8.0
+
+      - name: Flake8 — Lint
+        run: |
+          flake8 attendance_project/ \
+            --max-line-length=120 \
+            --exclude=attendance_project/attendance/migrations/,attendance_project/staticfiles/ \
+            --extend-ignore=E501,W503,E203 \
+            --statistics \
+            --count
+
+      - name: Black — Format check
+        run: |
+          black attendance_project/ \
+            --check \
+            --diff \
+            --line-length=120 \
+            --exclude="/(migrations|staticfiles)/"
+
+      - name: isort — Import order
+        run: |
+          isort attendance_project/ \
+            --check-only \
+            --diff \
+            --profile=black \
+            --line-length=120 \
+            --skip=migrations \
+            --skip=staticfiles
+
+      - name: Bandit — Security scan
+        run: |
+          bandit -r attendance_project/ \
+            --exclude attendance_project/attendance/migrations,attendance_project/staticfiles \
+            --severity-level medium \
+            --confidence-level medium \
+            -f txt
+        continue-on-error: true
+
+      # Django check — uses SQLite so no real DB needed
+      # Matches exact settings module path: attendance_project/attendance_project/settings.py
+      - name: Django — System check
+        env:
+          DJANGO_SETTINGS_MODULE: attendance_project.settings
+          SECRET_KEY: ci-only-fake-secret-key-not-used-anywhere
+          DEBUG: "False"
+          DATABASE_URL: "sqlite:////tmp/ci-check.db"
+          ALLOWED_HOSTS: "localhost"
+        run: |
+          cd attendance_project
+          python manage.py check
+          echo "Django system check passed"

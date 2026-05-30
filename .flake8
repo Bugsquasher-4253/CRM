@@ -1,0 +1,13 @@
+[flake8]
+max-line-length = 120
+exclude =
+    attendance_project/attendance/migrations/,
+    attendance_project/staticfiles/,
+    venv/,
+    .git/
+extend-ignore =
+    E501,
+    W503,
+    E203
+statistics = true
+count = true

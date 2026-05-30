@@ -1,0 +1,47 @@
+name: CD
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      github.event.workflow_run.conclusion == 'success'
+
+    steps:
+      - name: SSH and deploy
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host:     ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key:      ${{ secrets.SSH_KEY }}
+          port:     22
+          script: |
+            set -e
+            cd /var/www/hrms
+
+            echo "── [1/5] Pull latest code ──"
+            git pull origin main
+
+            echo "── [2/5] Build Docker image ──"
+            docker compose build
+
+            echo "── [3/5] Restart containers ──"
+            docker compose up -d --remove-orphans
+
+            echo "── [4/5] Migrate & collectstatic ──"
+            sleep 8
+            docker compose exec -T web python attendance_project/manage.py migrate --no-input
+            docker compose exec -T web python attendance_project/manage.py collectstatic --no-input || true
+
+            echo "── [5/5] Cleanup ──"
+            docker image prune -f
+
+            echo "✅ Done"

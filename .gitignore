@@ -17,9 +17,11 @@ media/
 # staticfiles/ → keep this committed so Vercel can serve them
 *.log
 
-# Secrets
+# Secrets — never commit these
 .env
 *.env
+.env.production
+.env.local
 local_settings.py
 
 # OS
