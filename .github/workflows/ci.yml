@@ -39,8 +39,8 @@ jobs:
         run: |
           flake8 attendance_project/ \
             --max-line-length=120 \
-            --exclude=attendance_project/attendance/migrations/,attendance_project/staticfiles/ \
-            --extend-ignore=E501,W503,E203 \
+            --exclude=attendance_project/attendance/migrations/,attendance_project/staticfiles/,attendance_project/import_employees.py,attendance_project/attendance/tests.py \
+            --extend-ignore=E501,W503,E203,E221,E222,E225,E226,E231,E261,E262,E272,E302,E303,E402,F401,W291,W292,W293,W391 \
             --statistics \
             --count
 

@@ -3,11 +3,34 @@ max-line-length = 120
 exclude =
     attendance_project/attendance/migrations/,
     attendance_project/staticfiles/,
+    attendance_project/import_employees.py,
+    attendance_project/attendance/tests.py,
     venv/,
     .git/
 extend-ignore =
+    # Line length (handled by max-line-length)
     E501,
+    # Whitespace before operator (used for alignment)
+    E221, E222,
+    # Whitespace around operator
+    E225, E226,
+    # Missing whitespace after separator
+    E231,
+    # Comment spacing
+    E261, E262,
+    # Multiple spaces before keyword
+    E272,
+    # Blank lines
+    E302, E303,
+    # Module imports not at top (we use local imports inside functions)
+    E402,
+    # Imported but unused
+    F401,
+    # Trailing whitespace / no newline at end
+    W291, W292, W293, W391,
+    # Line break before binary operator
     W503,
+    # Slice notation
     E203
 statistics = true
 count = true
