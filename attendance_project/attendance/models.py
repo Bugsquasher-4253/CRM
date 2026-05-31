@@ -201,6 +201,43 @@ class AttendanceCorrectionRequest(models.Model):
         return f"{self.employee} - {self.date} ({self.status})"
 
 
+class EmployeeSalaryStructure(models.Model):
+    """
+    Base salary for an employee. One row per revision.
+    The row with the latest effective_from <= payroll month is used.
+    Historical payroll records are never changed when salary is updated.
+    """
+    employee       = models.ForeignKey(Employee, on_delete=models.CASCADE, related_name='salary_structures')
+    basic_salary   = models.DecimalField(max_digits=10, decimal_places=2)
+    allowances     = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    effective_from = models.DateField(help_text="First day of the month this salary takes effect")
+    notes          = models.TextField(blank=True)
+    created_at     = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-effective_from']
+        unique_together = ['employee', 'effective_from']
+
+    def __str__(self):
+        import calendar
+        return (
+            f"{self.employee.user.get_full_name()} — "
+            f"₹{self.basic_salary} from "
+            f"{calendar.month_name[self.effective_from.month]} {self.effective_from.year}"
+        )
+
+    @classmethod
+    def active_for(cls, employee, month: int, year: int):
+        """Return the salary structure effective for the given month/year, or None."""
+        import datetime as _dt
+        target = _dt.date(year, month, 1)
+        return (
+            cls.objects
+            .filter(employee=employee, effective_from__lte=target)
+            .first()   # ordering is -effective_from → first = most recent applicable
+        )
+
+
 class SalaryRecord(models.Model):
     employee = models.ForeignKey(Employee, on_delete=models.CASCADE, related_name='salary_records')
     month = models.IntegerField()

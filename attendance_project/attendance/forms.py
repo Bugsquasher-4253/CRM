@@ -1,6 +1,6 @@
 from django import forms
 from django.contrib.auth.models import User
-from .models import Employee, LeaveRequest, SupportTicket, SalaryRecord, Department, AttendanceRecord, AttendanceCorrectionRequest
+from .models import Employee, LeaveRequest, SupportTicket, SalaryRecord, EmployeeSalaryStructure, Department, AttendanceRecord, AttendanceCorrectionRequest
 
 
 class LoginForm(forms.Form):
@@ -267,3 +267,24 @@ class SalaryForm(forms.ModelForm):
         for fname in ('basic_salary', 'allowances'):
             if float(self.initial.get(fname) or 0) == 0:
                 self.initial[fname] = ''
+
+
+class SalaryStructureForm(forms.ModelForm):
+    class Meta:
+        model = EmployeeSalaryStructure
+        fields = ['basic_salary', 'allowances', 'effective_from', 'notes']
+        widgets = {
+            'basic_salary': forms.NumberInput(attrs={
+                'class': 'form-control', 'placeholder': 'e.g. 30000', 'step': '0.01',
+            }),
+            'allowances': forms.NumberInput(attrs={
+                'class': 'form-control', 'placeholder': 'e.g. 5000', 'step': '0.01',
+            }),
+            'effective_from': forms.DateInput(attrs={
+                'class': 'form-control', 'type': 'date',
+            }),
+            'notes': forms.Textarea(attrs={
+                'class': 'form-control', 'rows': 2,
+                'placeholder': 'e.g. Annual increment, Promotion',
+            }),
+        }

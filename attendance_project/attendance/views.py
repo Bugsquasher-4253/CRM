@@ -7,12 +7,12 @@ from django.utils import timezone
 from django.db import transaction, IntegrityError
 from django.db.models import Q, Count
 from django.http import JsonResponse
-from .models import Employee, AttendanceRecord, Department, LeaveRequest, SupportTicket, SalaryRecord, AttendanceCorrectionRequest
+from .models import Employee, AttendanceRecord, Department, LeaveRequest, SupportTicket, SalaryRecord, EmployeeSalaryStructure, AttendanceCorrectionRequest
 from .forms import (
     LoginForm, EmployeeForm, UserForm,
     LeaveRequestForm, SupportTicketForm,
     AdminLeaveResponseForm, AdminTicketResponseForm,
-    EmployeeProfileEditForm, SalaryForm, DepartmentForm,
+    EmployeeProfileEditForm, SalaryForm, SalaryStructureForm, DepartmentForm,
     AdminEmployeeEditForm, AttendanceRecordForm, AdminPasswordChangeForm,
     AttendanceCorrectionForm, AdminCorrectionResponseForm,
 )
@@ -1667,30 +1667,27 @@ def update_salary(request, emp_id):
     month = int(request.GET.get('month', timezone.now().month))
     year  = int(request.GET.get('year',  timezone.now().year))
 
+    # ── Active salary structure for this month ────────────────────────────
+    active_structure = EmployeeSalaryStructure.active_for(employee, month, year)
+
+    # ── Get or create payroll record, auto-fill from structure ────────────
     with transaction.atomic():
-        salary, _ = SalaryRecord.objects.get_or_create(
+        salary, created = SalaryRecord.objects.get_or_create(
             employee=employee, month=month, year=year,
-            defaults={'basic_salary': 0, 'allowances': 0, 'absent_days': 0}
+            defaults={
+                'basic_salary': active_structure.basic_salary if active_structure else 0,
+                'allowances':   active_structure.allowances   if active_structure else 0,
+                'absent_days':  0,
+            }
         )
 
-    # Auto-calculate attendance counts from records (exclude Sundays)
-    # Rules: present (check-in only or >=5h) = full day; half_day (<5h) = half day;
-    #        absent/leave = 0% pay.
+    # ── Attendance counts (exclude Sundays) ───────────────────────────────
     month_records = AttendanceRecord.objects.filter(
         employee=employee, date__month=month, date__year=year
     )
-    absent_days = sum(
-        1 for r in month_records
-        if r.status in ('absent', 'leave') and r.date.weekday() != 6
-    )
-    half_days = sum(
-        1 for r in month_records
-        if r.status == 'half_day' and r.date.weekday() != 6
-    )
-    present_days = sum(
-        1 for r in month_records
-        if r.status == 'present' and r.date.weekday() != 6
-    )
+    absent_days  = sum(1 for r in month_records if r.status in ('absent', 'leave') and r.date.weekday() != 6)
+    half_days    = sum(1 for r in month_records if r.status == 'half_day' and r.date.weekday() != 6)
+    present_days = sum(1 for r in month_records if r.status == 'present'  and r.date.weekday() != 6)
     salary.absent_days = absent_days
     salary.half_days   = half_days
     salary.save()
@@ -1704,29 +1701,93 @@ def update_salary(request, emp_id):
             obj.absent_days = absent_days
             obj.half_days   = half_days
             obj.save()
+
+            # ── Auto-save salary structure so future months use this salary ──
+            # Only create a new structure entry if salary changed or no structure exists
+            new_basic      = obj.basic_salary
+            new_allowances = obj.allowances
+            effective_date = datetime.date(year, month, 1)
+            structure_changed = (
+                active_structure is None
+                or active_structure.basic_salary != new_basic
+                or active_structure.allowances   != new_allowances
+            )
+            if structure_changed:
+                EmployeeSalaryStructure.objects.update_or_create(
+                    employee=employee,
+                    effective_from=effective_date,
+                    defaults={
+                        'basic_salary': new_basic,
+                        'allowances':   new_allowances,
+                        'notes':        f'Set from payroll — {calendar.month_name[month]} {year}',
+                    }
+                )
+
             messages.success(
                 request,
                 f'Salary for {employee.user.get_full_name()} '
-                f'({calendar.month_name[month]} {year}) saved successfully!'
+                f'({calendar.month_name[month]} {year}) saved and set as default for future months.'
             )
             return redirect(f"{request.path_info}?month={month}&year={year}&saved=1")
     else:
         form = SalaryForm(instance=salary)
 
     return render(request, 'attendance/update_salary.html', {
-        'form':         form,
-        'employee':     employee,
-        'salary':       salary,
-        'month':        month,
-        'year':         year,
-        'month_name':   calendar.month_name[month],
-        'absent_days':  absent_days,
-        'half_days':    half_days,
-        'present_days': present_days,
-        'daily_rate':   daily_rate,
+        'form':             form,
+        'employee':         employee,
+        'salary':           salary,
+        'month':            month,
+        'year':             year,
+        'month_name':       calendar.month_name[month],
+        'absent_days':      absent_days,
+        'half_days':        half_days,
+        'present_days':     present_days,
+        'daily_rate':       daily_rate,
+        'active_structure': active_structure,
+        'auto_filled':      created and active_structure is not None,
         'months': [(i, calendar.month_name[i]) for i in range(1, 13)],
         'years':  range(2023, timezone.now().year + 1),
         'saved':  request.GET.get('saved'),
+    })
+
+
+@login_required
+@user_passes_test(is_admin)
+def salary_structure(request, emp_id):
+    """View/update an employee's salary structure with full history."""
+    import calendar as _cal
+    employee = get_object_or_404(Employee, id=emp_id)
+    today    = timezone.now().date()
+
+    if request.method == 'POST':
+        form = SalaryStructureForm(request.POST)
+        if form.is_valid():
+            obj          = form.save(commit=False)
+            obj.employee = employee
+            EmployeeSalaryStructure.objects.update_or_create(
+                employee=employee,
+                effective_from=obj.effective_from,
+                defaults={'basic_salary': obj.basic_salary, 'allowances': obj.allowances, 'notes': obj.notes}
+            )
+            messages.success(
+                request,
+                f'Salary updated for {employee.user.get_full_name()} — '
+                f'₹{obj.basic_salary:,.0f} effective {_cal.month_name[obj.effective_from.month]} {obj.effective_from.year}.'
+            )
+            return redirect('update_salary', emp_id=emp_id)
+    else:
+        current = EmployeeSalaryStructure.active_for(employee, today.month, today.year)
+        form = SalaryStructureForm(initial={
+            'basic_salary':   current.basic_salary if current else 0,
+            'allowances':     current.allowances   if current else 0,
+            'effective_from': today.replace(day=1),
+        })
+
+    history = EmployeeSalaryStructure.objects.filter(employee=employee)
+    return render(request, 'attendance/salary_structure.html', {
+        'form':     form,
+        'employee': employee,
+        'history':  history,
     })
 
 

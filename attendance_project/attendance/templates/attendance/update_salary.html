@@ -20,9 +20,10 @@
 </div>
 
 {% if saved %}
-<div class="alert alert-success mb-4">
+<div class="alert alert-success alert-dismissible fade show auto-dismiss mb-4" role="alert">
   <i class="bi bi-check-circle me-2"></i>Salary saved!
   {% if salary.id %}<a href="{% url 'salary_slip' salary.id %}" class="alert-link ms-2">View Slip &rarr;</a>{% endif %}
+  <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
 </div>
 {% endif %}
 
