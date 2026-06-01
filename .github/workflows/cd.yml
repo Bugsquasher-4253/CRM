@@ -36,7 +36,8 @@ jobs:
             docker compose build
 
             echo "── [3/5] Restart containers ──"
-            docker compose up -d --remove-orphans
+            docker compose down --remove-orphans 2>/dev/null || true
+            docker compose up -d
 
             echo "── [4/5] Migrate & collectstatic ──"
             sleep 8
