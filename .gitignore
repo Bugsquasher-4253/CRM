@@ -14,7 +14,7 @@ env/
 *.sqlite3
 db.sqlite3
 media/
-# staticfiles/ → keep this committed so Vercel can serve them
+attendance_project/staticfiles/
 *.log
 
 # Secrets — never commit these
