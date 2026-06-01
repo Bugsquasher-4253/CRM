@@ -18,3 +18,13 @@ services:
 
 volumes:
   media_data:
+
+# Pin the project network to a fixed subnet so the container's IP stays in a
+# known range. The host firewall (ufw) and Postgres pg_hba.conf both allow
+# 172.18.0.0/16 — without this pin Docker could reassign a different subnet on
+# network recreate and silently break the DB connection.
+networks:
+  default:
+    ipam:
+      config:
+        - subnet: 172.18.0.0/16
