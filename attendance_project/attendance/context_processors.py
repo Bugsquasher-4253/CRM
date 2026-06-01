@@ -1,4 +1,4 @@
-from .models import LeaveRequest, SupportTicket, AttendanceCorrectionRequest
+from .models import AttendanceCorrectionRequest, LeaveRequest, SupportTicket
 
 
 def panel_context(request):

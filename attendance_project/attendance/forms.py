@@ -1,14 +1,15 @@
 from django import forms
 from django.contrib.auth.models import User
+
 from .models import (
-    Employee,
-    LeaveRequest,
-    SupportTicket,
-    SalaryRecord,
-    EmployeeSalaryStructure,
-    Department,
-    AttendanceRecord,
     AttendanceCorrectionRequest,
+    AttendanceRecord,
+    Department,
+    Employee,
+    EmployeeSalaryStructure,
+    LeaveRequest,
+    SalaryRecord,
+    SupportTicket,
 )
 
 

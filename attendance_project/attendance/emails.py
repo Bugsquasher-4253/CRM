@@ -10,6 +10,7 @@ tokens (7-day expiry) — admin can act directly from their inbox.
 """
 
 import logging
+
 from django.conf import settings
 from django.core import signing
 from django.core.mail import EmailMultiAlternatives

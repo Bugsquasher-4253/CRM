@@ -1,8 +1,9 @@
 import pandas as pd
-from django.core.management.base import BaseCommand
 from django.contrib.auth.models import User
-from attendance.models import Department, Employee
+from django.core.management.base import BaseCommand
 from django.utils.crypto import get_random_string
+
+from attendance.models import Department, Employee
 
 
 class Command(BaseCommand):

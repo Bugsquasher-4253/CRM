@@ -29,10 +29,11 @@ import django
 
 django.setup()
 
+import openpyxl
 from django.contrib.auth.models import User
 from django.db import transaction
-from attendance.models import Employee, Department
-import openpyxl
+
+from attendance.models import Department, Employee
 
 # ─── Super-admin accounts ────────────────────────────────────────────────────
 # Change these passwords, or set PARIKSHIT_PASSWORD / NISHIL_PASSWORD env vars.

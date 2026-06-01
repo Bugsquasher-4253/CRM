@@ -16,9 +16,11 @@ Expected deductions:
 """
 
 import datetime
-from django.core.management.base import BaseCommand
+
 from django.contrib.auth.models import User
-from attendance.models import Employee, AttendanceRecord, SalaryRecord, Department
+from django.core.management.base import BaseCommand
+
+from attendance.models import AttendanceRecord, Department, Employee, SalaryRecord
 
 
 class Command(BaseCommand):

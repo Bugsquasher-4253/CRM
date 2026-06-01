@@ -1,42 +1,44 @@
-from django.shortcuts import render, redirect, get_object_or_404
+import datetime
+
+from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.models import User
-from django.contrib import messages
-from django.utils import timezone
-from django.db import transaction, IntegrityError
-from django.db.models import Q, Count
+from django.db import IntegrityError, transaction
+from django.db.models import Count, Q
 from django.http import JsonResponse
-from .models import (
-    Employee,
-    AttendanceRecord,
-    Department,
-    LeaveRequest,
-    SupportTicket,
-    SalaryRecord,
-    EmployeeSalaryStructure,
-    AttendanceCorrectionRequest,
-)
+from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
+
+from . import emails as email_service
 from .forms import (
-    LoginForm,
-    EmployeeForm,
-    UserForm,
-    LeaveRequestForm,
-    SupportTicketForm,
+    AdminCorrectionResponseForm,
+    AdminEmployeeEditForm,
     AdminLeaveResponseForm,
+    AdminPasswordChangeForm,
     AdminTicketResponseForm,
+    AttendanceCorrectionForm,
+    AttendanceRecordForm,
+    DepartmentForm,
+    EmployeeForm,
     EmployeeProfileEditForm,
+    LeaveRequestForm,
+    LoginForm,
     SalaryForm,
     SalaryStructureForm,
-    DepartmentForm,
-    AdminEmployeeEditForm,
-    AttendanceRecordForm,
-    AdminPasswordChangeForm,
-    AttendanceCorrectionForm,
-    AdminCorrectionResponseForm,
+    SupportTicketForm,
+    UserForm,
 )
-import datetime
-from . import emails as email_service
+from .models import (
+    AttendanceCorrectionRequest,
+    AttendanceRecord,
+    Department,
+    Employee,
+    EmployeeSalaryStructure,
+    LeaveRequest,
+    SalaryRecord,
+    SupportTicket,
+)
 
 
 def is_admin(user):
@@ -1055,10 +1057,11 @@ def reports(request):
 @user_passes_test(is_admin)
 def export_monthly_report_excel(request):
     import calendar
+
     import openpyxl
-    from openpyxl.styles import Font, PatternFill, Alignment
-    from openpyxl.utils import get_column_letter
     from django.http import HttpResponse
+    from openpyxl.styles import Alignment, Font, PatternFill
+    from openpyxl.utils import get_column_letter
 
     month = int(request.GET.get("month", timezone.now().month))
     year = int(request.GET.get("year", timezone.now().year))
