@@ -5,8 +5,10 @@ services:
     build: .
     container_name: crefio_web
     restart: always
-    ports:
-      - "8000:8000"
+    # No host port exposed — Nginx reaches web via Docker network (web:8000)
+    # This prevents "port already in use" errors on the host completely
+    expose:
+      - "8000"
     env_file:
       - .env                                     # user's .env on server
     environment:
