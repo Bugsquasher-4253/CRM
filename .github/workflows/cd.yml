@@ -35,16 +35,20 @@ jobs:
             echo "── [2/5] Build Docker image ──"
             docker compose build
 
-            echo "── [3/5] Restart containers ──"
-            # Stop any container currently binding port 8000 (regardless of name/project)
-            docker ps --filter "publish=8000" -q | xargs -r docker stop 2>/dev/null || true
-            docker ps --filter "publish=80"   -q | xargs -r docker stop 2>/dev/null || true
-            # Bring down this project's containers
-            docker compose down --remove-orphans
+            echo "── [3/5] Free ports and restart containers ──"
+            # Stop all running Docker containers (cleans up anything using port 8000/80)
+            docker stop $(docker ps -q) 2>/dev/null || true
+            # Kill any non-Docker process still holding port 8000 or 80
+            fuser -k 8000/tcp 2>/dev/null || true
+            fuser -k 80/tcp   2>/dev/null || true
+            # Wait a moment for ports to be released
+            sleep 2
+            # Bring down compose project cleanly then start fresh
+            docker compose down --remove-orphans 2>/dev/null || true
             docker compose up -d
 
             echo "── [4/5] Migrate & collectstatic ──"
-            sleep 8
+            sleep 10
             docker compose exec -T web python attendance_project/manage.py migrate --no-input
             docker compose exec -T web python attendance_project/manage.py collectstatic --no-input || true
 
