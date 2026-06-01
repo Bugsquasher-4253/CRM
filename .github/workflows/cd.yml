@@ -1,3 +1,12 @@
+# Build image on GitHub runners → push to GHCR → SSH to server → pull & run
+# Server never builds — faster deploy, no build load on production.
+#
+# One-time server setup (run manually ONCE):
+#   sudo docker compose down --remove-orphans
+#   sudo usermod -aG docker $USER
+#   newgrp docker
+#
+# Secrets needed: SSH_HOST, SSH_USER, SSH_KEY
 name: CD
 
 on:
@@ -7,14 +16,59 @@ on:
     branches: [main]
   workflow_dispatch:
 
+concurrency:
+  group: cd-prod
+  cancel-in-progress: false
+
 jobs:
-  deploy:
-    name: Deploy to Production
+  # ── JOB 1: Build image on GitHub and push to GHCR ─────────────────────────
+  build-push:
+    name: Build & push image to GHCR
     runs-on: ubuntu-latest
     if: >
       github.event_name == 'workflow_dispatch' ||
       github.event.workflow_run.conclusion == 'success'
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      image: ${{ steps.image.outputs.name }}
+    steps:
+      - uses: actions/checkout@v4
 
+      - name: Lowercase image name
+        id: image
+        run: echo "name=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_OUTPUT"
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ steps.image.outputs.name }}:prod
+            ${{ steps.image.outputs.name }}:${{ github.sha }}
+          cache-from: type=gha
+          cache-to:   type=gha,mode=max
+
+  # ── JOB 2: SSH to server, pull new image, restart ─────────────────────────
+  deploy:
+    name: Deploy to Production
+    needs: build-push
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
     steps:
       - name: SSH and deploy
         uses: appleboy/ssh-action@v1.0.3
@@ -27,32 +81,23 @@ jobs:
             set -e
             cd /var/www/hrms
 
-            echo "── [1/5] Pull latest code ──"
+            echo "── [1/4] Pull latest code ──"
             git fetch origin main
             git reset --hard origin/main
-            git clean -fd attendance_project/staticfiles/ 2>/dev/null || true
 
-            echo "── [2/5] Build Docker image ──"
-            docker compose build
-
-            echo "── [3/5] Free ports and restart containers ──"
-            # Stop all running Docker containers (cleans up anything using port 8000/80)
-            docker stop $(docker ps -q) 2>/dev/null || true
-            # Kill any non-Docker process still holding port 8000 or 80
-            fuser -k 8000/tcp 2>/dev/null || true
-            fuser -k 80/tcp   2>/dev/null || true
-            # Wait a moment for ports to be released
-            sleep 2
-            # Bring down compose project cleanly then start fresh
-            docker compose down --remove-orphans 2>/dev/null || true
+            echo "── [2/4] Pull image from GHCR & restart ──"
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io \
+              -u ${{ github.actor }} --password-stdin
+            docker compose down --remove-orphans
+            docker compose pull
             docker compose up -d
 
-            echo "── [4/5] Migrate & collectstatic ──"
-            sleep 10
-            docker compose exec -T web python attendance_project/manage.py migrate --no-input
-            docker compose exec -T web python attendance_project/manage.py collectstatic --no-input || true
+            echo "── [3/4] Migrate ──"
+            sleep 8
+            docker compose exec -T web \
+              python attendance_project/manage.py migrate --no-input
 
-            echo "── [5/5] Cleanup ──"
+            echo "── [4/4] Cleanup ──"
             docker image prune -f
 
             echo "✅ Done"

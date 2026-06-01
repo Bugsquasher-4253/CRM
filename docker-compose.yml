@@ -2,19 +2,17 @@ version: "3.9"
 
 services:
   web:
-    build: .
+    image: ghcr.io/bugsquasher-4253/crm:${IMAGE_TAG:-prod}
+    build: .                          # local dev ke liye: docker compose up --build
     container_name: crefio_web
     restart: always
-    ports:
-      - "8000:8000"
-    env_file:
-      - .env                                     # user's .env on server
+    env_file: .env                    # DATABASE_URL, SECRET_KEY, ALLOWED_HOSTS ...
     environment:
-      - MEDIA_ROOT=/app/attendance_project/media  # must match volume mount below
+      - MEDIA_ROOT=/app/attendance_project/media
     extra_hosts:
-      - "host.docker.internal:host-gateway"      # reach host PostgreSQL at localhost
+      - "host.docker.internal:host-gateway"   # host ke PostgreSQL tak pahuchne ke liye
     volumes:
-      - media_data:/app/attendance_project/media  # persistent media uploads
+      - media_data:/app/attendance_project/media
 
   nginx:
     image: nginx:1.27-alpine
