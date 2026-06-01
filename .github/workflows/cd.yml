@@ -101,6 +101,10 @@ jobs:
             #    the crefio_web name only — the other project's containers on this
             #    host are never matched.
             for c in $(docker ps -aq --filter "name=crefio_web"); do
+              # The service uses `restart: always`, so Docker would respawn the
+              # container the instant we kill it. Switch its restart policy off
+              # first (metadata-only, not blocked by AppArmor) so the kill sticks.
+              docker update --restart=no "$c" >/dev/null 2>&1 || true
               PID=$(docker inspect -f '{{.State.Pid}}' "$c" 2>/dev/null || true)
               if [ -n "$PID" ] && [ "$PID" != "0" ]; then
                 sudo kill -9 "$PID" || true
