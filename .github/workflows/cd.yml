@@ -36,7 +36,11 @@ jobs:
             docker compose build
 
             echo "── [3/5] Restart containers ──"
-            docker compose down --remove-orphans 2>/dev/null || true
+            # Stop any container currently binding port 8000 (regardless of name/project)
+            docker ps --filter "publish=8000" -q | xargs -r docker stop 2>/dev/null || true
+            docker ps --filter "publish=80"   -q | xargs -r docker stop 2>/dev/null || true
+            # Bring down this project's containers
+            docker compose down --remove-orphans
             docker compose up -d
 
             echo "── [4/5] Migrate & collectstatic ──"
