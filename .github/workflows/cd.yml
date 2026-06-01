@@ -36,14 +36,26 @@ jobs:
             docker compose build
 
             echo "── [3/5] Free ports and restart containers ──"
-            # Stop all running Docker containers (cleans up anything using port 8000/80)
+
+            # Step A: Stop ALL Docker containers (any name, any project)
             docker stop $(docker ps -q) 2>/dev/null || true
-            # Kill any non-Docker process still holding port 8000 or 80
+            docker rm -f $(docker ps -aq) 2>/dev/null || true
+
+            # Step B: Kill any systemd/host service on port 8000 or 80
+            # Uses 'ss' which is always available on Linux (no extra packages needed)
+            ss -tlnp 'sport = :8000' 2>/dev/null \
+              | grep -oP 'pid=\K[0-9]+' | xargs -r kill -9 2>/dev/null || true
+            ss -tlnp 'sport = :80' 2>/dev/null \
+              | grep -oP 'pid=\K[0-9]+' | xargs -r kill -9 2>/dev/null || true
+
+            # Step C: Also try fuser in case it is installed
             fuser -k 8000/tcp 2>/dev/null || true
             fuser -k 80/tcp   2>/dev/null || true
-            # Wait a moment for ports to be released
-            sleep 2
-            # Bring down compose project cleanly then start fresh
+
+            # Step D: Give OS 3 seconds to fully release the ports
+            sleep 3
+
+            # Step E: Clean compose state and start fresh
             docker compose down --remove-orphans 2>/dev/null || true
             docker compose up -d
 
