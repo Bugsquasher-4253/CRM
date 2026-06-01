@@ -35,19 +35,16 @@ jobs:
             echo "── [2/5] Build Docker image ──"
             docker compose build
 
-            echo "── [3/5] Clean up old containers and start fresh ──"
-            # Force-remove containers by exact name (works even with permission issues)
-            docker rm -f crefio_web   2>/dev/null || true
-            docker rm -f crefio_nginx 2>/dev/null || true
-            # Stop and remove ALL remaining containers
+            echo "── [3/5] Free ports and restart containers ──"
+            # Stop all running Docker containers (cleans up anything using port 8000/80)
             docker stop $(docker ps -q) 2>/dev/null || true
-            docker rm -f $(docker ps -aq) 2>/dev/null || true
-            # Kill any host process on port 80 (ss is always on Linux)
-            ss -tlnp 'sport = :80' 2>/dev/null \
-              | grep -oP 'pid=\K[0-9]+' | xargs -r kill -9 2>/dev/null || true
-            # Wait for OS to release ports
-            sleep 3
-            # Start fresh
+            # Kill any non-Docker process still holding port 8000 or 80
+            fuser -k 8000/tcp 2>/dev/null || true
+            fuser -k 80/tcp   2>/dev/null || true
+            # Wait a moment for ports to be released
+            sleep 2
+            # Bring down compose project cleanly then start fresh
+            docker compose down --remove-orphans 2>/dev/null || true
             docker compose up -d
 
             echo "── [4/5] Migrate & collectstatic ──"

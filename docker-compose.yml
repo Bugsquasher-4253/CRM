@@ -5,26 +5,27 @@ services:
     build: .
     container_name: crefio_web
     restart: always
-    expose:
-      - "8000"
+    ports:
+      - "8000:8000"
     env_file:
-      - .env
+      - .env                                     # user's .env on server
     environment:
-      - MEDIA_ROOT=/app/attendance_project/media
+      - MEDIA_ROOT=/app/attendance_project/media  # must match volume mount below
     extra_hosts:
-      - "host.docker.internal:host-gateway"
+      - "host.docker.internal:host-gateway"      # reach host PostgreSQL at localhost
     volumes:
-      - media_data:/app/attendance_project/media
+      - media_data:/app/attendance_project/media  # persistent media uploads
 
   nginx:
-    build: ./nginx                          # nginx config baked into image
+    image: nginx:1.27-alpine
     container_name: crefio_nginx
     restart: always
     ports:
       - "80:80"
       - "443:443"
     volumes:
-      - media_data:/media:ro               # media files only, no host config file
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - media_data:/media:ro
     depends_on:
       - web
 
