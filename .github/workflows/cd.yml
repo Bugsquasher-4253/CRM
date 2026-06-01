@@ -90,22 +90,25 @@ jobs:
               -u ${{ github.actor }} --password-stdin
             docker compose pull
 
-            # Recreate the stack. On this host the snap Docker daemon is blocked
-            # by AppArmor from signalling its own containers, so a normal stop can
-            # fail with "cannot stop container: permission denied". If `up` fails,
-            # force-kill crefio_web's PID directly (an unconfined root signal the
-            # AppArmor profile doesn't restrict), then recreate. Everything here is
-            # scoped to the `hrms` compose project — the other containers on this
-            # host are a different project and are never touched.
+            # Recreate the stack. The snap Docker daemon on this host is blocked
+            # by AppArmor from signalling its own containers, so a normal stop
+            # fails ("cannot stop container: permission denied") and a recreate
+            # leaves renamed orphans like <hash>_crefio_web that collide on the
+            # next deploy. If `up` fails, force-kill EVERY crefio_web* container by
+            # PID (an unconfined root signal AppArmor doesn't restrict), remove
+            # them all, then recreate clean. All scoped to the crefio_web name —
+            # the other project's containers on this host are never matched.
             if ! docker compose up -d --remove-orphans; then
-              echo "compose up failed — force-replacing crefio_web"
-              PID=$(docker inspect --format '{{.State.Pid}}' crefio_web 2>/dev/null || true)
-              if [ -n "$PID" ] && [ "$PID" != "0" ]; then
-                sudo kill -9 "$PID" || true
-                sleep 2
-              fi
-              docker rm -f crefio_web 2>/dev/null || true
-              docker compose up -d --remove-orphans
+              echo "compose up failed — force-clearing all crefio_web containers"
+              for c in $(docker ps -aq --filter "name=crefio_web"); do
+                PID=$(docker inspect -f '{{.State.Pid}}' "$c" 2>/dev/null || true)
+                if [ -n "$PID" ] && [ "$PID" != "0" ]; then
+                  sudo kill -9 "$PID" || true
+                fi
+              done
+              sleep 2
+              docker ps -aq --filter "name=crefio_web" | xargs -r docker rm -f || true
+              docker compose up -d --force-recreate --remove-orphans
             fi
 
             echo "── [3/4] Migrate ──"
