@@ -1845,12 +1845,11 @@ def update_salary(request, emp_id):
     today_date = timezone.now().date()
     last_day_of_month = calendar.monthrange(year, month)[1]
     if year == today_date.year and month == today_date.month:
-        cutoff_day = today_date.day   # current month: only count elapsed days
+        cutoff_day = today_date.day  # current month: only count elapsed days
     else:
         cutoff_day = last_day_of_month  # past/future month: full month
     total_working_days = sum(
-        1 for d in range(1, cutoff_day + 1)
-        if datetime.date(year, month, d).weekday() != 6   # exclude Sunday
+        1 for d in range(1, cutoff_day + 1) if datetime.date(year, month, d).weekday() != 6  # exclude Sunday
     )
 
     # absent = all working days NOT marked present or half_day
