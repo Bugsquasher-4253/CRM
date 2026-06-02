@@ -1835,32 +1835,51 @@ def update_salary(request, emp_id):
             },
         )
 
-    # ── Attendance counts (exclude Sundays) ───────────────────────────────
+    # ── Attendance counts ─────────────────────────────────────────────────
     month_records = AttendanceRecord.objects.filter(employee=employee, date__month=month, date__year=year)
     present_days = sum(1 for r in month_records if r.status == "present" and r.date.weekday() != 6)
     half_days = sum(1 for r in month_records if r.status == "half_day" and r.date.weekday() != 6)
+    leave_days = sum(1 for r in month_records if r.status == "leave" and r.date.weekday() != 6)
 
-    # Total working days (Mon–Sat) in this month up to today
-    # For past months use full month; for current month use days elapsed so far
+    # Cutoff: current month → elapsed days only; past/future → full month
     today_date = timezone.now().date()
     last_day_of_month = calendar.monthrange(year, month)[1]
-    if year == today_date.year and month == today_date.month:
-        cutoff_day = today_date.day  # current month: only count elapsed days
-    else:
-        cutoff_day = last_day_of_month  # past/future month: full month
-    total_working_days = sum(
-        1 for d in range(1, cutoff_day + 1) if datetime.date(year, month, d).weekday() != 6  # exclude Sunday
-    )
+    cutoff_day = today_date.day if (year == today_date.year and month == today_date.month) else last_day_of_month
 
-    # absent = all working days NOT marked present or half_day
-    # (unrecorded days = employee didn't come = absent)
-    absent_days = max(0, total_working_days - present_days - half_days)
+    # Mon–Sat working days in period
+    total_working_days = sum(1 for d in range(1, cutoff_day + 1) if datetime.date(year, month, d).weekday() != 6)
+    # Sundays in period — paid holiday, always included in salary
+    sunday_days = sum(1 for d in range(1, cutoff_day + 1) if datetime.date(year, month, d).weekday() == 6)
+
+    # Absent = Mon–Sat days with no record and not on approved leave
+    absent_days = max(0, total_working_days - present_days - half_days - leave_days)
+
+    # ── Salary formula ────────────────────────────────────────────────────
+    # per_day = basic / actual_days_in_month  (NOT 30.4)
+    # This ensures: payable + deductions = basic (exact, no rounding gap)
+    #
+    # Payable     = (present + sunday) × rate + half × rate × 0.5
+    # Deductions  = (leave + absent + half × 0.5) × rate  [shown only]
+    # Net salary  = Payable + allowances
+    basic_val = float(salary.basic_salary)
+    _rate = basic_val / last_day_of_month if last_day_of_month else 0
+    daily_rate = round(_rate, 2)  # display only
+    present_earn = round(present_days * _rate, 2)
+    sunday_earn = round(sunday_days * _rate, 2)
+    half_earn = round(half_days * _rate * 0.5, 2)
+    leave_deduct = round(leave_days * _rate, 2)
+    absent_deduct = round(absent_days * _rate, 2)
+    half_deduct = round(half_days * _rate * 0.5, 2)
+    total_deductions = round(leave_deduct + absent_deduct + half_deduct, 2)
+    # Net = payable only (deductions are informational, not subtracted)
+    computed_net = round(present_earn + sunday_earn + half_earn + float(salary.allowances), 2)
 
     salary.absent_days = absent_days
     salary.half_days = half_days
+    salary._skip_auto_calc = True
+    salary.deductions = total_deductions
+    salary.net_salary = computed_net
     salary.save()
-
-    daily_rate = round(salary.daily_rate, 2)
 
     if request.method == "POST":
         form = SalaryForm(request.POST, instance=salary)
@@ -1868,6 +1887,19 @@ def update_salary(request, emp_id):
             obj = form.save(commit=False)
             obj.absent_days = absent_days
             obj.half_days = half_days
+            # Recalculate with updated basic/allowances (same formula as GET)
+            r = float(obj.basic_salary) / last_day_of_month if last_day_of_month else 0
+            p_earn = round(present_days * r, 2)
+            s_earn = round(sunday_days * r, 2)
+            h_earn = round(half_days * r * 0.5, 2)
+            l_ded = round(leave_days * r, 2)
+            a_ded = round(absent_days * r, 2)
+            h_ded = round(half_days * r * 0.5, 2)
+            t_ded = round(l_ded + a_ded + h_ded, 2)
+            new_net = round(p_earn + s_earn + h_earn + float(obj.allowances), 2)
+            obj._skip_auto_calc = True
+            obj.deductions = t_ded
+            obj.net_salary = new_net
             obj.save()
 
             # ── Auto-save salary structure so future months use this salary ──
@@ -1910,10 +1942,20 @@ def update_salary(request, emp_id):
             "month": month,
             "year": year,
             "month_name": calendar.month_name[month],
-            "absent_days": absent_days,
-            "half_days": half_days,
             "present_days": present_days,
+            "sunday_days": sunday_days,
+            "half_days": half_days,
+            "leave_days": leave_days,
+            "absent_days": absent_days,
+            "present_earn": present_earn,
+            "sunday_earn": sunday_earn,
+            "half_earn": half_earn,
+            "leave_deduct": leave_deduct,
+            "absent_deduct": absent_deduct,
+            "half_deduct": half_deduct,
+            "total_deductions": total_deductions,
             "daily_rate": daily_rate,
+            "days_in_month": last_day_of_month,
             "active_structure": active_structure,
             "auto_filled": created and active_structure is not None,
             "months": [(i, calendar.month_name[i]) for i in range(1, 13)],

@@ -271,11 +271,10 @@ class SalaryRecord(models.Model):
         return float(self.basic_salary) / 30.4 if self.basic_salary else 0
 
     def save(self, *args, **kwargs):
-        rate = self.daily_rate
-        # Absent / leave days → full daily rate deducted (0% pay)
-        absent_deduction = self.absent_days * rate
-        # Half days → 50% pay, so deduct 50% of daily rate
-        half_day_deduction = self.half_days * (rate / 2)
-        self.deductions = round(absent_deduction + half_day_deduction, 2)
-        self.net_salary = round(float(self.basic_salary) + float(self.allowances) - self.deductions, 2)
+        # View pre-computes net/deductions with the full formula and sets _skip_auto_calc.
+        # Fallback (e.g. admin panel): deduct absent + half only.
+        if not getattr(self, "_skip_auto_calc", False):
+            rate = self.daily_rate
+            self.deductions = round(self.absent_days * rate + self.half_days * rate * 0.5, 2)
+            self.net_salary = round(max(0.0, float(self.basic_salary) + float(self.allowances) - self.deductions), 2)
         super().save(*args, **kwargs)

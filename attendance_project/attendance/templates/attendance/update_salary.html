@@ -57,46 +57,75 @@
         <i class="bi bi-calendar-check me-2 text-success"></i>Attendance This Month
       </div>
       <div class="card-body">
+        <!-- Attendance tiles -->
         <div class="row g-2 mb-3">
-          <div class="col-6 col-sm-3">
-            <div class="text-center p-3 rounded-3" style="background:#f0fdf4;">
-              <div style="font-size:1.5rem;font-weight:700;color:#166534;">{{ present_days }}</div>
-              <div class="text-muted small">Present</div>
+          <div class="col-6 col-sm-2">
+            <div class="text-center p-2 rounded-3" style="background:#f0fdf4;">
+              <div style="font-size:1.4rem;font-weight:700;color:#166534;">{{ present_days }}</div>
+              <div class="text-muted" style="font-size:0.72rem;">Present</div>
             </div>
           </div>
-          <div class="col-6 col-sm-3">
-            <div class="text-center p-3 rounded-3" style="background:#dbeafe;">
-              <div style="font-size:1.5rem;font-weight:700;color:#1e40af;" id="halfDaysDisplay">{{ half_days }}</div>
-              <div class="text-muted small">Half Days</div>
+          <div class="col-6 col-sm-2">
+            <div class="text-center p-2 rounded-3" style="background:#e0f2fe;">
+              <div style="font-size:1.4rem;font-weight:700;color:#0369a1;">{{ sunday_days }}</div>
+              <div class="text-muted" style="font-size:0.72rem;">Sundays</div>
             </div>
           </div>
-          <div class="col-6 col-sm-3">
-            <div class="text-center p-3 rounded-3" style="background:#fef2f2;">
-              <div style="font-size:1.5rem;font-weight:700;color:#991b1b;" id="absentDaysDisplay">{{ absent_days }}</div>
-              <div class="text-muted small">Absent/Leave</div>
+          <div class="col-6 col-sm-2">
+            <div class="text-center p-2 rounded-3" style="background:#dbeafe;">
+              <div style="font-size:1.4rem;font-weight:700;color:#1e40af;">{{ half_days }}</div>
+              <div class="text-muted" style="font-size:0.72rem;">Half Days</div>
             </div>
           </div>
-          <div class="col-6 col-sm-3">
-            <div class="text-center p-3 rounded-3" style="background:#fff7ed;">
-              <div style="font-size:1.5rem;font-weight:700;color:#9a3412;" id="dailyRateDisplay">&#8377;{{ daily_rate }}</div>
-              <div class="text-muted small">Per Day Rate</div>
+          <div class="col-6 col-sm-2">
+            <div class="text-center p-2 rounded-3" style="background:#fef9c3;">
+              <div style="font-size:1.4rem;font-weight:700;color:#854d0e;">{{ leave_days }}</div>
+              <div class="text-muted" style="font-size:0.72rem;">Leave</div>
+            </div>
+          </div>
+          <div class="col-6 col-sm-2">
+            <div class="text-center p-2 rounded-3" style="background:#fef2f2;">
+              <div style="font-size:1.4rem;font-weight:700;color:#991b1b;">{{ absent_days }}</div>
+              <div class="text-muted" style="font-size:0.72rem;">Absent</div>
+            </div>
+          </div>
+          <div class="col-6 col-sm-2">
+            <div class="text-center p-2 rounded-3" style="background:#fff7ed;">
+              <div style="font-size:1.1rem;font-weight:700;color:#9a3412;" id="dailyRateDisplay">&#8377;{{ daily_rate }}</div>
+              <div class="text-muted" style="font-size:0.72rem;">Per Day Rate</div>
             </div>
           </div>
         </div>
 
-        <!-- Deduction breakdown -->
-        <div class="p-3 rounded-3" style="background:#f8fafc;border:1px solid #e2e8f0;font-size:0.85rem;">
+        <!-- Full salary breakdown -->
+        <div class="p-3 rounded-3" style="background:#f8fafc;border:1px solid #e2e8f0;font-size:0.84rem;">
+          <div class="fw-semibold text-success mb-2" style="font-size:0.78rem;text-transform:uppercase;letter-spacing:.5px;">Earnings</div>
           <div class="d-flex justify-content-between mb-1">
-            <span class="text-muted">Absent deduction ({{ absent_days }} × ₹{{ daily_rate }})</span>
-            <span class="text-danger fw-semibold" id="absentDeductPreview">—</span>
+            <span class="text-muted">Present ({{ present_days }}d × ₹{{ daily_rate }})</span>
+            <span class="text-success fw-semibold" id="presentEarnPreview">₹{{ present_earn }}</span>
           </div>
           <div class="d-flex justify-content-between mb-1">
-            <span class="text-muted">Half-day deduction ({{ half_days }} × ₹{{ daily_rate }}/2)</span>
-            <span class="text-warning fw-semibold" id="halfDeductPreview">—</span>
+            <span class="text-muted">Sundays ({{ sunday_days }}d × ₹{{ daily_rate }})</span>
+            <span class="text-success fw-semibold" id="sundayEarnPreview">₹{{ sunday_earn }}</span>
           </div>
+          <div class="d-flex justify-content-between mb-2">
+            <span class="text-muted">Half Days ({{ half_days }}d × ₹{{ daily_rate }}/2)</span>
+            <span class="text-success fw-semibold" id="halfEarnPreview">₹{{ half_earn }}</span>
+          </div>
+
+          <div class="fw-semibold text-danger mb-2" style="font-size:0.78rem;text-transform:uppercase;letter-spacing:.5px;">Deductions</div>
+          <div class="d-flex justify-content-between mb-1">
+            <span class="text-muted">Leave ({{ leave_days }}d × ₹{{ daily_rate }})</span>
+            <span class="text-danger fw-semibold" id="leaveDeductPreview">−₹{{ leave_deduct }}</span>
+          </div>
+          <div class="d-flex justify-content-between mb-2">
+            <span class="text-muted">Absent ({{ absent_days }}d × ₹{{ daily_rate }})</span>
+            <span class="text-danger fw-semibold" id="absentDeductPreview">−₹{{ absent_deduct }}</span>
+          </div>
+
           <div class="d-flex justify-content-between pt-2" style="border-top:1px solid #e2e8f0;">
-            <span class="fw-semibold text-danger">Total Deduction</span>
-            <span class="fw-bold text-danger" id="deductionPreview">—</span>
+            <span class="fw-semibold text-danger">Total Deductions</span>
+            <span class="fw-bold text-danger" id="deductionPreview">−₹{{ total_deductions }}</span>
           </div>
         </div>
       </div>
@@ -182,21 +211,33 @@
           <div style="opacity:0.5;font-size:0.8rem;">{{ employee.designation }}{% if employee.department %} · {{ employee.department }}{% endif %}</div>
         </div>
 
-        <div class="d-flex justify-content-between mb-2">
+        <div class="d-flex justify-content-between mb-1">
           <span style="opacity:0.65;">Basic Salary</span>
           <span class="fw-semibold" id="p_basic">&#8377;0</span>
         </div>
-        <div class="d-flex justify-content-between mb-2" style="color:#6ee7b7;">
+        <div class="d-flex justify-content-between mb-1" style="color:#6ee7b7;">
           <span>+ Allowances</span>
           <span class="fw-semibold" id="p_allow">&#8377;0</span>
         </div>
-        <div class="d-flex justify-content-between mb-1" style="color:#fca5a5;">
-          <span>− Absent ({{ absent_days }}d × rate)</span>
-          <span class="fw-semibold" id="p_absent_deduct">&#8377;0</span>
+        <div class="d-flex justify-content-between mb-1" style="color:#6ee7b7;font-size:0.82rem;">
+          <span>+ Present ({{ present_days }}d × rate)</span>
+          <span id="p_present_earn">&#8377;0</span>
         </div>
-        <div class="d-flex justify-content-between mb-3" style="color:#fcd34d;">
-          <span>− Half Day ({{ half_days }}d × rate/2)</span>
-          <span class="fw-semibold" id="p_half_deduct">&#8377;0</span>
+        <div class="d-flex justify-content-between mb-1" style="color:#6ee7b7;font-size:0.82rem;">
+          <span>+ Sundays ({{ sunday_days }}d × rate)</span>
+          <span id="p_sunday_earn">&#8377;0</span>
+        </div>
+        <div class="d-flex justify-content-between mb-1" style="color:#6ee7b7;font-size:0.82rem;">
+          <span>+ Half Days ({{ half_days }}d × rate/2)</span>
+          <span id="p_half_earn">&#8377;0</span>
+        </div>
+        <div class="d-flex justify-content-between mb-1" style="color:#fca5a5;font-size:0.82rem;opacity:0.8;">
+          <span>Leave deducted ({{ leave_days }}d) ↓</span>
+          <span id="p_absent_deduct">&#8377;0</span>
+        </div>
+        <div class="d-flex justify-content-between mb-3" style="color:#fca5a5;font-size:0.82rem;opacity:0.8;">
+          <span>Absent deducted ({{ absent_days }}d) ↓</span>
+          <span id="p_half_deduct">&#8377;0</span>
         </div>
 
         <div class="d-flex justify-content-between align-items-center p-3 rounded-3 mb-3" style="background:rgba(186,242,191,0.12);border:1px solid rgba(186,242,191,0.3);">
@@ -230,8 +271,12 @@
   const allowInput   = document.getElementById('{{ form.allowances.id_for_label }}');
   const isPaidCheck  = document.getElementById('{{ form.is_paid.id_for_label }}');
   const paidDateWrap = document.getElementById('paidDateWrapper');
-  const absentDays   = {{ absent_days }};
+  const presentDays  = {{ present_days }};
+  const sundayDays   = {{ sunday_days }};
   const halfDays     = {{ half_days }};
+  const leaveDays    = {{ leave_days }};
+  const absentDays   = {{ absent_days }};
+  const daysInMonth  = {{ days_in_month }};  // actual days in this month
 
   function fmt(n) {
     return '₹' + Math.max(0, n).toLocaleString('en-IN', {minimumFractionDigits:0, maximumFractionDigits:2});
@@ -240,23 +285,39 @@
   function recalc() {
     const b    = parseFloat(basicInput.value) || 0;
     const a    = parseFloat(allowInput.value) || 0;
-    const rate = b / 30.4;
-    const absentDeduct   = rate * absentDays;
-    const halfDeduct     = rate / 2 * halfDays;
-    const totalDeduction = absentDeduct + halfDeduct;
-    const net            = b + a - totalDeduction;
+    // per_day = basic / actual_days_in_month  (not 30.4)
+    // This makes payable + deductions = basic exactly
+    const rate = daysInMonth > 0 ? b / daysInMonth : 0;
 
-    document.getElementById('dailyRateDisplay').textContent    = fmt(rate);
-    document.getElementById('absentDeductPreview').textContent = '−' + fmt(absentDeduct);
-    document.getElementById('halfDeductPreview').textContent   = '−' + fmt(halfDeduct);
-    document.getElementById('deductionPreview').textContent    = '−' + fmt(totalDeduction);
-    document.getElementById('netDisplay').textContent          = fmt(net);
+    // Earnings
+    const presentEarn = presentDays * rate;
+    const sundayEarn  = sundayDays  * rate;
+    const halfEarn    = halfDays    * rate * 0.5;
+    // Deductions (informational — include half-day deduction to make sum = basic)
+    const leaveDeduct  = leaveDays  * rate;
+    const absentDeduct = absentDays * rate;
+    const halfDeduct   = halfDays   * rate * 0.5;
+    const totalDeduct  = leaveDeduct + absentDeduct + halfDeduct;
+    // Net = payable earnings only (deductions shown but not subtracted)
+    const net = presentEarn + sundayEarn + halfEarn + a;
 
-    document.getElementById('p_basic').textContent        = fmt(b);
-    document.getElementById('p_allow').textContent        = fmt(a);
-    document.getElementById('p_absent_deduct').textContent = fmt(absentDeduct);
-    document.getElementById('p_half_deduct').textContent  = fmt(halfDeduct);
-    document.getElementById('p_net').textContent          = fmt(net);
+    document.getElementById('dailyRateDisplay').textContent     = fmt(rate);
+    document.getElementById('presentEarnPreview').textContent   = fmt(presentEarn);
+    document.getElementById('sundayEarnPreview').textContent    = fmt(sundayEarn);
+    document.getElementById('halfEarnPreview').textContent      = fmt(halfEarn);
+    document.getElementById('leaveDeductPreview').textContent   = '−' + fmt(leaveDeduct);
+    document.getElementById('absentDeductPreview').textContent  = '−' + fmt(absentDeduct);
+    document.getElementById('deductionPreview').textContent     = '−' + fmt(totalDeduct);
+    document.getElementById('netDisplay').textContent           = fmt(net);
+
+    document.getElementById('p_basic').textContent          = fmt(b);
+    document.getElementById('p_allow').textContent          = fmt(a);
+    document.getElementById('p_present_earn').textContent   = fmt(presentEarn);
+    document.getElementById('p_sunday_earn').textContent    = fmt(sundayEarn);
+    document.getElementById('p_half_earn').textContent      = fmt(halfEarn);
+    document.getElementById('p_absent_deduct').textContent  = fmt(leaveDeduct);
+    document.getElementById('p_half_deduct').textContent    = fmt(absentDeduct);
+    document.getElementById('p_net').textContent            = fmt(net);
   }
 
   function togglePaid() {
