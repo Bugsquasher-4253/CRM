@@ -1837,9 +1837,26 @@ def update_salary(request, emp_id):
 
     # ── Attendance counts (exclude Sundays) ───────────────────────────────
     month_records = AttendanceRecord.objects.filter(employee=employee, date__month=month, date__year=year)
-    absent_days = sum(1 for r in month_records if r.status in ("absent", "leave") and r.date.weekday() != 6)
-    half_days = sum(1 for r in month_records if r.status == "half_day" and r.date.weekday() != 6)
     present_days = sum(1 for r in month_records if r.status == "present" and r.date.weekday() != 6)
+    half_days = sum(1 for r in month_records if r.status == "half_day" and r.date.weekday() != 6)
+
+    # Total working days (Mon–Sat) in this month up to today
+    # For past months use full month; for current month use days elapsed so far
+    today_date = timezone.now().date()
+    last_day_of_month = calendar.monthrange(year, month)[1]
+    if year == today_date.year and month == today_date.month:
+        cutoff_day = today_date.day   # current month: only count elapsed days
+    else:
+        cutoff_day = last_day_of_month  # past/future month: full month
+    total_working_days = sum(
+        1 for d in range(1, cutoff_day + 1)
+        if datetime.date(year, month, d).weekday() != 6   # exclude Sunday
+    )
+
+    # absent = all working days NOT marked present or half_day
+    # (unrecorded days = employee didn't come = absent)
+    absent_days = max(0, total_working_days - present_days - half_days)
+
     salary.absent_days = absent_days
     salary.half_days = half_days
     salary.save()
