@@ -13,6 +13,15 @@ services:
       - MEDIA_ROOT=/app/attendance_project/media
     extra_hosts:
       - "host.docker.internal:host-gateway"
+    # Run this container WITHOUT the docker-default AppArmor profile. On this
+    # host the snap Docker daemon is AppArmor-confined and the docker-default
+    # profile refuses signals from peer "snap.docker.dockerd", so the daemon
+    # can't cleanly stop/restart the container (signal: permission denied) and
+    # `restart: always` is unreliable. Removing the container's profile drops
+    # that receiver-side check, so the daemon can signal it normally. Scoped to
+    # this service only; the crefio_*_dev stack is unaffected.
+    security_opt:
+      - apparmor=unconfined
     volumes:
       - media_data:/app/attendance_project/media
 
