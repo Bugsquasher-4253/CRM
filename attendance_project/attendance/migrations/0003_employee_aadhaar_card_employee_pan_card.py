@@ -13,9 +13,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name="employee",
             name="aadhaar_card",
-            field=models.FileField(
-                blank=True, null=True, upload_to="documents/aadhaar/"
-            ),
+            field=models.FileField(blank=True, null=True, upload_to="documents/aadhaar/"),
         ),
         migrations.AddField(
             model_name="employee",

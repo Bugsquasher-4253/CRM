@@ -62,6 +62,7 @@ urlpatterns = [
     # Salary
     path("admin-panel/salary/", views.admin_salary, name="admin_salary"),
     path("admin-panel/salary/<int:emp_id>/", views.update_salary, name="update_salary"),
+    path("admin-panel/salary/<int:emp_id>/structure/", views.salary_structure, name="salary_structure"),
     path("salary/", views.my_salary, name="my_salary"),
     path("salary/slip/<int:salary_id>/", views.salary_slip, name="salary_slip"),
 ]

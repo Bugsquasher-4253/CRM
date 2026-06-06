@@ -6,7 +6,7 @@
 <div class="row justify-content-center">
   <div class="col-lg-7">
 
-    <!-- What to use tickets for -->
+    <!-- When to raise a ticket -->
     <div class="card mb-4" style="border-left: 4px solid #111827;">
       <div class="card-body py-3">
         <h6 class="fw-bold mb-2">When to raise a ticket?</h6>
@@ -21,35 +21,72 @@
       </div>
     </div>
 
-    <!-- Form -->
-    <div class="card">
-      <div class="card-header py-3">
-        <i class="bi bi-ticket-perforated me-2 text-warning"></i>New Support Ticket
+    <!-- Success state (hidden until ticket is submitted) -->
+    <div id="successCard" class="card mb-4 d-none" style="border-left: 4px solid #22c55e;">
+      <div class="card-body py-4 text-center">
+        <div style="width:60px;height:60px;border-radius:50%;background:#dcfce7;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
+          <i class="bi bi-check-lg" style="font-size:1.8rem;color:#16a34a;"></i>
+        </div>
+        <h5 class="fw-bold mb-1" style="color:#111827;">Ticket Raised Successfully!</h5>
+        <p class="text-muted mb-1" id="successTicketId" style="font-size:0.9rem;"></p>
+        <p class="text-muted mb-4" style="font-size:0.85rem;">Admin has been notified and will respond soon.</p>
+        <div class="d-flex gap-3 justify-content-center">
+          <a href="{% url 'my_tickets' %}" class="btn btn-primary px-4 fw-semibold">
+            <i class="bi bi-ticket-perforated me-2"></i>View My Tickets
+          </a>
+          <button type="button" id="raiseAnotherBtn" class="btn btn-outline-secondary px-4">
+            <i class="bi bi-plus-circle me-2"></i>Raise Another
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Form card -->
+    <div id="formCard" class="card">
+      <div class="card-header py-3 d-flex align-items-center gap-2">
+        <i class="bi bi-ticket-perforated text-warning"></i>
+        <span class="fw-semibold">New Support Ticket</span>
       </div>
       <div class="card-body p-4">
-        <form method="POST">
+
+        <!-- Error banner -->
+        <div id="formErrorBanner" class="alert alert-danger d-none mb-3" role="alert">
+          <i class="bi bi-exclamation-circle me-2"></i>
+          <span id="formErrorText">Please fix the errors below.</span>
+        </div>
+
+        <form id="raiseTicketForm" novalidate>
           {% csrf_token %}
 
           <div class="mb-3">
             <label class="form-label fw-semibold">Subject <span class="text-danger">*</span></label>
             {{ form.subject }}
+            <div class="text-danger small mt-1 d-none" id="err-subject"></div>
           </div>
 
-          <div class="mb-3">
-            <label class="form-label fw-semibold">Priority</label>
-            {{ form.priority }}
-            <small class="text-muted d-block mt-1">
-              🟢 Low — not urgent &nbsp;|&nbsp; 🟡 Medium — needs attention &nbsp;|&nbsp; 🔴 High — urgent
-            </small>
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Category <span class="text-danger">*</span></label>
+              {{ form.category }}
+              <div class="text-danger small mt-1 d-none" id="err-category"></div>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold">Priority</label>
+              {{ form.priority }}
+              <small class="text-muted d-block mt-1" style="font-size:0.75rem;">
+                🟢 Low — not urgent &nbsp;|&nbsp; 🟡 Medium — needs attention &nbsp;|&nbsp; 🔴 High — urgent
+              </small>
+            </div>
           </div>
 
           <div class="mb-4">
             <label class="form-label fw-semibold">Description <span class="text-danger">*</span></label>
             {{ form.description }}
+            <div class="text-danger small mt-1 d-none" id="err-description"></div>
             <small class="text-muted">Be as detailed as possible so admin can help you faster.</small>
           </div>
 
-          <!-- Employee Info (read only display) -->
+          <!-- Submitter info -->
           <div class="p-3 rounded-3 mb-4" style="background:#f8f9fa;">
             <small class="text-muted fw-semibold d-block mb-1">This ticket will be submitted as:</small>
             <div class="fw-bold">{{ employee.user.get_full_name }}</div>
@@ -57,7 +94,7 @@
           </div>
 
           <div class="d-flex gap-3">
-            <button type="submit" class="btn btn-warning text-dark px-5 fw-semibold">
+            <button type="button" id="submitTicketBtn" class="btn btn-warning text-dark px-5 fw-semibold">
               <i class="bi bi-send me-2"></i>Submit Ticket
             </button>
             <a href="{% url 'my_tickets' %}" class="btn btn-outline-secondary px-4">
@@ -65,9 +102,90 @@
             </a>
           </div>
         </form>
+
       </div>
     </div>
 
   </div>
 </div>
+
+<script>
+(function () {
+  const form      = document.getElementById('raiseTicketForm');
+  const btn       = document.getElementById('submitTicketBtn');
+  const formCard  = document.getElementById('formCard');
+  const successCard = document.getElementById('successCard');
+  const errorBanner = document.getElementById('formErrorBanner');
+  const errorText   = document.getElementById('formErrorText');
+
+  function clearErrors() {
+    form.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
+    ['subject', 'category', 'description'].forEach(f => {
+      const el = document.getElementById('err-' + f);
+      if (el) { el.textContent = ''; el.classList.add('d-none'); }
+    });
+    errorBanner.classList.add('d-none');
+  }
+
+  function showFieldError(field, msg) {
+    const inp = form.querySelector('[name="' + field + '"]');
+    const err = document.getElementById('err-' + field);
+    if (inp) inp.classList.add('is-invalid');
+    if (err) { err.textContent = msg; err.classList.remove('d-none'); }
+  }
+
+  btn.addEventListener('click', function () {
+    clearErrors();
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Submitting…';
+
+    const data = new FormData(form);
+
+    fetch('{% url "raise_ticket" %}', {
+      method: 'POST',
+      headers: { 'X-Requested-With': 'XMLHttpRequest' },
+      body: data,
+    })
+    .then(r => r.json())
+    .then(res => {
+      if (res.success) {
+        formCard.classList.add('d-none');
+        successCard.classList.remove('d-none');
+        document.getElementById('successTicketId').textContent =
+          'Ticket ID: ' + res.ticket.ticket_id + ' · ' + res.ticket.category_display;
+      } else {
+        const errors = res.errors || {};
+        let hasShown = false;
+        for (const [field, errs] of Object.entries(errors)) {
+          if (field === '__all__') continue;
+          showFieldError(field, Array.isArray(errs) ? errs[0] : errs);
+          hasShown = true;
+        }
+        if (!hasShown || errors.__all__) {
+          errorText.textContent = errors.__all__
+            ? (Array.isArray(errors.__all__) ? errors.__all__[0] : errors.__all__)
+            : 'Please fill in all required fields.';
+          errorBanner.classList.remove('d-none');
+        }
+      }
+    })
+    .catch(() => {
+      errorText.textContent = 'Network error. Please check your connection and try again.';
+      errorBanner.classList.remove('d-none');
+    })
+    .finally(() => {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="bi bi-send me-2"></i>Submit Ticket';
+    });
+  });
+
+  // Raise another ticket — reset form and show it again
+  document.getElementById('raiseAnotherBtn').addEventListener('click', function () {
+    form.reset();
+    clearErrors();
+    successCard.classList.add('d-none');
+    formCard.classList.remove('d-none');
+  });
+})();
+</script>
 {% endblock %}

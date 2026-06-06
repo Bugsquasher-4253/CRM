@@ -157,7 +157,7 @@
   </div>
 
   <!-- Mobile cards -->
-  <div class="d-block d-md-none p-3">
+  <div class="d-block d-md-none p-3" id="mobileTicketList">
     {% for ticket in tickets %}
     <div class="card mb-2 border" style="border-radius:10px;">
       <div class="d-flex align-items-center justify-content-between px-3 py-2"
@@ -329,6 +329,8 @@ document.getElementById('submitTicketBtn').addEventListener('click', function() 
       tbody.querySelectorAll('tr td[colspan]').forEach(td => td.parentElement.remove());
 
       const t = res.ticket;
+
+      // ── Desktop table row ──
       const tr = document.createElement('tr');
       const editBtn = (t.status === 'open' || t.status === 'in_progress')
         ? `<a href="/tickets/${t.id}/edit/" class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil me-1"></i>Edit</a>`
@@ -342,6 +344,44 @@ document.getElementById('submitTicketBtn').addEventListener('click', function() 
         <td class="py-3" style="font-size:.82rem;color:#6B7280;">${t.created_at}</td>
         <td class="py-3 text-center">${editBtn}</td>`;
       tbody.insertBefore(tr, tbody.firstChild);
+
+      // ── Mobile card ──
+      const mobileList = document.getElementById('mobileTicketList');
+      // Remove empty-state div if present
+      mobileList.querySelectorAll('.text-center.py-5').forEach(el => el.remove());
+      const mobileEditBtn = (t.status === 'open' || t.status === 'in_progress')
+        ? `<a href="/tickets/${t.id}/edit/" class="btn btn-sm btn-outline-primary w-100"><i class="bi bi-pencil me-1"></i>Edit Ticket</a>`
+        : '';
+      const mobileCard = document.createElement('div');
+      mobileCard.className = 'card mb-2 border';
+      mobileCard.style.borderRadius = '10px';
+      mobileCard.innerHTML = `
+        <div class="d-flex align-items-center justify-content-between px-3 py-2"
+             style="background:#f8f9fa;border-bottom:1px solid #E5E7EB;border-radius:10px 10px 0 0;">
+          <div>
+            <span class="text-muted" style="font-size:.72rem;">${t.ticket_id}</span>
+            <div class="fw-semibold" style="font-size:.88rem;">${t.subject}</div>
+          </div>
+          ${OPEN_BADGE}
+        </div>
+        <div class="px-3 py-2">
+          <div class="row g-2 mb-2">
+            <div class="col-6">
+              <div class="text-muted" style="font-size:.68rem;font-weight:600;text-transform:uppercase;">Category</div>
+              <div style="font-size:.82rem;">${t.category_display}</div>
+            </div>
+            <div class="col-6">
+              <div class="text-muted" style="font-size:.68rem;font-weight:600;text-transform:uppercase;">Priority</div>
+              <div>${PRIORITY_BADGES[t.priority] || t.priority_display}</div>
+            </div>
+            <div class="col-12">
+              <div class="text-muted" style="font-size:.68rem;font-weight:600;text-transform:uppercase;">Created</div>
+              <div style="font-size:.82rem;">${t.created_at}</div>
+            </div>
+          </div>
+          ${mobileEditBtn}
+        </div>`;
+      mobileList.insertBefore(mobileCard, mobileList.firstChild);
 
       showTicketToast('Ticket submitted successfully! Admin will respond soon.', 'success');
     } else {
