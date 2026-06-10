@@ -108,7 +108,7 @@
   <div class="card-header py-3 d-flex justify-content-between align-items-center">
     <span><i class="bi bi-table me-2"></i>Day-by-Day: {{ month_name }} {{ year }}</span>
     <small class="text-muted">
-      <span class="badge" style="background:#f0f0f0;color:#888;">Weekend</span>
+      <span class="badge" style="background:#f0f0f0;color:#888;">Sunday / Holiday</span>
       &nbsp;
       <span class="badge" style="background:#d4edda;color:#155724;">Present (Full)</span>
       &nbsp;
@@ -143,13 +143,13 @@
             <span class="{% if row.is_weekend %}text-muted{% else %}text-dark{% endif %}">
               {{ row.day_name }}
             </span>
-            {% if row.is_weekend %}<span class="badge ms-1" style="background:#f0f0f0;color:#888;font-size:0.6rem;">Weekend</span>{% endif %}
+            {% if row.is_weekend %}<span class="badge ms-1" style="background:#f0f0f0;color:#888;font-size:0.6rem;">Holiday</span>{% endif %}
           </td>
 
           {% if row.is_future %}
             <td class="py-3 text-muted" colspan="5"><em>Future date</em></td>
           {% elif row.is_weekend and not row.record %}
-            <td class="py-3 text-muted" colspan="5"><em>Weekend / Holiday</em></td>
+            <td class="py-3 text-muted" colspan="5"><em>Weekly Holiday</em></td>
           {% elif row.record %}
             <td class="py-3">
               {% if row.record.check_in_time %}
@@ -193,7 +193,7 @@
             <td class="py-3"><span class="text-muted">—</span></td>
             <td class="py-3"><span class="text-muted">—</span></td>
             <td class="py-3">
-              <span class="badge badge-absent px-3 py-2 rounded-pill">No Record</span>
+              <span class="badge badge-absent px-3 py-2 rounded-pill">Absent / No Record</span>
             </td>
             <td class="py-3 text-muted">—</td>
           {% endif %}

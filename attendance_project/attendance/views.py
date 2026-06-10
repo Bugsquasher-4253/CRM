@@ -1211,22 +1211,26 @@ def employee_monthly_detail(request, emp_id):
         d = datetime.date(year, month, day)
         record = records_map.get(d)
         weekday_name = d.strftime("%A")
-        is_weekend = d.weekday() >= 5  # Saturday / Sunday
+        is_sunday = d.weekday() == 6  # Sunday only — weekly holiday
         is_future = d > today
 
         daily_rows.append(
             {
                 "date": d,
                 "day_name": weekday_name,
-                "is_weekend": is_weekend,
+                "is_weekend": is_sunday,
                 "is_future": is_future,
                 "record": record,
             }
         )
 
+    # Days with no record, not Sunday, not future → count as absent
+    no_record_absent = sum(
+        1 for row in daily_rows if not row["record"] and not row["is_weekend"] and not row["is_future"]
+    )
     present = records_qs.filter(status="present", date__week_day__gt=1).count()
     half_day = records_qs.filter(status="half_day", date__week_day__gt=1).count()
-    absent = records_qs.filter(status="absent", date__week_day__gt=1).count()
+    absent = records_qs.filter(status="absent", date__week_day__gt=1).count() + no_record_absent
     leave = records_qs.filter(status="leave", date__week_day__gt=1).count()
     total_hours = sum(float(r.total_hours or 0) for r in records_qs)
     avg_checkin = None
