@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>Reimbursement Submitted – Crefio</title></head>
+<body style="margin:0;padding:0;background:#F7F8FA;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#F7F8FA;padding:32px 0;">
+  <tr><td align="center">
+  <table width="580" cellpadding="0" cellspacing="0" style="max-width:580px;width:100%;background:#ffffff;border-radius:14px;overflow:hidden;box-shadow:0 2px 16px rgba(0,0,0,0.08);">
+
+    <tr><td style="background:#111827;padding:28px 36px;">
+      <table width="100%" cellpadding="0" cellspacing="0"><tr>
+        <td><span style="font-size:1.4rem;font-weight:700;color:#BAF2BF;letter-spacing:-0.5px;">Crefio</span><br>
+            <span style="font-size:0.68rem;color:rgba(255,255,255,0.35);text-transform:uppercase;letter-spacing:1px;">Attendance &amp; HR</span></td>
+        <td align="right"><span style="background:rgba(186,242,191,0.15);color:#BAF2BF;font-size:0.7rem;font-weight:600;padding:5px 14px;border-radius:20px;border:1px solid rgba(186,242,191,0.3);">Request Submitted</span></td>
+      </tr></table>
+    </td></tr>
+
+    <tr><td style="padding:28px 36px 20px;">
+      <h2 style="margin:0 0 6px;font-size:1.1rem;font-weight:700;color:#111827;">
+        Reimbursement Request #{{ reimbursement.id }} Submitted
+      </h2>
+      <p style="margin:0 0 22px;font-size:0.875rem;color:#6B7280;line-height:1.6;">
+        Hi {{ employee.user.first_name }}, your reimbursement request has been submitted successfully and is pending admin review.
+      </p>
+
+      <table width="100%" cellpadding="0" cellspacing="0" style="background:#F7F8FA;border-radius:10px;margin-bottom:18px;">
+        <tr><td style="padding:18px 22px;">
+          <table width="100%" cellpadding="0" cellspacing="0">
+            <tr><td colspan="2" style="font-size:0.68rem;font-weight:700;color:#9CA3AF;text-transform:uppercase;letter-spacing:0.8px;padding-bottom:12px;">Request Summary</td></tr>
+            <tr>
+              <td style="font-size:0.82rem;color:#6B7280;padding:4px 0;width:40%;">Request ID</td>
+              <td style="font-size:0.82rem;font-weight:600;color:#111827;padding:4px 0;">#{{ reimbursement.id }}</td>
+            </tr>
+            <tr>
+              <td style="font-size:0.82rem;color:#6B7280;padding:4px 0;">Title</td>
+              <td style="font-size:0.82rem;font-weight:600;color:#111827;padding:4px 0;">{{ reimbursement.title }}</td>
+            </tr>
+            <tr>
+              <td style="font-size:0.82rem;color:#6B7280;padding:4px 0;">Category</td>
+              <td style="font-size:0.82rem;font-weight:600;color:#111827;padding:4px 0;">{{ reimbursement.get_category_display }}</td>
+            </tr>
+            <tr>
+              <td style="font-size:0.82rem;color:#6B7280;padding:4px 0;">Amount</td>
+              <td style="font-size:1rem;font-weight:700;color:#111827;padding:4px 0;">₹{{ reimbursement.amount }}</td>
+            </tr>
+            <tr>
+              <td style="font-size:0.82rem;color:#6B7280;padding:4px 0;">Expense Date</td>
+              <td style="font-size:0.82rem;font-weight:600;color:#111827;padding:4px 0;">{{ reimbursement.expense_date|date:"d M Y" }}</td>
+            </tr>
+            <tr>
+              <td style="font-size:0.82rem;color:#6B7280;padding:4px 0;">Status</td>
+              <td style="padding:4px 0;"><span style="background:#FEF9C3;color:#854D0E;font-size:0.75rem;font-weight:700;padding:3px 12px;border-radius:20px;">Pending Approval</span></td>
+            </tr>
+          </table>
+        </td></tr>
+      </table>
+
+      <p style="font-size:0.82rem;color:#6B7280;line-height:1.6;margin:0;">
+        You will receive another email once your request has been reviewed. Thank you.
+      </p>
+    </td></tr>
+
+    <tr><td style="background:#F7F8FA;padding:16px 36px;border-top:1px solid #E5E7EB;">
+      <p style="margin:0;font-size:0.72rem;color:#9CA3AF;text-align:center;">
+        Automated notification from <strong>{{ app_name }}</strong>. Do not reply to this email.
+      </p>
+    </td></tr>
+
+  </table>
+  </td></tr>
+</table>
+</body>
+</html>

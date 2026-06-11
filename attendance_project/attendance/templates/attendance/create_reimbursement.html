@@ -1,0 +1,255 @@
+{% extends 'attendance/base.html' %}
+{% block title %}Submit Reimbursement – Crefio{% endblock %}
+{% block page_title %}Submit Reimbursement{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-12 col-lg-8">
+
+    <!-- Info banner -->
+    <div class="alert mb-4" style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:10px;">
+      <div class="d-flex align-items-start gap-2">
+        <i class="bi bi-info-circle-fill" style="color:#2563EB;margin-top:2px;flex-shrink:0;"></i>
+        <div style="font-size:0.82rem;color:#1E40AF;">
+          <strong>Before you submit:</strong> Upload at least one supporting document (invoice, receipt, screenshot). Supported formats: PDF, JPG, PNG, GIF. Max 5 MB per file.
+        </div>
+      </div>
+    </div>
+
+    <form method="POST" enctype="multipart/form-data" id="reimbursementForm" novalidate>
+      {% csrf_token %}
+
+      <!-- Non-field errors -->
+      {% if form.non_field_errors %}
+      <div class="alert alert-danger mb-3" style="border-radius:10px;">
+        {% for err in form.non_field_errors %}{{ err }}{% endfor %}
+      </div>
+      {% endif %}
+
+      <!-- Expense Details -->
+      <div class="card mb-4">
+        <div class="card-header py-3">
+          <i class="bi bi-receipt me-2 text-primary"></i>Expense Details
+        </div>
+        <div class="card-body p-4">
+          <div class="row g-3">
+
+            <div class="col-12">
+              <label class="form-label">Expense Title <span class="text-danger">*</span></label>
+              {{ form.title }}
+              {% if form.title.errors %}
+                <div class="text-danger small mt-1">{{ form.title.errors.0 }}</div>
+              {% endif %}
+            </div>
+
+            <div class="col-12 col-sm-6">
+              <label class="form-label">Category <span class="text-danger">*</span></label>
+              {{ form.category }}
+              {% if form.category.errors %}
+                <div class="text-danger small mt-1">{{ form.category.errors.0 }}</div>
+              {% endif %}
+            </div>
+
+            <div class="col-12 col-sm-6">
+              <label class="form-label">Amount (₹) <span class="text-danger">*</span></label>
+              <div class="input-group">
+                <span class="input-group-text">₹</span>
+                {{ form.amount }}
+              </div>
+              {% if form.amount.errors %}
+                <div class="text-danger small mt-1">{{ form.amount.errors.0 }}</div>
+              {% endif %}
+            </div>
+
+            <div class="col-12 col-sm-6">
+              <label class="form-label">Expense Date <span class="text-danger">*</span></label>
+              {{ form.expense_date }}
+              {% if form.expense_date.errors %}
+                <div class="text-danger small mt-1">{{ form.expense_date.errors.0 }}</div>
+              {% endif %}
+            </div>
+
+            <div class="col-12 col-sm-6">
+              <label class="form-label">Payment Method <span class="text-danger">*</span></label>
+              {{ form.payment_method }}
+              {% if form.payment_method.errors %}
+                <div class="text-danger small mt-1">{{ form.payment_method.errors.0 }}</div>
+              {% endif %}
+            </div>
+
+            <div class="col-12">
+              <label class="form-label">Reason / Description <span class="text-danger">*</span></label>
+              {{ form.reason }}
+              {% if form.reason.errors %}
+                <div class="text-danger small mt-1">{{ form.reason.errors.0 }}</div>
+              {% endif %}
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <!-- Attachments -->
+      <div class="card mb-4">
+        <div class="card-header py-3">
+          <i class="bi bi-paperclip me-2 text-primary"></i>Supporting Documents <span class="text-danger">*</span>
+        </div>
+        <div class="card-body p-4">
+
+          <!-- Drop zone -->
+          <div id="dropZone"
+               style="border:2px dashed #D1D5DB;border-radius:12px;padding:36px 20px;text-align:center;cursor:pointer;transition:border-color 0.2s,background 0.2s;"
+               onclick="document.getElementById('fileInput').click()">
+            <i class="bi bi-cloud-upload" style="font-size:2.2rem;color:#9CA3AF;display:block;margin-bottom:10px;"></i>
+            <div style="font-weight:600;color:#374151;margin-bottom:4px;">Drag &amp; drop files here</div>
+            <div style="font-size:0.8rem;color:#9CA3AF;">or click to browse &nbsp;·&nbsp; PDF, JPG, PNG, GIF &nbsp;·&nbsp; Max 5 MB each</div>
+          </div>
+
+          <input type="file" id="fileInput" name="attachments" multiple
+                 accept=".pdf,.jpg,.jpeg,.png,.gif"
+                 class="d-none">
+
+          <!-- Preview list -->
+          <div id="fileList" class="mt-3"></div>
+
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="d-flex gap-2 justify-content-end">
+        <a href="{% url 'my_reimbursements' %}" class="btn btn-outline-secondary px-4">Cancel</a>
+        <button type="submit" class="btn btn-primary px-5" id="submitBtn">
+          <span id="submitText"><i class="bi bi-send me-2"></i>Submit Request</span>
+          <span id="submitSpinner" class="d-none">
+            <span class="spinner-border spinner-border-sm me-2" role="status"></span>Submitting...
+          </span>
+        </button>
+      </div>
+
+    </form>
+  </div>
+</div>
+
+<style>
+  #dropZone.dragover { border-color:#111827; background:#F9FAFB; }
+  .file-preview-item {
+    display:flex; align-items:center; gap:10px;
+    padding:10px 14px; border-radius:8px; background:#F9FAFB;
+    border:1px solid #E5E7EB; margin-bottom:8px;
+  }
+  .file-preview-item .file-icon { font-size:1.4rem; flex-shrink:0; }
+  .file-preview-item .file-name { font-size:0.82rem; font-weight:600; color:#111827; word-break:break-all; }
+  .file-preview-item .file-size { font-size:0.72rem; color:#9CA3AF; }
+  .file-preview-item .remove-btn {
+    margin-left:auto; background:none; border:none; color:#9CA3AF;
+    font-size:1.1rem; cursor:pointer; flex-shrink:0; padding:2px 4px;
+    border-radius:4px; transition:color 0.15s;
+  }
+  .file-preview-item .remove-btn:hover { color:#EF4444; }
+</style>
+
+<script>
+(function() {
+  var dropZone = document.getElementById('dropZone');
+  var fileInput = document.getElementById('fileInput');
+  var fileList  = document.getElementById('fileList');
+  var form      = document.getElementById('reimbursementForm');
+  var submitBtn = document.getElementById('submitBtn');
+  var allFiles  = [];  // DataTransfer-style array
+
+  // ── Drag & drop ──────────────────────────────────────
+  dropZone.addEventListener('dragover', function(e) {
+    e.preventDefault();
+    dropZone.classList.add('dragover');
+  });
+  dropZone.addEventListener('dragleave', function() {
+    dropZone.classList.remove('dragover');
+  });
+  dropZone.addEventListener('drop', function(e) {
+    e.preventDefault();
+    dropZone.classList.remove('dragover');
+    addFiles(Array.from(e.dataTransfer.files));
+  });
+
+  fileInput.addEventListener('change', function() {
+    addFiles(Array.from(fileInput.files));
+    fileInput.value = '';  // reset so same file can be added again after remove
+  });
+
+  function addFiles(newFiles) {
+    newFiles.forEach(function(f) {
+      // Deduplicate by name+size
+      var dup = allFiles.some(function(x) { return x.name === f.name && x.size === f.size; });
+      if (!dup) allFiles.push(f);
+    });
+    renderFileList();
+  }
+
+  function renderFileList() {
+    fileList.innerHTML = '';
+    if (allFiles.length === 0) return;
+
+    allFiles.forEach(function(f, idx) {
+      var ext = f.name.split('.').pop().toLowerCase();
+      var icon = (ext === 'pdf') ? '📄' : (['jpg','jpeg','png','gif'].includes(ext) ? '🖼️' : '📎');
+      var kb = f.size < 1024 * 1024
+        ? Math.round(f.size / 1024) + ' KB'
+        : (f.size / (1024 * 1024)).toFixed(1) + ' MB';
+
+      var item = document.createElement('div');
+      item.className = 'file-preview-item';
+      item.innerHTML = [
+        '<span class="file-icon">' + icon + '</span>',
+        '<div class="flex-grow-1 min-w-0">',
+          '<div class="file-name">' + escHtml(f.name) + '</div>',
+          '<div class="file-size">' + kb + '</div>',
+        '</div>',
+        '<button type="button" class="remove-btn" data-idx="' + idx + '" title="Remove"><i class="bi bi-x-lg"></i></button>'
+      ].join('');
+      fileList.appendChild(item);
+    });
+
+    fileList.querySelectorAll('.remove-btn').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        allFiles.splice(parseInt(this.dataset.idx), 1);
+        renderFileList();
+      });
+    });
+  }
+
+  function escHtml(s) {
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  // ── On submit: inject files into a real FileList via DataTransfer ─────────
+  form.addEventListener('submit', function(e) {
+    if (allFiles.length === 0) {
+      e.preventDefault();
+      var banner = document.createElement('div');
+      banner.className = 'alert alert-danger mt-2';
+      banner.style.borderRadius = '8px';
+      banner.textContent = 'Please upload at least one supporting document.';
+      var existing = fileList.previousElementSibling;
+      var insertAfter = document.getElementById('dropZone');
+      insertAfter.insertAdjacentElement('afterend', banner);
+      setTimeout(function() { if (banner.parentNode) banner.parentNode.removeChild(banner); }, 5000);
+      return;
+    }
+
+    // Build a real FileList with DataTransfer
+    try {
+      var dt = new DataTransfer();
+      allFiles.forEach(function(f) { dt.items.add(f); });
+      fileInput.files = dt.files;
+    } catch(ex) {
+      // Safari/old browsers: fallback — files already in input won't work; warn user
+      console.warn('DataTransfer not supported:', ex);
+    }
+
+    document.getElementById('submitText').classList.add('d-none');
+    document.getElementById('submitSpinner').classList.remove('d-none');
+    submitBtn.disabled = true;
+  });
+})();
+</script>
+{% endblock %}

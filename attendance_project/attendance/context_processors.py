@@ -1,4 +1,4 @@
-from .models import AttendanceCorrectionRequest, LeaveRequest, SupportTicket
+from .models import AttendanceCorrectionRequest, LeaveRequest, Reimbursement, SupportTicket
 
 
 def panel_context(request):
@@ -13,5 +13,6 @@ def panel_context(request):
         context["pending_leaves_count"] = LeaveRequest.objects.filter(status="pending").count()
         context["open_tickets_count"] = SupportTicket.objects.filter(status="open").count()
         context["pending_corrections_count"] = AttendanceCorrectionRequest.objects.filter(status="pending").count()
+        context["pending_reimbursements_count"] = Reimbursement.objects.filter(status="pending").count()
 
     return context

@@ -474,9 +474,13 @@
         {% if open_tickets_count %}<span class="badge-notify">{{ open_tickets_count }}</span>{% endif %}
       </a>
 
-      <div class="sidebar-section-label">Salary</div>
+      <div class="sidebar-section-label">Finance</div>
       <a href="{% url 'admin_salary' %}" class="nav-link {% if request.resolver_match.url_name == 'admin_salary' or request.resolver_match.url_name == 'update_salary' %}active{% endif %}">
         <i class="bi bi-cash-coin"></i> Manage Salary
+      </a>
+      <a href="{% url 'admin_reimbursements' %}" class="nav-link {% if request.resolver_match.url_name == 'admin_reimbursements' or request.resolver_match.url_name == 'admin_reimbursement_detail' %}active{% endif %}">
+        <i class="bi bi-receipt"></i> Reimbursements
+        {% if pending_reimbursements_count %}<span class="badge-notify">{{ pending_reimbursements_count }}</span>{% endif %}
       </a>
 
       <div class="sidebar-section-label">Reports</div>
@@ -516,9 +520,12 @@
         <i class="bi bi-ticket-perforated"></i> My Tickets
       </a>
 
-      <div class="sidebar-section-label">Payroll</div>
+      <div class="sidebar-section-label">Finance</div>
       <a href="{% url 'my_salary' %}" class="nav-link {% if request.resolver_match.url_name == 'my_salary' %}active{% endif %}">
         <i class="bi bi-cash-coin"></i> My Salary
+      </a>
+      <a href="{% url 'my_reimbursements' %}" class="nav-link {% if request.resolver_match.url_name == 'my_reimbursements' or request.resolver_match.url_name == 'create_reimbursement' %}active{% endif %}">
+        <i class="bi bi-receipt"></i> Reimbursements
       </a>
 
       <div class="sidebar-section-label">Account</div>

@@ -241,6 +241,72 @@ class EmployeeSalaryStructure(models.Model):
         ).first()  # ordering is -effective_from → first = most recent applicable
 
 
+class Reimbursement(models.Model):
+    CATEGORY_CHOICES = [
+        ("travel", "Travel"),
+        ("food", "Food & Meals"),
+        ("internet", "Internet"),
+        ("office_supplies", "Office Supplies"),
+        ("client_meeting", "Client Meeting"),
+        ("accommodation", "Accommodation"),
+        ("other", "Other"),
+    ]
+    STATUS_CHOICES = [
+        ("pending", "Pending Approval"),
+        ("approved", "Approved"),
+        ("rejected", "Rejected"),
+    ]
+    PAYMENT_METHOD_CHOICES = [
+        ("cash", "Cash"),
+        ("upi", "UPI"),
+        ("credit_card", "Credit Card"),
+        ("debit_card", "Debit Card"),
+        ("bank_transfer", "Bank Transfer"),
+        ("other", "Other"),
+    ]
+
+    employee = models.ForeignKey(Employee, on_delete=models.CASCADE, related_name="reimbursements")
+    title = models.CharField(max_length=200)
+    category = models.CharField(max_length=30, choices=CATEGORY_CHOICES)
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    expense_date = models.DateField()
+    reason = models.TextField()
+    payment_method = models.CharField(max_length=20, choices=PAYMENT_METHOD_CHOICES)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="pending")
+    admin_remarks = models.TextField(blank=True)
+    reviewed_by = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True, related_name="reviewed_reimbursements"
+    )
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+    submitted_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-submitted_at"]
+
+    def __str__(self):
+        return f"#{self.id} - {self.title} ({self.employee})"
+
+
+class ReimbursementAttachment(models.Model):
+    reimbursement = models.ForeignKey(Reimbursement, on_delete=models.CASCADE, related_name="attachments")
+    file = models.FileField(upload_to="reimbursements/%Y/%m/")
+    filename = models.CharField(max_length=255)
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.filename
+
+    @property
+    def is_image(self):
+        ext = self.filename.rsplit(".", 1)[-1].lower() if "." in self.filename else ""
+        return ext in ("jpg", "jpeg", "png", "gif", "webp")
+
+    @property
+    def is_pdf(self):
+        return self.filename.lower().endswith(".pdf")
+
+
 class SalaryRecord(models.Model):
     employee = models.ForeignKey(Employee, on_delete=models.CASCADE, related_name="salary_records")
     month = models.IntegerField()

@@ -201,6 +201,60 @@ def notify_employee_correction_decision(correction) -> bool:
     )
 
 
+# ─── REIMBURSEMENT NOTIFICATIONS ────────────────────────────────────────────
+
+
+def notify_admin_reimbursement_submitted(reimbursement) -> int:
+    context = {
+        "reimbursement": reimbursement,
+        "employee": reimbursement.employee,
+        "app_name": "Crefio",
+        "approve_url": _action_url(_make_token("reimbursement", reimbursement.id, "approved")),
+        "reject_url": _action_url(_make_token("reimbursement", reimbursement.id, "rejected")),
+    }
+    return _send_to_all_admins(
+        subject=f"[Crefio] Reimbursement #{reimbursement.id} — {reimbursement.employee.user.get_full_name()} · Action Required",
+        template="attendance/emails/reimbursement_admin_notify.html",
+        context=context,
+    )
+
+
+def notify_employee_reimbursement_submitted(reimbursement) -> bool:
+    employee_email = reimbursement.employee.user.email
+    if not employee_email:
+        return False
+    context = {
+        "reimbursement": reimbursement,
+        "employee": reimbursement.employee,
+        "app_name": "Crefio",
+    }
+    return _send(
+        subject=f"[Crefio] Reimbursement Request #{reimbursement.id} Submitted",
+        to=employee_email,
+        template="attendance/emails/reimbursement_submitted.html",
+        context=context,
+    )
+
+
+def notify_employee_reimbursement_decision(reimbursement) -> bool:
+    employee_email = reimbursement.employee.user.email
+    if not employee_email:
+        return False
+    context = {
+        "reimbursement": reimbursement,
+        "employee": reimbursement.employee,
+        "app_name": "Crefio",
+        "approved": reimbursement.status == "approved",
+    }
+    status_label = "Approved" if reimbursement.status == "approved" else "Rejected"
+    return _send(
+        subject=f"[Crefio] Reimbursement #{reimbursement.id} {status_label} — {reimbursement.title}",
+        to=employee_email,
+        template="attendance/emails/reimbursement_decision.html",
+        context=context,
+    )
+
+
 # ─── TEST EMAIL ──────────────────────────────────────────────────────────────
 
 

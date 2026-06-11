@@ -59,8 +59,24 @@ urlpatterns = [
     path("admin-panel/tickets/<int:ticket_id>/", views.admin_ticket_action, name="admin_ticket_action"),
     # One-click email actions (approve/reject via signed token — no login needed)
     path("ea/<str:token>/", views.email_action, name="email_action"),
+    # Reimbursements (employee)
+    path("reimbursements/", views.my_reimbursements, name="my_reimbursements"),
+    path("reimbursements/create/", views.create_reimbursement, name="create_reimbursement"),
+    # Reimbursements (admin)
+    path("admin-panel/reimbursements/", views.admin_reimbursements, name="admin_reimbursements"),
+    path(
+        "admin-panel/reimbursements/export/",
+        views.export_reimbursements_excel,
+        name="export_reimbursements_excel",
+    ),
+    path(
+        "admin-panel/reimbursements/<int:reimbursement_id>/",
+        views.admin_reimbursement_detail,
+        name="admin_reimbursement_detail",
+    ),
     # Salary
     path("admin-panel/salary/", views.admin_salary, name="admin_salary"),
+    path("admin-panel/salary/process-all/", views.process_all_salaries, name="process_all_salaries"),
     path("admin-panel/salary/<int:emp_id>/", views.update_salary, name="update_salary"),
     path("admin-panel/salary/<int:emp_id>/structure/", views.salary_structure, name="salary_structure"),
     path("salary/", views.my_salary, name="my_salary"),

@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>Reimbursement Decision – Crefio</title></head>
+<body style="margin:0;padding:0;background:#F7F8FA;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#F7F8FA;padding:32px 0;">
+  <tr><td align="center">
+  <table width="580" cellpadding="0" cellspacing="0" style="max-width:580px;width:100%;background:#ffffff;border-radius:14px;overflow:hidden;box-shadow:0 2px 16px rgba(0,0,0,0.08);">
+
+    <tr><td style="background:#111827;padding:28px 36px;">
+      <table width="100%" cellpadding="0" cellspacing="0"><tr>
+        <td><span style="font-size:1.4rem;font-weight:700;color:#BAF2BF;letter-spacing:-0.5px;">Crefio</span><br>
+            <span style="font-size:0.68rem;color:rgba(255,255,255,0.35);text-transform:uppercase;letter-spacing:1px;">Attendance &amp; HR</span></td>
+        <td align="right">
+          {% if approved %}
+            <span style="background:rgba(22,163,74,0.15);color:#16a34a;font-size:0.7rem;font-weight:600;padding:5px 14px;border-radius:20px;border:1px solid rgba(22,163,74,0.3);">Approved</span>
+          {% else %}
+            <span style="background:rgba(220,38,38,0.15);color:#dc2626;font-size:0.7rem;font-weight:600;padding:5px 14px;border-radius:20px;border:1px solid rgba(220,38,38,0.3);">Rejected</span>
+          {% endif %}
+        </td>
+      </tr></table>
+    </td></tr>
+
+    <!-- Status banner -->
+    {% if approved %}
+    <tr><td style="background:#D1FAE5;padding:14px 36px;border-bottom:1px solid #6EE7B7;">
+      <p style="margin:0;font-size:0.85rem;font-weight:600;color:#065F46;">
+        ✓ Your reimbursement request has been approved.
+      </p>
+    </td></tr>
+    {% else %}
+    <tr><td style="background:#FEE2E2;padding:14px 36px;border-bottom:1px solid #FECACA;">
+      <p style="margin:0;font-size:0.85rem;font-weight:600;color:#991B1B;">
+        ✗ Your reimbursement request has been rejected.
+      </p>
+    </td></tr>
+    {% endif %}
+
+    <tr><td style="padding:28px 36px 20px;">
+      <h2 style="margin:0 0 6px;font-size:1.1rem;font-weight:700;color:#111827;">
+        Reimbursement #{{ reimbursement.id }} {% if approved %}Approved{% else %}Rejected{% endif %}
+      </h2>
+      <p style="margin:0 0 22px;font-size:0.875rem;color:#6B7280;line-height:1.6;">
+        Hi {{ employee.user.first_name }}, your reimbursement request has been reviewed.
+      </p>
+
+      <table width="100%" cellpadding="0" cellspacing="0" style="background:#F7F8FA;border-radius:10px;margin-bottom:18px;">
+        <tr><td style="padding:18px 22px;">
+          <table width="100%" cellpadding="0" cellspacing="0">
+            <tr><td colspan="2" style="font-size:0.68rem;font-weight:700;color:#9CA3AF;text-transform:uppercase;letter-spacing:0.8px;padding-bottom:12px;">Request Details</td></tr>
+            <tr>
+              <td style="font-size:0.82rem;color:#6B7280;padding:4px 0;width:40%;">Request ID</td>
+              <td style="font-size:0.82rem;font-weight:600;color:#111827;padding:4px 0;">#{{ reimbursement.id }}</td>
+            </tr>
+            <tr>
+              <td style="font-size:0.82rem;color:#6B7280;padding:4px 0;">Title</td>
+              <td style="font-size:0.82rem;font-weight:600;color:#111827;padding:4px 0;">{{ reimbursement.title }}</td>
+            </tr>
+            <tr>
+              <td style="font-size:0.82rem;color:#6B7280;padding:4px 0;">Amount</td>
+              <td style="font-size:1rem;font-weight:700;color:#111827;padding:4px 0;">₹{{ reimbursement.amount }}</td>
+            </tr>
+            <tr>
+              <td style="font-size:0.82rem;color:#6B7280;padding:4px 0;">Status</td>
+              <td style="padding:4px 0;">
+                {% if approved %}
+                  <span style="background:#D1FAE5;color:#065F46;font-size:0.75rem;font-weight:700;padding:3px 12px;border-radius:20px;">Approved</span>
+                {% else %}
+                  <span style="background:#FEE2E2;color:#991B1B;font-size:0.75rem;font-weight:700;padding:3px 12px;border-radius:20px;">Rejected</span>
+                {% endif %}
+              </td>
+            </tr>
+            {% if reimbursement.reviewed_at %}
+            <tr>
+              <td style="font-size:0.82rem;color:#6B7280;padding:4px 0;">Reviewed On</td>
+              <td style="font-size:0.82rem;font-weight:600;color:#111827;padding:4px 0;">{{ reimbursement.reviewed_at|date:"d M Y, h:i A" }}</td>
+            </tr>
+            {% endif %}
+          </table>
+        </td></tr>
+      </table>
+
+      {% if reimbursement.admin_remarks %}
+      <table width="100%" cellpadding="0" cellspacing="0" style="{% if approved %}background:#F0FDF4;border:1px solid #BBF7D0;{% else %}background:#FEF2F2;border:1px solid #FECACA;{% endif %}border-radius:10px;margin-bottom:22px;">
+        <tr><td style="padding:14px 20px;">
+          <p style="margin:0 0 4px;font-size:0.68rem;font-weight:700;{% if approved %}color:#166534;{% else %}color:#991B1B;{% endif %}text-transform:uppercase;letter-spacing:0.8px;">Admin Remarks</p>
+          <p style="margin:0;font-size:0.875rem;{% if approved %}color:#14532D;{% else %}color:#7F1D1D;{% endif %}line-height:1.7;">{{ reimbursement.admin_remarks }}</p>
+        </td></tr>
+      </table>
+      {% endif %}
+
+      <p style="font-size:0.82rem;color:#6B7280;line-height:1.6;margin:0;">
+        {% if approved %}
+          Your reimbursement has been approved. Please contact HR for payment details.
+        {% else %}
+          If you have questions about this decision, please contact your HR manager.
+        {% endif %}
+      </p>
+    </td></tr>
+
+    <tr><td style="background:#F7F8FA;padding:16px 36px;border-top:1px solid #E5E7EB;">
+      <p style="margin:0;font-size:0.72rem;color:#9CA3AF;text-align:center;">
+        Automated notification from <strong>{{ app_name }}</strong>. Do not reply to this email.
+      </p>
+    </td></tr>
+
+  </table>
+  </td></tr>
+</table>
+</body>
+</html>

@@ -1,0 +1,298 @@
+{% extends 'attendance/base.html' %}
+{% block title %}Reimbursement #{{ reimbursement.id }} – Crefio{% endblock %}
+{% block page_title %}Reimbursement #{{ reimbursement.id }}{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+
+  <!-- Left: Expense Details -->
+  <div class="col-12 col-lg-7">
+
+    <!-- Employee Card -->
+    <div class="card mb-4">
+      <div class="card-body p-4">
+        <div class="d-flex align-items-center gap-3">
+          <div style="width:52px;height:52px;border-radius:50%;background:#111827;display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:1.2rem;flex-shrink:0;">
+            {{ reimbursement.employee.user.first_name|first|upper }}
+          </div>
+          <div>
+            <div class="fw-bold fs-6">{{ reimbursement.employee.user.get_full_name }}</div>
+            <div class="text-muted small">{{ reimbursement.employee.employee_id }} · {{ reimbursement.employee.designation }} · {{ reimbursement.employee.department|default:"—" }}</div>
+            <div class="text-muted small">{{ reimbursement.employee.user.email }}</div>
+          </div>
+          <div class="ms-auto">
+            {% if reimbursement.status == 'approved' %}
+              <span class="badge bg-success px-3 py-2 rounded-pill">Approved</span>
+            {% elif reimbursement.status == 'rejected' %}
+              <span class="badge bg-danger px-3 py-2 rounded-pill">Rejected</span>
+            {% else %}
+              <span class="badge bg-warning text-dark px-3 py-2 rounded-pill">Pending Approval</span>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Expense Info -->
+    <div class="card mb-4">
+      <div class="card-header py-3">
+        <i class="bi bi-receipt me-2 text-primary"></i>Expense Details
+      </div>
+      <div class="card-body p-4">
+        <div class="row g-3">
+          <div class="col-12">
+            <div class="text-muted small mb-1">Title</div>
+            <div class="fw-semibold fs-6">{{ reimbursement.title }}</div>
+          </div>
+          <div class="col-6">
+            <div class="text-muted small mb-1">Category</div>
+            <span class="badge" style="background:#EFF6FF;color:#1E40AF;font-size:0.8rem;padding:5px 12px;">{{ reimbursement.get_category_display }}</span>
+          </div>
+          <div class="col-6">
+            <div class="text-muted small mb-1">Payment Method</div>
+            <div class="fw-semibold">{{ reimbursement.get_payment_method_display }}</div>
+          </div>
+          <div class="col-6">
+            <div class="text-muted small mb-1">Amount</div>
+            <div class="fw-bold fs-5 text-success">₹{{ reimbursement.amount|floatformat:2 }}</div>
+          </div>
+          <div class="col-6">
+            <div class="text-muted small mb-1">Expense Date</div>
+            <div class="fw-semibold">{{ reimbursement.expense_date|date:"d M Y" }}</div>
+          </div>
+          <div class="col-6">
+            <div class="text-muted small mb-1">Submitted On</div>
+            <div class="small">{{ reimbursement.submitted_at|date:"d M Y, h:i A" }}</div>
+          </div>
+          {% if reimbursement.reviewed_at %}
+          <div class="col-6">
+            <div class="text-muted small mb-1">Reviewed On</div>
+            <div class="small">{{ reimbursement.reviewed_at|date:"d M Y, h:i A" }}</div>
+          </div>
+          {% endif %}
+          {% if reimbursement.reviewed_by %}
+          <div class="col-12">
+            <div class="text-muted small mb-1">Reviewed By</div>
+            <div class="fw-semibold">{{ reimbursement.reviewed_by.get_full_name }}</div>
+          </div>
+          {% endif %}
+          <div class="col-12">
+            <div class="text-muted small mb-2">Reason / Description</div>
+            <div class="p-3 rounded" style="background:#F9FAFB;border:1px solid #E5E7EB;font-size:0.88rem;line-height:1.7;">
+              {{ reimbursement.reason }}
+            </div>
+          </div>
+          {% if reimbursement.admin_remarks %}
+          <div class="col-12">
+            <div class="text-muted small mb-2">Admin Remarks</div>
+            <div class="p-3 rounded" style="background:{% if reimbursement.status == 'approved' %}#F0FDF4;border:1px solid #BBF7D0;{% else %}#FEF2F2;border:1px solid #FECACA;{% endif %}font-size:0.88rem;line-height:1.7;">
+              {{ reimbursement.admin_remarks }}
+            </div>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Attachments -->
+    <div class="card">
+      <div class="card-header py-3">
+        <i class="bi bi-paperclip me-2 text-primary"></i>Supporting Documents ({{ reimbursement.attachments.count }})
+      </div>
+      <div class="card-body p-3">
+        {% for att in reimbursement.attachments.all %}
+        <div class="d-flex align-items-center gap-3 p-3 mb-2 rounded" style="background:#F9FAFB;border:1px solid #E5E7EB;">
+          {% if att.is_image %}
+            <i class="bi bi-image" style="font-size:1.4rem;color:#7C3AED;flex-shrink:0;"></i>
+          {% elif att.is_pdf %}
+            <i class="bi bi-file-earmark-pdf" style="font-size:1.4rem;color:#DC2626;flex-shrink:0;"></i>
+          {% else %}
+            <i class="bi bi-file-earmark" style="font-size:1.4rem;color:#6B7280;flex-shrink:0;"></i>
+          {% endif %}
+          <div class="flex-grow-1 min-w-0">
+            <div class="fw-semibold" style="font-size:0.85rem;word-break:break-all;">{{ att.filename }}</div>
+            <small class="text-muted">{{ att.uploaded_at|date:"d M Y, h:i A" }}</small>
+          </div>
+          <a href="{{ att.file.url }}" target="_blank" class="btn btn-sm btn-outline-primary" style="flex-shrink:0;">
+            <i class="bi bi-eye me-1"></i>View
+          </a>
+          <a href="{{ att.file.url }}" download="{{ att.filename }}" class="btn btn-sm btn-outline-success" style="flex-shrink:0;">
+            <i class="bi bi-download"></i>
+          </a>
+        </div>
+        {% empty %}
+        <p class="text-muted text-center py-3">No attachments.</p>
+        {% endfor %}
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Right: Action Panel -->
+  <div class="col-12 col-lg-5">
+    <div class="card" style="position:sticky;top:24px;">
+      <div class="card-header py-3">
+        <i class="bi bi-check2-square me-2 text-primary"></i>
+        {% if reimbursement.status == 'pending' %}Review & Action{% else %}Decision Record{% endif %}
+      </div>
+      <div class="card-body p-4">
+
+        {% if reimbursement.status == 'pending' %}
+        <form method="POST" id="actionForm">
+          {% csrf_token %}
+
+          {% if form.non_field_errors %}
+          <div class="alert alert-danger mb-3" style="border-radius:8px;font-size:0.82rem;">
+            {% for err in form.non_field_errors %}{{ err }}{% endfor %}
+          </div>
+          {% endif %}
+
+          <div class="mb-3">
+            <label class="form-label">Decision <span class="text-danger">*</span></label>
+            <div class="d-flex gap-2">
+              <label class="flex-grow-1 d-flex align-items-center gap-2 p-3 rounded" id="approveLabel"
+                     style="border:2px solid #E5E7EB;cursor:pointer;transition:border-color 0.15s,background 0.15s;">
+                <input type="radio" name="status" value="approved" class="d-none" id="approveRadio">
+                <div style="width:18px;height:18px;border-radius:50%;border:2px solid #16A34A;display:flex;align-items:center;justify-content:center;flex-shrink:0;" id="approveCircle">
+                  <div id="approveDot" style="width:8px;height:8px;border-radius:50%;background:#16A34A;display:none;"></div>
+                </div>
+                <span class="fw-semibold text-success">Approve</span>
+              </label>
+              <label class="flex-grow-1 d-flex align-items-center gap-2 p-3 rounded" id="rejectLabel"
+                     style="border:2px solid #E5E7EB;cursor:pointer;transition:border-color 0.15s,background 0.15s;">
+                <input type="radio" name="status" value="rejected" class="d-none" id="rejectRadio">
+                <div style="width:18px;height:18px;border-radius:50%;border:2px solid #DC2626;display:flex;align-items:center;justify-content:center;flex-shrink:0;" id="rejectCircle">
+                  <div id="rejectDot" style="width:8px;height:8px;border-radius:50%;background:#DC2626;display:none;"></div>
+                </div>
+                <span class="fw-semibold text-danger">Reject</span>
+              </label>
+            </div>
+            {% if form.status.errors %}
+              <div class="text-danger small mt-1">{{ form.status.errors.0 }}</div>
+            {% endif %}
+          </div>
+
+          <div class="mb-4">
+            <label class="form-label">
+              Admin Remarks
+              <span id="remarksRequired" class="text-danger d-none">*</span>
+              <small class="text-muted fw-normal">(required for rejection)</small>
+            </label>
+            {{ form.admin_remarks }}
+            {% if form.admin_remarks.errors %}
+              <div class="text-danger small mt-1">{{ form.admin_remarks.errors.0 }}</div>
+            {% endif %}
+          </div>
+
+          <!-- Summary -->
+          <div class="p-3 rounded mb-4" style="background:#F9FAFB;border:1px solid #E5E7EB;">
+            <div class="row g-1" style="font-size:0.8rem;">
+              <div class="col-6 text-muted">Employee</div>
+              <div class="col-6 fw-semibold">{{ reimbursement.employee.user.get_full_name }}</div>
+              <div class="col-6 text-muted">Amount</div>
+              <div class="col-6 fw-bold text-success">₹{{ reimbursement.amount|floatformat:2 }}</div>
+              <div class="col-6 text-muted">Category</div>
+              <div class="col-6">{{ reimbursement.get_category_display }}</div>
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-primary w-100 fw-semibold" id="submitActionBtn" disabled>
+            <i class="bi bi-send me-2"></i>Submit Decision
+          </button>
+        </form>
+
+        {% else %}
+
+        <!-- Already actioned -->
+        <div class="text-center py-3">
+          {% if reimbursement.status == 'approved' %}
+            <div style="width:64px;height:64px;border-radius:50%;background:#D1FAE5;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
+              <i class="bi bi-check-lg" style="font-size:1.8rem;color:#16A34A;"></i>
+            </div>
+            <div class="fw-bold fs-6 text-success mb-2">Approved</div>
+          {% else %}
+            <div style="width:64px;height:64px;border-radius:50%;background:#FEE2E2;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
+              <i class="bi bi-x-lg" style="font-size:1.8rem;color:#DC2626;"></i>
+            </div>
+            <div class="fw-bold fs-6 text-danger mb-2">Rejected</div>
+          {% endif %}
+          {% if reimbursement.reviewed_by %}
+            <div class="text-muted small mb-1">by {{ reimbursement.reviewed_by.get_full_name }}</div>
+          {% endif %}
+          {% if reimbursement.reviewed_at %}
+            <div class="text-muted small">{{ reimbursement.reviewed_at|date:"d M Y, h:i A" }}</div>
+          {% endif %}
+          {% if reimbursement.admin_remarks %}
+          <div class="p-3 rounded mt-3 text-start" style="background:#F9FAFB;border:1px solid #E5E7EB;font-size:0.85rem;">
+            <div class="text-muted small mb-1">Remarks</div>
+            {{ reimbursement.admin_remarks }}
+          </div>
+          {% endif %}
+        </div>
+
+        {% endif %}
+
+      </div>
+    </div>
+
+    <!-- Back button -->
+    <div class="mt-3">
+      <a href="{% url 'admin_reimbursements' %}" class="btn btn-outline-secondary w-100">
+        <i class="bi bi-arrow-left me-2"></i>Back to All Requests
+      </a>
+    </div>
+  </div>
+
+</div>
+
+<script>
+(function() {
+  var approveRadio = document.getElementById('approveRadio');
+  var rejectRadio  = document.getElementById('rejectRadio');
+  if (!approveRadio) return;  // not shown when already actioned
+
+  var approveLabel = document.getElementById('approveLabel');
+  var rejectLabel  = document.getElementById('rejectLabel');
+  var approveDot   = document.getElementById('approveDot');
+  var rejectDot    = document.getElementById('rejectDot');
+  var remarksReq   = document.getElementById('remarksRequired');
+  var submitBtn    = document.getElementById('submitActionBtn');
+
+  function updateUI() {
+    var isApprove = approveRadio.checked;
+    var isReject  = rejectRadio.checked;
+
+    approveLabel.style.borderColor = isApprove ? '#16A34A' : '#E5E7EB';
+    approveLabel.style.background  = isApprove ? '#F0FDF4' : '';
+    approveDot.style.display       = isApprove ? 'block' : 'none';
+
+    rejectLabel.style.borderColor  = isReject ? '#DC2626' : '#E5E7EB';
+    rejectLabel.style.background   = isReject ? '#FEF2F2' : '';
+    rejectDot.style.display        = isReject ? 'block' : 'none';
+
+    remarksReq.classList.toggle('d-none', !isReject);
+    submitBtn.disabled = !(isApprove || isReject);
+  }
+
+  approveLabel.addEventListener('click', function() {
+    approveRadio.checked = true;
+    rejectRadio.checked = false;
+    updateUI();
+  });
+  rejectLabel.addEventListener('click', function() {
+    rejectRadio.checked = true;
+    approveRadio.checked = false;
+    updateUI();
+  });
+
+  document.getElementById('actionForm').addEventListener('submit', function(e) {
+    if (!approveRadio.checked && !rejectRadio.checked) {
+      e.preventDefault();
+      return;
+    }
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span>Processing...';
+  });
+})();
+</script>
+{% endblock %}

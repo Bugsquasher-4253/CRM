@@ -1,0 +1,222 @@
+{% extends 'attendance/base.html' %}
+{% block title %}Reimbursements – Crefio{% endblock %}
+{% block page_title %}Reimbursement Management{% endblock %}
+
+{% block content %}
+
+<!-- Summary Stats -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3">
+    <a href="?status=" class="text-decoration-none">
+      <div class="stat-card text-center py-3" style="{% if not status_filter %}border:2px solid #111827;{% else %}border:2px solid transparent;{% endif %}cursor:pointer;">
+        <div class="icon mx-auto mb-2" style="background:#F3F4F6;"><i class="bi bi-receipt" style="color:#374151;"></i></div>
+        <div class="fs-resp-num" style="color:#111827;">{{ total_count }}</div>
+        <div class="text-muted small">Total</div>
+      </div>
+    </a>
+  </div>
+  <div class="col-6 col-md-3">
+    <a href="?status=pending" class="text-decoration-none">
+      <div class="stat-card text-center py-3" style="{% if status_filter == 'pending' %}border:2px solid #D97706;{% else %}border:2px solid transparent;{% endif %}cursor:pointer;">
+        <div class="icon mx-auto mb-2" style="background:#FEF3C7;"><i class="bi bi-hourglass-split" style="color:#D97706;"></i></div>
+        <div class="fs-resp-num" style="color:#D97706;">{{ pending_count }}</div>
+        <div class="text-muted small">Pending</div>
+      </div>
+    </a>
+  </div>
+  <div class="col-6 col-md-3">
+    <a href="?status=approved" class="text-decoration-none">
+      <div class="stat-card text-center py-3" style="{% if status_filter == 'approved' %}border:2px solid #16A34A;{% else %}border:2px solid transparent;{% endif %}cursor:pointer;">
+        <div class="icon mx-auto mb-2" style="background:#D1FAE5;"><i class="bi bi-check-circle-fill" style="color:#16A34A;"></i></div>
+        <div class="fs-resp-num" style="color:#16A34A;">{{ approved_count }}</div>
+        <div class="text-muted small">Approved</div>
+      </div>
+    </a>
+  </div>
+  <div class="col-6 col-md-3">
+    <a href="?status=rejected" class="text-decoration-none">
+      <div class="stat-card text-center py-3" style="{% if status_filter == 'rejected' %}border:2px solid #DC2626;{% else %}border:2px solid transparent;{% endif %}cursor:pointer;">
+        <div class="icon mx-auto mb-2" style="background:#FEE2E2;"><i class="bi bi-x-circle-fill" style="color:#DC2626;"></i></div>
+        <div class="fs-resp-num" style="color:#DC2626;">{{ rejected_count }}</div>
+        <div class="text-muted small">Rejected</div>
+      </div>
+    </a>
+  </div>
+</div>
+
+<!-- Filters -->
+<div class="card mb-4">
+  <div class="card-body">
+    <form method="GET" class="row g-2 align-items-end">
+      <div class="col-12 col-sm-6 col-md-3">
+        <label class="form-label fw-semibold" style="font-size:0.8rem;">Status</label>
+        <select name="status" class="form-select form-select-sm">
+          <option value="" {% if not status_filter %}selected{% endif %}>All Statuses</option>
+          <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Pending</option>
+          <option value="approved" {% if status_filter == 'approved' %}selected{% endif %}>Approved</option>
+          <option value="rejected" {% if status_filter == 'rejected' %}selected{% endif %}>Rejected</option>
+        </select>
+      </div>
+      <div class="col-12 col-sm-6 col-md-3">
+        <label class="form-label fw-semibold" style="font-size:0.8rem;">Employee</label>
+        <select name="employee" class="form-select form-select-sm">
+          <option value="" {% if not employee_filter %}selected{% endif %}>All Employees</option>
+          {% for emp in employees %}
+            <option value="{{ emp.id }}" {% if employee_filter == emp.id|stringformat:"s" %}selected{% endif %}>
+              {{ emp.user.get_full_name }} ({{ emp.employee_id }})
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-12 col-sm-6 col-md-3">
+        <label class="form-label fw-semibold" style="font-size:0.8rem;">Category</label>
+        <select name="category" class="form-select form-select-sm">
+          <option value="" {% if not category_filter %}selected{% endif %}>All Categories</option>
+          {% for val, label in category_choices %}
+            <option value="{{ val }}" {% if category_filter == val %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-12 col-sm-auto d-flex gap-2">
+        <button type="submit" class="btn btn-primary btn-sm">
+          <i class="bi bi-search me-1"></i>Filter
+        </button>
+        <a href="{% url 'admin_reimbursements' %}" class="btn btn-outline-secondary btn-sm">Clear</a>
+        <a href="{% url 'export_reimbursements_excel' %}{% if status_filter %}?status={{ status_filter }}{% endif %}"
+           class="btn btn-outline-success btn-sm">
+          <i class="bi bi-download me-1"></i>Export
+        </a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Requests Table -->
+<div class="card">
+  <div class="card-header py-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <span><i class="bi bi-receipt me-2 text-primary"></i>Reimbursement Requests</span>
+    <small class="text-muted">{{ reimbursements|length }} result(s)</small>
+  </div>
+
+  <!-- Desktop -->
+  <div class="card-body p-0 d-none d-md-block">
+    <table class="table table-hover mb-0">
+      <thead style="background:#F8F9FA;">
+        <tr>
+          <th class="px-4 py-3">#</th>
+          <th class="py-3">Employee</th>
+          <th class="py-3">Title</th>
+          <th class="py-3">Category</th>
+          <th class="py-3 text-end">Amount</th>
+          <th class="py-3">Expense Date</th>
+          <th class="py-3">Submitted</th>
+          <th class="py-3 text-center">Status</th>
+          <th class="py-3 text-center">Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in reimbursements %}
+        <tr>
+          <td class="px-4 py-3 text-muted small">{{ r.id }}</td>
+          <td class="py-3">
+            <div class="d-flex align-items-center gap-2">
+              <div style="width:32px;height:32px;border-radius:50%;background:#111827;display:flex;align-items:center;justify-content:center;color:white;font-weight:700;flex-shrink:0;font-size:0.8rem;">
+                {{ r.employee.user.first_name|first|upper }}
+              </div>
+              <div>
+                <div class="fw-semibold" style="font-size:0.85rem;">{{ r.employee.user.get_full_name }}</div>
+                <small class="text-muted">{{ r.employee.employee_id }}</small>
+              </div>
+            </div>
+          </td>
+          <td class="py-3">
+            <div class="fw-semibold" style="font-size:0.85rem;max-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="{{ r.title }}">{{ r.title }}</div>
+            <small class="text-muted">{{ r.get_payment_method_display }}</small>
+          </td>
+          <td class="py-3">
+            <span class="badge" style="background:#EFF6FF;color:#1E40AF;font-size:0.72rem;">{{ r.get_category_display }}</span>
+          </td>
+          <td class="py-3 text-end fw-bold">₹{{ r.amount|floatformat:0 }}</td>
+          <td class="py-3 small">{{ r.expense_date|date:"d M Y" }}</td>
+          <td class="py-3 small text-muted">{{ r.submitted_at|date:"d M Y" }}</td>
+          <td class="py-3 text-center">
+            {% if r.status == 'approved' %}
+              <span class="badge bg-success px-2 py-1 rounded-pill" style="font-size:0.72rem;"><i class="bi bi-check-circle me-1"></i>Approved</span>
+            {% elif r.status == 'rejected' %}
+              <span class="badge bg-danger px-2 py-1 rounded-pill" style="font-size:0.72rem;"><i class="bi bi-x-circle me-1"></i>Rejected</span>
+            {% else %}
+              <span class="badge bg-warning text-dark px-2 py-1 rounded-pill" style="font-size:0.72rem;"><i class="bi bi-hourglass-split me-1"></i>Pending</span>
+            {% endif %}
+          </td>
+          <td class="py-3 text-center">
+            <a href="{% url 'admin_reimbursement_detail' r.id %}"
+               class="btn btn-sm {% if r.status == 'pending' %}btn-primary{% else %}btn-outline-secondary{% endif %}"
+               style="font-size:0.75rem;">
+              {% if r.status == 'pending' %}<i class="bi bi-check2-square me-1"></i>Review{% else %}<i class="bi bi-eye me-1"></i>View{% endif %}
+            </a>
+          </td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="9" class="text-center py-5 text-muted">
+            <i class="bi bi-receipt" style="font-size:2rem;display:block;margin-bottom:10px;opacity:0.3;"></i>
+            No reimbursement requests found.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Mobile cards -->
+  <div class="d-block d-md-none p-3">
+    {% for r in reimbursements %}
+    <div class="card mb-3 border" style="border-radius:12px;overflow:hidden;">
+      <div class="d-flex align-items-center gap-3 p-3" style="background:#F8F9FA;border-bottom:1px solid #E5E7EB;">
+        <div style="width:40px;height:40px;border-radius:50%;background:#111827;display:flex;align-items:center;justify-content:center;color:white;font-weight:700;flex-shrink:0;">
+          {{ r.employee.user.first_name|first|upper }}
+        </div>
+        <div class="flex-grow-1 min-w-0">
+          <div class="fw-bold" style="font-size:0.88rem;">{{ r.employee.user.get_full_name }}</div>
+          <small class="text-muted">{{ r.employee.employee_id }} · {{ r.employee.department|default:"—" }}</small>
+        </div>
+        {% if r.status == 'approved' %}
+          <span class="badge bg-success rounded-pill">Approved</span>
+        {% elif r.status == 'rejected' %}
+          <span class="badge bg-danger rounded-pill">Rejected</span>
+        {% else %}
+          <span class="badge bg-warning text-dark rounded-pill">Pending</span>
+        {% endif %}
+      </div>
+      <div class="p-3">
+        <div class="fw-semibold mb-1" style="font-size:0.88rem;">{{ r.title }}</div>
+        <div class="row g-2 mb-3">
+          <div class="col-6">
+            <div class="text-muted" style="font-size:0.72rem;">Amount</div>
+            <div class="fw-bold text-success">₹{{ r.amount|floatformat:0 }}</div>
+          </div>
+          <div class="col-6">
+            <div class="text-muted" style="font-size:0.72rem;">Category</div>
+            <div class="small">{{ r.get_category_display }}</div>
+          </div>
+          <div class="col-6">
+            <div class="text-muted" style="font-size:0.72rem;">Expense Date</div>
+            <div class="small">{{ r.expense_date|date:"d M Y" }}</div>
+          </div>
+          <div class="col-6">
+            <div class="text-muted" style="font-size:0.72rem;">Attachments</div>
+            <div class="small"><i class="bi bi-paperclip me-1"></i>{{ r.attachments.count }}</div>
+          </div>
+        </div>
+        <a href="{% url 'admin_reimbursement_detail' r.id %}"
+           class="btn btn-sm {% if r.status == 'pending' %}btn-primary{% else %}btn-outline-secondary{% endif %} w-100">
+          {% if r.status == 'pending' %}<i class="bi bi-check2-square me-1"></i>Review{% else %}<i class="bi bi-eye me-1"></i>View Details{% endif %}
+        </a>
+      </div>
+    </div>
+    {% empty %}
+    <p class="text-muted text-center py-4">No reimbursement requests found.</p>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

@@ -8,6 +8,7 @@ from .models import (
     Employee,
     EmployeeSalaryStructure,
     LeaveRequest,
+    Reimbursement,
     SalaryRecord,
     SupportTicket,
 )
@@ -367,6 +368,63 @@ class SalaryForm(forms.ModelForm):
         for fname in ("basic_salary", "allowances"):
             if float(self.initial.get(fname) or 0) == 0:
                 self.initial[fname] = ""
+
+
+class ReimbursementForm(forms.ModelForm):
+    class Meta:
+        model = Reimbursement
+        fields = ["title", "category", "amount", "expense_date", "reason", "payment_method"]
+        widgets = {
+            "title": forms.TextInput(
+                attrs={"class": "form-control", "placeholder": "e.g. Flight to Delhi — Client Visit"}
+            ),
+            "category": forms.Select(attrs={"class": "form-select"}),
+            "amount": forms.NumberInput(
+                attrs={"class": "form-control", "placeholder": "0.00", "step": "0.01", "min": "0.01"}
+            ),
+            "expense_date": forms.DateInput(attrs={"class": "form-control", "type": "date"}),
+            "reason": forms.Textarea(
+                attrs={
+                    "class": "form-control",
+                    "rows": 4,
+                    "placeholder": "Describe the business purpose of this expense...",
+                }
+            ),
+            "payment_method": forms.Select(attrs={"class": "form-select"}),
+        }
+
+    def clean_amount(self):
+        amount = self.cleaned_data.get("amount")
+        if amount is not None and amount <= 0:
+            raise forms.ValidationError("Amount must be greater than 0.")
+        return amount
+
+
+class AdminReimbursementActionForm(forms.ModelForm):
+    class Meta:
+        model = Reimbursement
+        fields = ["status", "admin_remarks"]
+        widgets = {
+            "status": forms.Select(
+                attrs={"class": "form-select"},
+                choices=[("approved", "Approved"), ("rejected", "Rejected")],
+            ),
+            "admin_remarks": forms.Textarea(
+                attrs={
+                    "class": "form-control",
+                    "rows": 3,
+                    "placeholder": "Add remarks (mandatory for rejection)...",
+                }
+            ),
+        }
+
+    def clean(self):
+        cleaned_data = super().clean()
+        status = cleaned_data.get("status")
+        remarks = cleaned_data.get("admin_remarks", "").strip()
+        if status == "rejected" and not remarks:
+            raise forms.ValidationError("Rejection reason is required.")
+        return cleaned_data
 
 
 class SalaryStructureForm(forms.ModelForm):

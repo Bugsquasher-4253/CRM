@@ -1,12 +1,13 @@
 import datetime
+import os
 
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.models import User
 from django.db import IntegrityError, transaction
-from django.db.models import Count, Q
-from django.http import JsonResponse
+from django.db.models import Count, Q, Sum
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 
@@ -16,6 +17,7 @@ from .forms import (
     AdminEmployeeEditForm,
     AdminLeaveResponseForm,
     AdminPasswordChangeForm,
+    AdminReimbursementActionForm,
     AdminTicketResponseForm,
     AttendanceCorrectionForm,
     AttendanceRecordForm,
@@ -24,6 +26,7 @@ from .forms import (
     EmployeeProfileEditForm,
     LeaveRequestForm,
     LoginForm,
+    ReimbursementForm,
     SalaryForm,
     SalaryStructureForm,
     SupportTicketForm,
@@ -36,6 +39,8 @@ from .models import (
     Employee,
     EmployeeSalaryStructure,
     LeaveRequest,
+    Reimbursement,
+    ReimbursementAttachment,
     SalaryRecord,
     SupportTicket,
 )
@@ -1778,13 +1783,34 @@ def admin_salary(request):
     salary_map = {s.employee_id: s for s in SalaryRecord.objects.filter(month=month, year=year)}
 
     all_rows = []
+    has_unprocessed = False
     for emp in employees:
-        all_rows.append(
-            {
-                "employee": emp,
-                "salary": salary_map.get(emp.id),
-            }
-        )
+        sal = salary_map.get(emp.id)
+        structure = None
+        if not sal:
+            structure = EmployeeSalaryStructure.active_for(emp, month, year)
+            if not structure:
+                # Fallback: employee has past SalaryRecords but no structure yet
+                # (set before auto-structure feature). Use last non-zero record as preview.
+                last_record = (
+                    SalaryRecord.objects.filter(employee=emp, basic_salary__gt=0).order_by("-year", "-month").first()
+                )
+                if last_record:
+                    import datetime as _dt
+
+                    effective = _dt.date(last_record.year, last_record.month, 1)
+                    structure, _ = EmployeeSalaryStructure.objects.get_or_create(
+                        employee=emp,
+                        effective_from=effective,
+                        defaults={
+                            "basic_salary": last_record.basic_salary,
+                            "allowances": last_record.allowances,
+                            "notes": f"Auto-migrated from {calendar.month_name[last_record.month]} {last_record.year}",
+                        },
+                    )
+            if structure:
+                has_unprocessed = True
+        all_rows.append({"employee": emp, "salary": sal, "structure": structure})
 
     paid_count = sum(1 for r in all_rows if r["salary"] and r["salary"].is_paid)
     unpaid_count = len(all_rows) - paid_count
@@ -1808,10 +1834,109 @@ def admin_salary(request):
             "unpaid_count": unpaid_count,
             "total": len(all_rows),
             "status_filter": status_filter,
+            "has_unprocessed": has_unprocessed,
             "months": [(i, calendar.month_name[i]) for i in range(1, 13)],
             "years": range(2023, timezone.now().year + 1),
         },
     )
+
+
+@login_required
+@user_passes_test(is_admin)
+def process_all_salaries(request):
+    """One-click: auto-calculate and create salary records for all employees from their structure."""
+    import calendar
+
+    if request.method != "POST":
+        return redirect("admin_salary")
+
+    month = int(request.POST.get("month", timezone.now().month))
+    year = int(request.POST.get("year", timezone.now().year))
+    last_day_of_month = calendar.monthrange(year, month)[1]
+    today_date = timezone.now().date()
+    cutoff_day = today_date.day if (year == today_date.year and month == today_date.month) else last_day_of_month
+
+    employees = Employee.objects.filter(is_active=True)
+    processed = 0
+    skipped_no_structure = 0
+    skipped_paid = 0
+
+    for employee in employees:
+        active_structure = EmployeeSalaryStructure.active_for(employee, month, year)
+        if not active_structure:
+            last_record = (
+                SalaryRecord.objects.filter(employee=employee, basic_salary__gt=0).order_by("-year", "-month").first()
+            )
+            if last_record:
+                effective = datetime.date(last_record.year, last_record.month, 1)
+                active_structure, _ = EmployeeSalaryStructure.objects.get_or_create(
+                    employee=employee,
+                    effective_from=effective,
+                    defaults={
+                        "basic_salary": last_record.basic_salary,
+                        "allowances": last_record.allowances,
+                        "notes": f"Auto-migrated from {calendar.month_name[last_record.month]} {last_record.year}",
+                    },
+                )
+        if not active_structure:
+            skipped_no_structure += 1
+            continue
+
+        # Skip already-paid records
+        existing = SalaryRecord.objects.filter(employee=employee, month=month, year=year).first()
+        if existing and existing.is_paid:
+            skipped_paid += 1
+            continue
+
+        # Attendance calculation (same formula as update_salary)
+        month_records = AttendanceRecord.objects.filter(employee=employee, date__month=month, date__year=year)
+        present_days = sum(1 for r in month_records if r.status == "present" and r.date.weekday() != 6)
+        half_days = sum(1 for r in month_records if r.status == "half_day" and r.date.weekday() != 6)
+        leave_days = sum(1 for r in month_records if r.status == "leave" and r.date.weekday() != 6)
+        total_working_days = sum(1 for d in range(1, cutoff_day + 1) if datetime.date(year, month, d).weekday() != 6)
+        sunday_days = sum(1 for d in range(1, cutoff_day + 1) if datetime.date(year, month, d).weekday() == 6)
+        absent_days = max(0, total_working_days - present_days - half_days - leave_days)
+
+        # Salary formula
+        basic_val = float(active_structure.basic_salary)
+        _rate = basic_val / last_day_of_month if last_day_of_month else 0
+        present_earn = round(present_days * _rate, 2)
+        sunday_earn = round(sunday_days * _rate, 2)
+        half_earn = round(half_days * _rate * 0.5, 2)
+        leave_deduct = round(leave_days * _rate, 2)
+        absent_deduct = round(absent_days * _rate, 2)
+        half_deduct = round(half_days * _rate * 0.5, 2)
+        total_deductions = round(leave_deduct + absent_deduct + half_deduct, 2)
+        computed_net = round(present_earn + sunday_earn + half_earn + float(active_structure.allowances), 2)
+
+        salary, _ = SalaryRecord.objects.get_or_create(
+            employee=employee,
+            month=month,
+            year=year,
+            defaults={
+                "basic_salary": active_structure.basic_salary,
+                "allowances": active_structure.allowances,
+                "absent_days": absent_days,
+                "half_days": half_days,
+            },
+        )
+        salary.basic_salary = active_structure.basic_salary
+        salary.allowances = active_structure.allowances
+        salary.absent_days = absent_days
+        salary.half_days = half_days
+        salary._skip_auto_calc = True
+        salary.deductions = total_deductions
+        salary.net_salary = computed_net
+        salary.save()
+        processed += 1
+
+    parts = [f"Processed {processed} employees."]
+    if skipped_paid:
+        parts.append(f"{skipped_paid} already paid (skipped).")
+    if skipped_no_structure:
+        parts.append(f"{skipped_no_structure} have no salary structure set.")
+    messages.success(request, " ".join(parts))
+    return redirect(f"/admin-panel/salary/?month={month}&year={year}")
 
 
 @login_required
@@ -2081,6 +2206,237 @@ def salary_slip(request, salary_id):
 # ─── EMAIL ONE-CLICK ACTION ──────────────────────────────────────────────────
 
 
+# ─── REIMBURSEMENT VIEWS ────────────────────────────────────────────────────
+
+
+@login_required
+def my_reimbursements(request):
+    if request.user.is_staff and get_panel_mode(request) == "admin":
+        return redirect("admin_reimbursements")
+    employee = get_object_or_404(Employee, user=request.user)
+    status_filter = request.GET.get("status", "")
+    qs = employee.reimbursements.prefetch_related("attachments").all()
+    if status_filter in ("pending", "approved", "rejected"):
+        qs = qs.filter(status=status_filter)
+
+    total_approved = employee.reimbursements.filter(status="approved").aggregate(total=Sum("amount"))["total"] or 0
+    pending_count = employee.reimbursements.filter(status="pending").count()
+    approved_count = employee.reimbursements.filter(status="approved").count()
+    rejected_count = employee.reimbursements.filter(status="rejected").count()
+
+    return render(
+        request,
+        "attendance/my_reimbursements.html",
+        {
+            "reimbursements": qs,
+            "status_filter": status_filter,
+            "total_approved": total_approved,
+            "pending_count": pending_count,
+            "approved_count": approved_count,
+            "rejected_count": rejected_count,
+            "today": timezone.now().date(),
+        },
+    )
+
+
+@login_required
+def create_reimbursement(request):
+    if request.user.is_staff and get_panel_mode(request) == "admin":
+        return redirect("admin_reimbursements")
+    employee = get_object_or_404(Employee, user=request.user)
+
+    if request.method == "POST":
+        form = ReimbursementForm(request.POST, request.FILES)
+        files = request.FILES.getlist("attachments")
+
+        if form.is_valid():
+            if not files:
+                messages.error(
+                    request, "Please upload at least one supporting document (invoice, receipt, or screenshot)."
+                )
+            else:
+                allowed_exts = {".pdf", ".jpg", ".jpeg", ".png", ".gif"}
+                max_size = 5 * 1024 * 1024  # 5 MB
+                file_errors = []
+                for f in files:
+                    ext = os.path.splitext(f.name)[1].lower()
+                    if ext not in allowed_exts:
+                        file_errors.append(f"'{f.name}': unsupported type. Allowed: PDF, JPG, PNG, GIF.")
+                    elif f.size > max_size:
+                        file_errors.append(f"'{f.name}' exceeds the 5 MB size limit.")
+
+                if file_errors:
+                    for err in file_errors:
+                        messages.error(request, err)
+                else:
+                    reimbursement = form.save(commit=False)
+                    reimbursement.employee = employee
+                    reimbursement.save()
+
+                    for f in files:
+                        ReimbursementAttachment.objects.create(
+                            reimbursement=reimbursement,
+                            file=f,
+                            filename=f.name,
+                        )
+
+                    email_service.notify_admin_reimbursement_submitted(reimbursement)
+                    email_service.notify_employee_reimbursement_submitted(reimbursement)
+
+                    messages.success(
+                        request,
+                        f"Reimbursement request #{reimbursement.id} submitted successfully. You'll be notified once reviewed.",
+                    )
+                    return redirect("my_reimbursements")
+    else:
+        form = ReimbursementForm(initial={"expense_date": timezone.now().date()})
+
+    return render(
+        request,
+        "attendance/create_reimbursement.html",
+        {"form": form, "today": timezone.now().date()},
+    )
+
+
+@login_required
+@user_passes_test(is_admin)
+def admin_reimbursements(request):
+    qs = Reimbursement.objects.select_related("employee__user", "employee__department", "reviewed_by").prefetch_related(
+        "attachments"
+    )
+
+    status_filter = request.GET.get("status", "")
+    employee_filter = request.GET.get("employee", "").strip()
+    category_filter = request.GET.get("category", "")
+
+    if status_filter in ("pending", "approved", "rejected"):
+        qs = qs.filter(status=status_filter)
+    if employee_filter:
+        try:
+            qs = qs.filter(employee_id=int(employee_filter))
+        except ValueError:
+            pass
+    if category_filter:
+        qs = qs.filter(category=category_filter)
+
+    all_reimb = Reimbursement.objects.all()
+    total_count = all_reimb.count()
+    pending_count = all_reimb.filter(status="pending").count()
+    approved_count = all_reimb.filter(status="approved").count()
+    rejected_count = all_reimb.filter(status="rejected").count()
+
+    employees = Employee.objects.filter(is_active=True).select_related("user").order_by("user__first_name")
+
+    return render(
+        request,
+        "attendance/admin_reimbursements.html",
+        {
+            "reimbursements": qs,
+            "total_count": total_count,
+            "pending_count": pending_count,
+            "approved_count": approved_count,
+            "rejected_count": rejected_count,
+            "status_filter": status_filter,
+            "employee_filter": employee_filter,
+            "category_filter": category_filter,
+            "category_choices": Reimbursement.CATEGORY_CHOICES,
+            "employees": employees,
+            "today": timezone.now().date(),
+        },
+    )
+
+
+@login_required
+@user_passes_test(is_admin)
+def admin_reimbursement_detail(request, reimbursement_id):
+    reimbursement = get_object_or_404(
+        Reimbursement.objects.select_related("employee__user", "employee__department", "reviewed_by").prefetch_related(
+            "attachments"
+        ),
+        id=reimbursement_id,
+    )
+
+    if request.method == "POST":
+        form = AdminReimbursementActionForm(request.POST, instance=reimbursement)
+        if form.is_valid():
+            obj = form.save(commit=False)
+            obj.reviewed_by = request.user
+            obj.reviewed_at = timezone.now()
+            obj.save()
+            email_service.notify_employee_reimbursement_decision(reimbursement)
+            action_label = "approved" if reimbursement.status == "approved" else "rejected"
+            messages.success(request, f"Reimbursement #{reimbursement.id} has been {action_label}. Employee notified.")
+            return redirect("admin_reimbursements")
+    else:
+        form = AdminReimbursementActionForm(instance=reimbursement)
+
+    return render(
+        request,
+        "attendance/admin_reimbursement_detail.html",
+        {
+            "reimbursement": reimbursement,
+            "form": form,
+            "today": timezone.now().date(),
+        },
+    )
+
+
+@login_required
+@user_passes_test(is_admin)
+def export_reimbursements_excel(request):
+    import csv
+
+    qs = Reimbursement.objects.select_related("employee__user", "employee__department", "reviewed_by").order_by(
+        "-submitted_at"
+    )
+
+    status_filter = request.GET.get("status", "")
+    if status_filter in ("pending", "approved", "rejected"):
+        qs = qs.filter(status=status_filter)
+
+    response = HttpResponse(content_type="text/csv")
+    response["Content-Disposition"] = 'attachment; filename="reimbursements.csv"'
+    writer = csv.writer(response)
+    writer.writerow(
+        [
+            "ID",
+            "Employee",
+            "Employee ID",
+            "Department",
+            "Title",
+            "Category",
+            "Amount",
+            "Expense Date",
+            "Payment Method",
+            "Status",
+            "Submitted On",
+            "Reviewed By",
+            "Reviewed On",
+            "Admin Remarks",
+        ]
+    )
+    for r in qs:
+        writer.writerow(
+            [
+                r.id,
+                r.employee.user.get_full_name(),
+                r.employee.employee_id,
+                str(r.employee.department) if r.employee.department else "",
+                r.title,
+                r.get_category_display(),
+                r.amount,
+                r.expense_date.strftime("%d %b %Y"),
+                r.get_payment_method_display(),
+                r.get_status_display(),
+                r.submitted_at.strftime("%d %b %Y %H:%M"),
+                r.reviewed_by.get_full_name() if r.reviewed_by else "",
+                r.reviewed_at.strftime("%d %b %Y %H:%M") if r.reviewed_at else "",
+                r.admin_remarks,
+            ]
+        )
+    return response
+
+
 def email_action(request, token):
     """
     Handle approve/reject/resolve actions triggered from email buttons.
@@ -2244,6 +2600,42 @@ def email_action(request, token):
                 "employee_name": correction.employee.user.get_full_name(),
                 "detail": f'Date: {correction.date.strftime("%d %b %Y")}',
                 "message": f"Correction request has been {action_label.lower()}. The employee has been notified by email.",
+            },
+        )
+
+    # ── Reimbursement ────────────────────────────────────────────────────────
+    elif obj_type == "reimbursement":
+        reimbursement = get_object_or_404(Reimbursement, id=obj_id)
+
+        if reimbursement.status != "pending":
+            return render(
+                request,
+                "attendance/email_action_result.html",
+                {
+                    "success": False,
+                    "title": "Already Actioned",
+                    "message": f"Reimbursement #{reimbursement.id} was already {reimbursement.status}. No changes made.",
+                    "employee_name": reimbursement.employee.user.get_full_name(),
+                },
+            )
+
+        reimbursement.status = action  # 'approved' or 'rejected'
+        reimbursement.reviewed_at = timezone.now()
+        reimbursement.save()
+        email_service.notify_employee_reimbursement_decision(reimbursement)
+
+        action_label = "Approved" if action == "approved" else "Rejected"
+        return render(
+            request,
+            "attendance/email_action_result.html",
+            {
+                "success": True,
+                "title": f"Reimbursement {action_label}",
+                "action_label": action_label,
+                "obj_type": f"Reimbursement #{reimbursement.id}",
+                "employee_name": reimbursement.employee.user.get_full_name(),
+                "detail": f"{reimbursement.title} · ₹{reimbursement.amount}",
+                "message": f"Reimbursement #{reimbursement.id} has been {action_label.lower()}. The employee has been notified by email.",
             },
         )
 
