@@ -50,6 +50,35 @@ def is_admin(user):
     return user.is_staff or user.is_superuser
 
 
+def _resolve_incomplete_checkins(employee=None):
+    """
+    Mark past-day records that have check-in but no check-out as absent.
+    Called on dashboard, attendance, and salary views so data stays accurate
+    without a background scheduler.
+    Leave records and records that already have an approved correction are skipped.
+    """
+    today = timezone.now().date()
+    qs = AttendanceRecord.objects.filter(
+        check_in_time__isnull=False,
+        check_out_time__isnull=True,
+        date__lt=today,
+    ).exclude(status="leave")
+    if employee is not None:
+        qs = qs.filter(employee=employee)
+
+    # Don't flip records that an admin already approved via a correction request
+    approved_pairs = list(
+        AttendanceCorrectionRequest.objects.filter(status="approved", date__lt=today).values_list("employee_id", "date")
+    )
+    if approved_pairs:
+        skip_q = Q()
+        for emp_id, dt in approved_pairs:
+            skip_q |= Q(employee_id=emp_id, date=dt)
+        qs = qs.exclude(skip_q)
+
+    qs.update(status="absent")
+
+
 def generate_employee_id():
     import re
 
@@ -159,6 +188,8 @@ def dashboard(request):
         return redirect("login")
 
     today = timezone.now().date()
+    # Auto-mark past days with check-in but no check-out as absent
+    _resolve_incomplete_checkins(employee)
     today_attendance = employee.get_today_attendance()
 
     # ── Build full 7-day view (today back to 6 days ago) ──────────────────
@@ -422,6 +453,7 @@ def my_attendance(request):
     import calendar
 
     today = timezone.now().date()
+    _resolve_incomplete_checkins(employee)
     month = int(request.GET.get("month", today.month))
     year = int(request.GET.get("year", today.year))
     stat_filter = request.GET.get("filter", "")
@@ -842,6 +874,8 @@ def reset_employee_password(request, emp_id):
 @login_required
 @user_passes_test(is_admin)
 def admin_attendance_records(request):
+    # Resolve all employees' incomplete past-day check-ins before displaying
+    _resolve_incomplete_checkins()
     records = AttendanceRecord.objects.select_related("employee__user", "employee__department").order_by(
         "-date", "-check_in_time"
     )
@@ -1203,6 +1237,7 @@ def employee_monthly_detail(request, emp_id):
     month = int(request.GET.get("month", timezone.now().month))
     year = int(request.GET.get("year", timezone.now().year))
 
+    _resolve_incomplete_checkins(employee)
     # All records this employee has for the chosen month
     records_qs = AttendanceRecord.objects.filter(employee=employee, date__month=month, date__year=year)
     records_map = {r.date: r for r in records_qs}
@@ -1741,9 +1776,14 @@ def admin_correction_action(request, correction_id):
                     record.check_in_time = saved.requested_check_in
                 if saved.requested_check_out:
                     record.check_out_time = saved.requested_check_out
-                # Persist times first, then recalculate status automatically
                 record.save()
-                record.calculate_hours()  # auto-sets status: present / half_day
+                if record.check_in_time and record.check_out_time:
+                    # Both times present — calculate present / half_day based on hours
+                    record.calculate_hours()
+                elif record.check_in_time:
+                    # Only check-in corrected (admin reviewed and approved) → present
+                    record.status = "present"
+                    record.save()
                 messages.success(
                     request,
                     f"Approved — attendance for {saved.employee.user.get_full_name()} "
@@ -1775,6 +1815,7 @@ def admin_salary(request):
     """Admin sees all employees' salary for a selected month/year."""
     import calendar
 
+    _resolve_incomplete_checkins()
     month = int(request.GET.get("month", timezone.now().month))
     year = int(request.GET.get("year", timezone.now().year))
     status_filter = request.GET.get("filter", "total")
@@ -1850,6 +1891,7 @@ def process_all_salaries(request):
     if request.method != "POST":
         return redirect("admin_salary")
 
+    _resolve_incomplete_checkins()
     month = int(request.POST.get("month", timezone.now().month))
     year = int(request.POST.get("year", timezone.now().year))
     last_day_of_month = calendar.monthrange(year, month)[1]

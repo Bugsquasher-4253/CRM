@@ -66,11 +66,11 @@ class AttendanceRecord(models.Model):
     def calculate_hours(self):
         """
         Recalculate total_hours and auto-set status based on business rules:
-          - No check-in            → absent (caller should handle; record shouldn't exist)
-          - Check-in, no check-out → present (full day credit; hours remain None)
+          - No check-in               → absent (caller should handle; record shouldn't exist)
+          - Check-in, no check-out    → absent (forgot to check out)
           - Check-in + check-out,
-              hours >= 5           → present (full day)
-              hours <  5           → half_day
+              hours >= 5              → present (full day)
+              hours <  5              → half_day
         Handles edge case where check-out is before check-in (midnight cross or bad entry)
         by treating hours as 0 (→ half_day).
         """
@@ -89,9 +89,9 @@ class AttendanceRecord(models.Model):
             else:
                 self.status = "half_day"
         elif self.check_in_time and not self.check_out_time:
-            # Checked in but forgot to check out → still present (full day)
+            # Checked in but forgot to check out → absent
             self.total_hours = None
-            self.status = "present"
+            self.status = "absent"
         # If somehow neither time exists, leave status as-is (absent / leave set externally)
         self.save()
         return self.total_hours
