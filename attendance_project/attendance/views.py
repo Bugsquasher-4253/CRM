@@ -275,14 +275,21 @@ def dashboard(request):
     # Leave days = records with status=leave  +  approved leave days with NO record
     leave_days = leave_rec_qs.count() + len(month_leave_dates - record_dates)
 
-    # Absent = past working days (Mon–Sat) up to today, no record AND not on approved leave
+    # Absent = past working days (Mon–Sat) up to today with no record OR a record marked absent
+    absent_rec_qs = monthly_records.filter(status="absent", date__week_day__gt=1, date__lte=today)
+    absent_rec_dates = set(absent_rec_qs.values_list("date", flat=True))
+
     absent_list = []
     d = month_start
     while d <= today:
-        if d.weekday() != 6 and d not in record_dates and d not in month_leave_dates:
-            absent_list.append(d)
+        if d.weekday() != 6 and d not in month_leave_dates:
+            if d not in record_dates or d in absent_rec_dates:
+                absent_list.append(d)
         d += datetime.timedelta(days=1)
     absent_days = len(absent_list)
+
+    # Build a lookup for absent records (for check_in/check_out display in filtered_rows)
+    absent_rec_map = {r.date: r for r in absent_rec_qs}
 
     # ── Stat-card filter ──────────────────────────────────────────────────
     stat_filter = request.GET.get("filter", "")
@@ -331,10 +338,19 @@ def dashboard(request):
                 }
             )
     elif stat_filter == "absent":
-        filtered_rows = [
-            {"date": d, "check_in": None, "check_out": None, "hours": None, "status": "absent", "label": "Absent"}
-            for d in sorted(absent_list, reverse=True)
-        ]
+        filtered_rows = []
+        for d in sorted(absent_list, reverse=True):
+            rec = absent_rec_map.get(d)
+            filtered_rows.append(
+                {
+                    "date": d,
+                    "check_in": rec.check_in_time if rec else None,
+                    "check_out": rec.check_out_time if rec else None,
+                    "hours": rec.total_hours if rec else None,
+                    "status": "absent",
+                    "label": "Absent",
+                }
+            )
 
     show_doc_reminder = not (employee.aadhaar_card and employee.pan_card)
 
@@ -464,16 +480,19 @@ def my_attendance(request):
     half_day_qs = records.filter(status="half_day", date__week_day__gt=1)
     leave_qs = records.filter(status="leave", date__week_day__gt=1)
 
-    # Absent = working days (Mon–Sat) up to today (or end of month) with no record
+    # Absent = working days (Mon–Sat) up to today (or end of month) with no record OR record marked absent
     record_dates = set(records.values_list("date", flat=True))
     month_start = datetime.date(year, month, 1)
     last_day = calendar.monthrange(year, month)[1]
     month_end = datetime.date(year, month, last_day)
     cutoff = min(month_end, today)  # don't count future days as absent
+    absent_rec_qs2 = records.filter(status="absent", date__week_day__gt=1, date__lte=cutoff)
+    absent_rec_dates2 = set(absent_rec_qs2.values_list("date", flat=True))
+    absent_rec_map2 = {r.date: r for r in absent_rec_qs2}
     absent_dates = []
     d = month_start
     while d <= cutoff:
-        if d.weekday() != 6 and d not in record_dates:  # skip Sunday + days with records
+        if d.weekday() != 6 and (d not in record_dates or d in absent_rec_dates2):
             absent_dates.append(d)
         d += datetime.timedelta(days=1)
 
@@ -509,10 +528,19 @@ def my_attendance(request):
             for r in leave_qs.order_by("-date")
         ]
     elif stat_filter == "absent":
-        filtered_rows = [
-            {"date": d, "check_in": None, "check_out": None, "hours": None, "status": "absent", "label": "Absent"}
-            for d in sorted(absent_dates, reverse=True)
-        ]
+        filtered_rows = []
+        for d in sorted(absent_dates, reverse=True):
+            rec = absent_rec_map2.get(d)
+            filtered_rows.append(
+                {
+                    "date": d,
+                    "check_in": rec.check_in_time if rec else None,
+                    "check_out": rec.check_out_time if rec else None,
+                    "hours": rec.total_hours if rec else None,
+                    "status": "absent",
+                    "label": "Absent",
+                }
+            )
 
     context = {
         "employee": employee,
