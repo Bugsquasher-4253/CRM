@@ -685,20 +685,29 @@ def admin_dashboard(request):
 @login_required
 @user_passes_test(is_admin)
 def manage_employees(request):
-    employees = Employee.objects.filter(is_active=True).select_related("user", "department")
     departments = Department.objects.all()
     search = request.GET.get("search", "")
     dept_filter = request.GET.get("department", "")
+    tab = request.GET.get("tab", "active")  # "active" | "fired"
+
+    base_qs = Employee.objects.select_related("user", "department")
+    active_qs = base_qs.filter(is_active=True)
+    fired_qs = base_qs.filter(is_active=False)
 
     if search:
-        employees = employees.filter(
+        q = (
             Q(user__first_name__icontains=search)
             | Q(user__last_name__icontains=search)
             | Q(employee_id__icontains=search)
             | Q(designation__icontains=search)
         )
+        active_qs = active_qs.filter(q)
+        fired_qs = fired_qs.filter(q)
     if dept_filter:
-        employees = employees.filter(department__id=dept_filter)
+        active_qs = active_qs.filter(department__id=dept_filter)
+        fired_qs = fired_qs.filter(department__id=dept_filter)
+
+    employees = fired_qs if tab == "fired" else active_qs
 
     return render(
         request,
@@ -707,6 +716,9 @@ def manage_employees(request):
             "employees": employees,
             "departments": departments,
             "search": search,
+            "tab": tab,
+            "active_count": active_qs.count(),
+            "fired_count": fired_qs.count(),
         },
     )
 
@@ -839,6 +851,41 @@ def edit_employee_admin(request, emp_id):
             "employee": employee,
         },
     )
+
+
+@login_required
+@user_passes_test(is_admin)
+def fire_employee(request, emp_id):
+    employee = get_object_or_404(Employee, id=emp_id)
+    if request.method != "POST":
+        return redirect("employee_detail", emp_id=emp_id)
+    if employee.user == request.user:
+        messages.error(request, "You cannot fire yourself.")
+        return redirect("employee_detail", emp_id=emp_id)
+    employee.is_active = False
+    employee.save()
+    employee.user.is_active = False
+    employee.user.save()
+    messages.success(
+        request, f"{employee.user.get_full_name()} has been terminated. Their login access has been removed."
+    )
+    return redirect("manage_employees")
+
+
+@login_required
+@user_passes_test(is_admin)
+def rehire_employee(request, emp_id):
+    employee = get_object_or_404(Employee, id=emp_id)
+    if request.method != "POST":
+        return redirect("employee_detail", emp_id=emp_id)
+    employee.is_active = True
+    employee.save()
+    employee.user.is_active = True
+    employee.user.save()
+    messages.success(
+        request, f"{employee.user.get_full_name()} has been rehired. Their login access has been restored."
+    )
+    return redirect("employee_detail", emp_id=emp_id)
 
 
 @login_required

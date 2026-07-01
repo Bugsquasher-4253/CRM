@@ -19,7 +19,11 @@
       <h5 class="fw-bold mb-0">{{ employee.user.get_full_name }}</h5>
       <p class="text-muted mb-1">{{ employee.designation }}</p>
       <p class="text-muted small mb-2">{{ employee.department }}</p>
-      {% if employee.user.is_staff %}
+      {% if not employee.is_active %}
+        <span class="badge px-3 py-2 rounded-pill mb-2" style="background:#DC2626;color:#fff;font-size:0.75rem;">
+          <i class="bi bi-slash-circle me-1"></i>Terminated
+        </span>
+      {% elif employee.user.is_staff %}
         <span class="badge px-3 py-2 rounded-pill mb-1" style="background:#111827;color:#BAF2BF;font-size:0.72rem;">
           <i class="bi bi-shield-fill-check me-1"></i>Admin
         </span>
@@ -218,22 +222,69 @@
       </form>
       {% endif %}
 
-      <!-- Activate / Deactivate -->
-      <form method="POST" action="{% url 'toggle_employee_active' employee.id %}" style="display:inline;">
-        {% csrf_token %}
+      {% if employee.user != request.user %}
         {% if employee.is_active %}
-          <button type="submit" class="btn btn-outline-danger"
-                  onclick="return confirm('Deactivate {{ employee.user.get_full_name }}? They won\'t be able to log in.')">
-            <i class="bi bi-person-x me-1"></i>Deactivate
+          <!-- Fire Employee -->
+          <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#fireModal">
+            <i class="bi bi-slash-circle me-1"></i>Terminate Employee
           </button>
         {% else %}
-          <button type="submit" class="btn btn-outline-success">
-            <i class="bi bi-person-check me-1"></i>Activate
-          </button>
+          <!-- Rehire -->
+          <form method="POST" action="{% url 'rehire_employee' employee.id %}" style="display:inline;">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-success"
+                    onclick="return confirm('Rehire {{ employee.user.get_full_name }}? This will restore their login access.')">
+              <i class="bi bi-person-check me-1"></i>Rehire Employee
+            </button>
+          </form>
         {% endif %}
-      </form>
+      {% endif %}
     </div>
-
   </div>
 </div>
+
+<!-- Fire Confirmation Modal -->
+{% if employee.is_active and employee.user != request.user %}
+<div class="modal fade" id="fireModal" tabindex="-1" aria-labelledby="fireModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content" style="border:2px solid #DC2626;border-radius:12px;">
+      <div class="modal-header" style="background:#FEF2F2;border-bottom:1px solid #FECACA;">
+        <h5 class="modal-title fw-bold text-danger" id="fireModalLabel">
+          <i class="bi bi-slash-circle me-2"></i>Terminate Employee
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body p-4">
+        <div class="p-3 mb-4 rounded" style="background:#FEF2F2;border:1px solid #FECACA;">
+          <div class="fw-bold text-danger mb-1">{{ employee.user.get_full_name }}</div>
+          <div class="text-muted small">{{ employee.employee_id }} · {{ employee.designation }}</div>
+        </div>
+        <p class="text-muted" style="font-size:0.9rem;">This will <strong>permanently revoke their login access</strong>. All attendance, salary, and leave records will be kept. You can rehire them later to restore access.</p>
+        <form method="POST" action="{% url 'fire_employee' employee.id %}" id="fireForm">
+          {% csrf_token %}
+          <label class="form-label fw-semibold" style="font-size:0.85rem;">
+            Type <code>{{ employee.user.get_full_name }}</code> to confirm:
+          </label>
+          <input type="text" name="confirm_name" id="confirmNameInput" class="form-control mb-3"
+                 placeholder="Type full name here..." autocomplete="off">
+          <button type="submit" id="fireSubmitBtn" class="btn btn-danger w-100 fw-semibold" disabled>
+            <i class="bi bi-slash-circle me-2"></i>Yes, Terminate Employee
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+(function() {
+  var input = document.getElementById('confirmNameInput');
+  var btn   = document.getElementById('fireSubmitBtn');
+  if (!input) return;
+  var expected = "{{ employee.user.get_full_name|lower }}";
+  input.addEventListener('input', function() {
+    btn.disabled = (input.value.trim().toLowerCase() !== expected);
+  });
+})();
+</script>
+{% endif %}
 {% endblock %}
