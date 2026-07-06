@@ -1296,6 +1296,167 @@ def export_monthly_report_excel(request):
     return response
 
 
+@login_required
+@user_passes_test(is_admin)
+def export_employee_monthly_excel(request, emp_id):
+    """Download a single employee's day-by-day attendance for the selected month as Excel."""
+    import calendar
+
+    import openpyxl
+    from openpyxl.styles import Alignment, Font, PatternFill
+    from openpyxl.utils import get_column_letter
+
+    employee = get_object_or_404(Employee, id=emp_id)
+    month = int(request.GET.get("month", timezone.now().month))
+    year = int(request.GET.get("year", timezone.now().year))
+    month_name_str = calendar.month_name[month]
+
+    records_qs = AttendanceRecord.objects.filter(employee=employee, date__month=month, date__year=year)
+    records_map = {r.date: r for r in records_qs}
+
+    num_days = calendar.monthrange(year, month)[1]
+    today = timezone.now().date()
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = f"{employee.employee_id}_{month_name_str[:3]}{year}"
+
+    # Title
+    ws.merge_cells("A1:H1")
+    ws["A1"] = (
+        f"Crefio — {employee.user.get_full_name()} ({employee.employee_id}) " f"— Attendance: {month_name_str} {year}"
+    )
+    ws["A1"].font = Font(bold=True, size=12, color="FFFFFF")
+    ws["A1"].fill = PatternFill(start_color="111827", end_color="111827", fill_type="solid")
+    ws["A1"].alignment = Alignment(horizontal="center", vertical="center")
+    ws.row_dimensions[1].height = 30
+
+    headers = ["Date", "Day", "Check-In", "Check-Out", "Hours Worked", "Status", "Notes"]
+    for col, h in enumerate(headers, 1):
+        cell = ws.cell(row=2, column=col, value=h)
+        cell.font = Font(bold=True, size=10)
+        cell.fill = PatternFill(start_color="BAF2BF", end_color="BAF2BF", fill_type="solid")
+        cell.alignment = Alignment(horizontal="center", vertical="center")
+    ws.row_dimensions[2].height = 20
+
+    status_colors = {
+        "present": "D1FAE5",
+        "half_day": "DBEAFE",
+        "absent": "FEE2E2",
+        "leave": "FEF9C3",
+    }
+
+    for day in range(1, num_days + 1):
+        d = datetime.date(year, month, day)
+        record = records_map.get(d)
+        is_sunday = d.weekday() == 6
+        is_future = d > today
+        row = day + 2
+
+        fill_color = "F0F0F0" if is_sunday else "FAFAFA" if is_future else "FFFFFF"
+        if record and not is_sunday and not is_future:
+            fill_color = status_colors.get(record.status, "FFFFFF")
+
+        check_in = record.check_in_time.strftime("%I:%M %p") if record and record.check_in_time else "—"
+        check_out = record.check_out_time.strftime("%I:%M %p") if record and record.check_out_time else "—"
+        hours = float(record.total_hours) if record and record.total_hours else "—"
+
+        if is_sunday:
+            status_label = "Sunday / Holiday"
+        elif is_future:
+            status_label = "Future"
+        elif record:
+            status_label = record.get_status_display()
+        else:
+            status_label = "Absent / No Record"
+
+        row_data = [
+            d.strftime("%d %b %Y"),
+            d.strftime("%A"),
+            check_in,
+            check_out,
+            hours,
+            status_label,
+            record.notes if record else "",
+        ]
+
+        for col, val in enumerate(row_data, 1):
+            cell = ws.cell(row=row, column=col, value=val)
+            cell.fill = PatternFill(start_color=fill_color, end_color=fill_color, fill_type="solid")
+            cell.alignment = Alignment(horizontal="center" if col > 2 else "left", vertical="center")
+
+    col_widths = [14, 14, 12, 12, 14, 18, 30]
+    for col, width in enumerate(col_widths, 1):
+        ws.column_dimensions[get_column_letter(col)].width = width
+
+    fname = f"Crefio_{employee.employee_id}_{month_name_str}_{year}.xlsx"
+    response = HttpResponse(content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+    response["Content-Disposition"] = f'attachment; filename="{fname}"'
+    wb.save(response)
+    return response
+
+
+@login_required
+@user_passes_test(is_admin)
+def edit_day_attendance(request, emp_id):
+    """Create or update a single day's attendance record from the monthly detail page."""
+    employee = get_object_or_404(Employee, id=emp_id)
+    if request.method != "POST":
+        return redirect("employee_monthly_detail", emp_id=emp_id)
+
+    date_str = request.POST.get("date")
+    try:
+        record_date = datetime.date.fromisoformat(date_str)
+    except (ValueError, TypeError):
+        messages.error(request, "Invalid date.")
+        return redirect("employee_monthly_detail", emp_id=emp_id)
+
+    check_in_raw = request.POST.get("check_in_time", "").strip()
+    check_out_raw = request.POST.get("check_out_time", "").strip()
+    status_override = request.POST.get("status", "").strip()
+    notes = request.POST.get("notes", "").strip()
+
+    # Parse HH:MM strings into proper time objects so calculate_hours() doesn't crash
+    def parse_time(t):
+        try:
+            return datetime.time.fromisoformat(t) if t else None
+        except ValueError:
+            return None
+
+    check_in_time = parse_time(check_in_raw)
+    check_out_time = parse_time(check_out_raw)
+
+    record, _ = AttendanceRecord.objects.get_or_create(
+        employee=employee, date=record_date, defaults={"status": "absent"}
+    )
+
+    record.check_in_time = check_in_time
+    record.check_out_time = check_out_time
+    record.notes = notes
+
+    if check_in_time and check_out_time:
+        # Both times present — calculate hours, then honour status override if set
+        record.save()
+        record.calculate_hours()
+        if status_override in ("present", "absent", "half_day", "leave") and status_override != record.status:
+            record.status = status_override
+            record.save()
+    elif check_in_time:
+        record.status = status_override if status_override in ("present", "absent", "half_day", "leave") else "present"
+        record.total_hours = None
+        record.save()
+    else:
+        record.status = status_override if status_override in ("present", "absent", "half_day", "leave") else "absent"
+        record.total_hours = None
+        record.save()
+
+    messages.success(request, f"Attendance for {record_date.strftime('%d %b %Y')} updated.")
+    from django.urls import reverse
+
+    url = reverse("employee_monthly_detail", args=[emp_id])
+    return redirect(f"{url}?month={record_date.month}&year={record_date.year}")
+
+
 # ─── DETAILED REPORT VIEWS ───────────────────────────────────────────────────
 
 

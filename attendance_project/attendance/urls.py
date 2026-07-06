@@ -49,6 +49,12 @@ urlpatterns = [
     path("reports/", views.reports, name="reports"),
     path("reports/export/excel/", views.export_monthly_report_excel, name="export_monthly_report_excel"),
     path("reports/employee/<int:emp_id>/", views.employee_monthly_detail, name="employee_monthly_detail"),
+    path(
+        "reports/employee/<int:emp_id>/export/",
+        views.export_employee_monthly_excel,
+        name="export_employee_monthly_excel",
+    ),
+    path("reports/employee/<int:emp_id>/edit-day/", views.edit_day_attendance, name="edit_day_attendance"),
     path("reports/date/", views.date_wise_report, name="date_wise_report"),
     # Admin leave management
     path("admin-panel/leaves/", views.admin_leaves, name="admin_leaves"),
