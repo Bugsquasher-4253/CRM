@@ -181,7 +181,7 @@
         <i class="bi bi-calendar2-x me-2" style="color:#856404;"></i>Leave Days
         <span class="badge ms-2" style="background:#fef9c3;color:#856404;">{{ leave_days }}</span>
       {% endif %}
-      <span class="text-muted ms-2" style="font-size:0.78rem;">— {{ today|date:"F Y" }}</span>
+      <span class="text-muted ms-2" style="font-size:0.78rem;">{{ today|date:"F Y" }}</span>
     </span>
     <a href="{% url 'dashboard' %}" class="btn btn-sm btn-outline-secondary">
       <i class="bi bi-x-lg me-1"></i>Close

@@ -1,5 +1,5 @@
 {% extends 'attendance/base.html' %}
-{% block title %}{{ employee.user.get_full_name }} — {{ month_name }} {{ year }}{% endblock %}
+{% block title %}{{ employee.user.get_full_name }} | {{ month_name }} {{ year }}{% endblock %}
 {% block page_title %}Employee Monthly Detail{% endblock %}
 
 {% block content %}
@@ -236,7 +236,7 @@
     <div class="modal-content" style="border-radius:12px;overflow:hidden;">
       <div class="modal-header" style="background:#111827;">
         <h5 class="modal-title text-white fw-bold">
-          <i class="bi bi-pencil-square me-2"></i>Edit Attendance — <span id="modalDateLabel"></span>
+          <i class="bi bi-pencil-square me-2"></i>Edit Attendance: <span id="modalDateLabel"></span>
         </h5>
         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
       </div>

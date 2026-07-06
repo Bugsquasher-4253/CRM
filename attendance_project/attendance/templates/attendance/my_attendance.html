@@ -124,7 +124,7 @@
         <i class="bi bi-calendar2-x me-2" style="color:#856404;"></i>Leave Days
         <span class="badge ms-2" style="background:#fef9c3;color:#856404;">{{ leave }}</span>
       {% endif %}
-      <span class="text-muted ms-1" style="font-size:0.78rem;">— {{ month_name }} {{ year }}</span>
+      <span class="text-muted ms-1" style="font-size:0.78rem;">{{ month_name }} {{ year }}</span>
     </span>
     <a href="?month={{ month }}&year={{ year }}" class="btn btn-sm btn-outline-secondary">
       <i class="bi bi-x-lg me-1"></i>Clear
@@ -163,7 +163,7 @@
 <!-- ── Full Month Records ───────────────────────────────────────────── -->
 <div class="card">
   <div class="card-header py-3 d-flex justify-content-between align-items-center">
-    <span><i class="bi bi-table me-2"></i>All Records — {{ month_name }} {{ year }}</span>
+    <span><i class="bi bi-table me-2"></i>All Records: {{ month_name }} {{ year }}</span>
     <span class="badge" style="background:#f3f4f6;color:#374151;font-weight:600;">
       {{ records.count }} record{{ records.count|pluralize }}
     </span>

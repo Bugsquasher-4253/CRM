@@ -1192,7 +1192,7 @@ def export_monthly_report_excel(request):
 
     # Title row — spans 15 columns (A:O)
     ws.merge_cells("A1:O1")
-    ws["A1"] = f"Crefio — Monthly Attendance & Salary Report: {month_name_str} {year}"
+    ws["A1"] = f"Crefio | Monthly Attendance & Salary Report: {month_name_str} {year}"
     ws["A1"].font = Font(bold=True, size=13, color="FFFFFF")
     ws["A1"].fill = PatternFill(start_color="111827", end_color="111827", fill_type="solid")
     ws["A1"].alignment = Alignment(horizontal="center", vertical="center")
@@ -1324,7 +1324,7 @@ def export_employee_monthly_excel(request, emp_id):
     # Title
     ws.merge_cells("A1:H1")
     ws["A1"] = (
-        f"Crefio — {employee.user.get_full_name()} ({employee.employee_id}) " f"— Attendance: {month_name_str} {year}"
+        f"Crefio | {employee.user.get_full_name()} ({employee.employee_id}) | Attendance: {month_name_str} {year}"
     )
     ws["A1"].font = Font(bold=True, size=12, color="FFFFFF")
     ws["A1"].fill = PatternFill(start_color="111827", end_color="111827", fill_type="solid")

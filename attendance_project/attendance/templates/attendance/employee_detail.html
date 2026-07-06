@@ -123,9 +123,9 @@
             {% for record in recent_attendance %}
             <tr>
               <td class="px-4 py-3">{{ record.date|date:"d M Y" }}</td>
-              <td class="py-3 text-success">{{ record.check_in_time|time:"h:i A"|default:"—" }}</td>
-              <td class="py-3 text-danger">{{ record.check_out_time|time:"h:i A"|default:"—" }}</td>
-              <td class="py-3">{{ record.total_hours|default:"—" }}</td>
+              <td class="py-3 text-success">{{ record.check_in_time|time:"h:i A"|default:"" }}</td>
+              <td class="py-3 text-danger">{{ record.check_out_time|time:"h:i A"|default:"" }}</td>
+              <td class="py-3">{{ record.total_hours|default:"" }}</td>
               <td class="py-3">
                 <span class="badge badge-{{ record.status }} px-3 py-2 rounded-pill">
                   {{ record.get_status_display }}
