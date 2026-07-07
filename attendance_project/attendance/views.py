@@ -221,15 +221,22 @@ def dashboard(request):
             att_state = "checked_out"
         elif active_break:
             att_state = "on_break"
-            pause_start_dt = datetime.datetime.combine(today, active_break.pause_start)
-            pause_start_dt = timezone.make_aware(pause_start_dt, timezone.get_current_timezone())
-            break_elapsed_secs = max(0, int((now_local - pause_start_dt).total_seconds()))
         else:
             att_state = "working"
 
-        checkin_dt = datetime.datetime.combine(today, today_attendance.check_in_time)
-        checkin_dt = timezone.make_aware(checkin_dt, timezone.get_current_timezone())
-        gross_elapsed = max(0, int((now_local - checkin_dt).total_seconds()))
+        # Use simple seconds-since-midnight arithmetic to avoid timezone-aware subtraction issues
+        now_t = now_local.time()
+        now_secs = now_t.hour * 3600 + now_t.minute * 60 + now_t.second
+
+        cin = today_attendance.check_in_time
+        cin_secs = cin.hour * 3600 + cin.minute * 60 + cin.second
+        gross_elapsed = max(0, now_secs - cin_secs)
+
+        if active_break:
+            ps = active_break.pause_start
+            ps_secs = ps.hour * 3600 + ps.minute * 60 + ps.second
+            break_elapsed_secs = max(0, now_secs - ps_secs)
+
         already_broken = (today_attendance.break_minutes or 0) * 60
         if active_break:
             already_broken += break_elapsed_secs
@@ -812,7 +819,16 @@ def admin_dashboard(request):
 
     checked_in_now = AttendanceRecord.objects.filter(
         date=today, check_in_time__isnull=False, check_out_time__isnull=True
-    ).select_related("employee__user")
+    ).select_related("employee__user", "employee__department")
+
+    # Split into Working vs On Break using AttendanceBreak
+    on_break_record_ids = set(
+        AttendanceBreak.objects.filter(attendance__date=today, pause_end__isnull=True).values_list(
+            "attendance_id", flat=True
+        )
+    )
+    working_records = [r for r in checked_in_now if r.id not in on_break_record_ids]
+    on_break_records = [r for r in checked_in_now if r.id in on_break_record_ids]
 
     recent_activity = (
         AttendanceRecord.objects.filter(date=today).select_related("employee__user").order_by("-check_in_time")[:10]
@@ -836,6 +852,8 @@ def admin_dashboard(request):
         "today_present": today_present,
         "today_absent": today_absent,
         "checked_in_now": checked_in_now,
+        "working_records": working_records,
+        "on_break_records": on_break_records,
         "recent_activity": recent_activity,
         "today": today,
         "status_filter": status_filter,

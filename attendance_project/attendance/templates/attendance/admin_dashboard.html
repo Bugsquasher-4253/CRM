@@ -44,10 +44,43 @@
         <div class="dash-stat-icon" style="background:#f3e5f5;">
           <i class="bi bi-person-workspace" style="color:#6a1b9a;"></i>
         </div>
-        <div class="dash-stat-num" style="color:#6a1b9a;">{{ checked_in_now.count }}</div>
-        <div class="dash-stat-label">In Office Now</div>
+        <div class="dash-stat-num" style="color:#6a1b9a;">{{ working_records|length }}</div>
+        <div class="dash-stat-label">Working Now</div>
       </div>
     </a>
+  </div>
+</div>
+
+<!-- Live Status Bar -->
+<div class="card mb-4" style="border-left:4px solid #111827;">
+  <div class="card-body py-3 px-4">
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+      <div class="fw-semibold" style="font-size:0.9rem;">
+        <i class="bi bi-broadcast me-2 text-danger"></i>Live Status — {{ today|date:"d M Y" }}
+      </div>
+      <div class="d-flex gap-3 flex-wrap">
+        <span class="d-flex align-items-center gap-2">
+          <span style="width:10px;height:10px;border-radius:50%;background:#16A34A;display:inline-block;"></span>
+          <span class="fw-semibold" style="color:#16A34A;">{{ working_records|length }}</span>
+          <span class="text-muted small">Working</span>
+        </span>
+        <span class="d-flex align-items-center gap-2">
+          <span style="width:10px;height:10px;border-radius:50%;background:#D97706;display:inline-block;"></span>
+          <span class="fw-semibold" style="color:#D97706;">{{ on_break_records|length }}</span>
+          <span class="text-muted small">On Break</span>
+        </span>
+        <span class="d-flex align-items-center gap-2">
+          <span style="width:10px;height:10px;border-radius:50%;background:#6B7280;display:inline-block;"></span>
+          <span class="fw-semibold text-muted">{{ today_present }}</span>
+          <span class="text-muted small">Checked Out</span>
+        </span>
+        <span class="d-flex align-items-center gap-2">
+          <span style="width:10px;height:10px;border-radius:50%;background:#DC2626;display:inline-block;"></span>
+          <span class="fw-semibold text-danger">{{ today_absent }}</span>
+          <span class="text-muted small">Absent</span>
+        </span>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -160,23 +193,48 @@
 <!-- Default dashboard panels (hidden when filter is active) -->
 {% if not status_filter %}
 <div class="row g-4">
-  <!-- Currently Checked In -->
+  <!-- Working + On Break -->
   <div class="col-md-6">
     <div class="card h-100">
-      <div class="card-header py-3">
-        <i class="bi bi-person-check me-2 text-success"></i>Currently In Office
+      <div class="card-header py-3 d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-person-check me-2 text-success"></i>Currently In Office</span>
+        <div class="d-flex gap-2">
+          <span class="badge rounded-pill px-3" style="background:#D1FAE5;color:#065F46;">
+            <i class="bi bi-activity me-1"></i>{{ working_records|length }} Working
+          </span>
+          <span class="badge rounded-pill px-3" style="background:#FEF3C7;color:#92400E;">
+            <i class="bi bi-cup-hot me-1"></i>{{ on_break_records|length }} On Break
+          </span>
+        </div>
       </div>
       <div class="card-body p-0">
-        {% if checked_in_now %}
+        {% if working_records or on_break_records %}
         <ul class="list-group list-group-flush">
-          {% for record in checked_in_now %}
+          {% for record in working_records %}
           <li class="list-group-item d-flex justify-content-between align-items-center px-4 py-3">
-            <div>
-              <div class="fw-semibold">{{ record.employee.user.get_full_name }}</div>
-              <small class="text-muted">{{ record.employee.designation }}</small>
+            <div class="d-flex align-items-center gap-2">
+              <span style="width:9px;height:9px;border-radius:50%;background:#16A34A;flex-shrink:0;"></span>
+              <div>
+                <div class="fw-semibold" style="font-size:0.88rem;">{{ record.employee.user.get_full_name }}</div>
+                <small class="text-muted">{{ record.employee.designation }} · In: {{ record.check_in_time|time:"h:i A" }}</small>
+              </div>
             </div>
-            <span class="badge bg-success rounded-pill">
-              In since {{ record.check_in_time|time:"h:i A" }}
+            <span class="badge rounded-pill px-3 py-1" style="background:#D1FAE5;color:#065F46;font-size:0.72rem;">
+              <i class="bi bi-activity me-1"></i>Working
+            </span>
+          </li>
+          {% endfor %}
+          {% for record in on_break_records %}
+          <li class="list-group-item d-flex justify-content-between align-items-center px-4 py-3" style="background:#FFFBEB;">
+            <div class="d-flex align-items-center gap-2">
+              <span style="width:9px;height:9px;border-radius:50%;background:#D97706;flex-shrink:0;animation:pulse 1.5s infinite;"></span>
+              <div>
+                <div class="fw-semibold" style="font-size:0.88rem;">{{ record.employee.user.get_full_name }}</div>
+                <small class="text-muted">{{ record.employee.designation }} · In: {{ record.check_in_time|time:"h:i A" }}</small>
+              </div>
+            </div>
+            <span class="badge rounded-pill px-3 py-1" style="background:#FEF3C7;color:#92400E;font-size:0.72rem;">
+              <i class="bi bi-cup-hot me-1"></i>On Break
             </span>
           </li>
           {% endfor %}
