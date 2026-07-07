@@ -52,6 +52,8 @@ class AttendanceRecord(models.Model):
     check_out_time = models.TimeField(null=True, blank=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="present")
     total_hours = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+    break_minutes = models.IntegerField(default=0)
+    net_hours = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
     notes = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -65,36 +67,56 @@ class AttendanceRecord(models.Model):
 
     def calculate_hours(self):
         """
-        Recalculate total_hours and auto-set status based on business rules:
-          - No check-in               → absent (caller should handle; record shouldn't exist)
+        Recalculate total_hours (gross), break_minutes, net_hours, and status.
+          - No check-in               → absent
           - Check-in, no check-out    → absent (forgot to check out)
-          - Check-in + check-out,
-              hours >= 5              → present (full day)
-              hours <  5              → half_day
-        Handles edge case where check-out is before check-in (midnight cross or bad entry)
-        by treating hours as 0 (→ half_day).
+          - Check-in + check-out      → present (≥5 net hrs) or half_day (<5)
+        Net hours = gross hours − total break time.
         """
         if self.check_in_time and self.check_out_time:
             check_in = datetime.datetime.combine(self.date, self.check_in_time)
             check_out = datetime.datetime.combine(self.date, self.check_out_time)
-            # Midnight crossover: checkout is next calendar day (e.g. in 10:56 PM, out 01:02 AM)
             if check_out <= check_in:
                 check_out += datetime.timedelta(days=1)
-            duration = check_out - check_in
-            hours = duration.total_seconds() / 3600
-            self.total_hours = round(hours, 2)
-            # ≥5 hours → full day present; <5 → half day
-            if hours >= 5:
+            gross_secs = (check_out - check_in).total_seconds()
+            gross_hours = gross_secs / 3600
+            self.total_hours = round(gross_hours, 2)
+
+            # Sum completed breaks
+            completed_breaks = self.breaks.filter(pause_end__isnull=False)
+            total_break_mins = sum(b.duration_minutes for b in completed_breaks)
+            self.break_minutes = total_break_mins
+
+            net_secs = max(0, gross_secs - total_break_mins * 60)
+            net_hours = net_secs / 3600
+            self.net_hours = round(net_hours, 2)
+
+            if net_hours >= 5:
                 self.status = "present"
             else:
                 self.status = "half_day"
         elif self.check_in_time and not self.check_out_time:
-            # Checked in but forgot to check out → absent
             self.total_hours = None
+            self.net_hours = None
             self.status = "absent"
-        # If somehow neither time exists, leave status as-is (absent / leave set externally)
         self.save()
-        return self.total_hours
+        return self.net_hours
+
+
+class AttendanceBreak(models.Model):
+    """Stores individual pause/resume sessions within a single attendance record."""
+
+    attendance = models.ForeignKey(AttendanceRecord, on_delete=models.CASCADE, related_name="breaks")
+    pause_start = models.TimeField()
+    pause_end = models.TimeField(null=True, blank=True)
+    duration_minutes = models.IntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["pause_start"]
+
+    def __str__(self):
+        return f"{self.attendance} break {self.pause_start}–{self.pause_end or '?'}"
 
 
 class LeaveRequest(models.Model):

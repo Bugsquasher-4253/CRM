@@ -65,7 +65,8 @@
           <th class="py-3">Date</th>
           <th class="py-3">Check In</th>
           <th class="py-3">Check Out</th>
-          <th class="py-3 text-center">Hours</th>
+          <th class="py-3 text-center">Break</th>
+          <th class="py-3 text-center">Net Hours</th>
           <th class="py-3 text-center">Status</th>
           <th class="py-3 text-center">Actions</th>
         </tr>
@@ -82,7 +83,20 @@
           </td>
           <td class="py-3 text-success fw-semibold">{{ record.check_in_time|time:"h:i A"|default:"" }}</td>
           <td class="py-3 text-danger fw-semibold">{{ record.check_out_time|time:"h:i A"|default:"" }}</td>
-          <td class="py-3 text-center">{{ record.total_hours|default:"" }}</td>
+          <td class="py-3 text-center">
+            {% if record.break_minutes %}
+              <span class="badge" style="background:#FEF3C7;color:#92400E;font-size:0.72rem;">
+                <i class="bi bi-cup-hot me-1"></i>{{ record.break_minutes }} min
+              </span>
+            {% else %}<span class="text-muted">—</span>{% endif %}
+          </td>
+          <td class="py-3 text-center">
+            {% if record.net_hours %}
+              <span class="fw-semibold text-success">{{ record.net_hours }}</span> <small class="text-muted">h</small>
+            {% elif record.total_hours %}
+              <span class="fw-semibold">{{ record.total_hours }}</span> <small class="text-muted">h</small>
+            {% else %}<span class="text-muted">—</span>{% endif %}
+          </td>
           <td class="py-3 text-center">
             <span class="badge badge-{{ record.status }} px-3 py-2 rounded-pill">
               {{ record.get_status_display }}
@@ -131,9 +145,20 @@
             </div>
           </div>
           <div class="col-4">
-            <div class="text-muted" style="font-size:0.7rem;">Hours</div>
-            <div style="font-size:0.82rem;">{{ record.total_hours|default:"" }}{% if record.total_hours %}h{% endif %}</div>
+            <div class="text-muted" style="font-size:0.7rem;">Net Hours</div>
+            <div style="font-size:0.82rem;">
+              {% if record.net_hours %}<strong>{{ record.net_hours }}</strong>h
+              {% elif record.total_hours %}<strong>{{ record.total_hours }}</strong>h
+              {% else %}—{% endif %}
+            </div>
           </div>
+          {% if record.break_minutes %}
+          <div class="col-12">
+            <span class="badge" style="background:#FEF3C7;color:#92400E;font-size:0.7rem;">
+              <i class="bi bi-cup-hot me-1"></i>Break: {{ record.break_minutes }} min
+            </span>
+          </div>
+          {% endif %}
         </div>
         <div class="d-flex gap-2">
           <a href="{% url 'edit_attendance_record' record.id %}" class="btn btn-sm btn-outline-primary flex-fill">

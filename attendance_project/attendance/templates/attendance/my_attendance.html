@@ -180,7 +180,8 @@
           <th class="py-3">Day</th>
           <th class="py-3">Check In</th>
           <th class="py-3">Check Out</th>
-          <th class="py-3">Hours</th>
+          <th class="py-3">Break</th>
+          <th class="py-3">Net Hours</th>
           <th class="py-3">Status</th>
         </tr>
       </thead>
@@ -203,7 +204,16 @@
             {% else %}<span class="text-muted">—</span>{% endif %}
           </td>
           <td class="py-3">
-            {% if record.total_hours %}
+            {% if record.break_minutes %}
+              <span class="badge" style="background:#FEF3C7;color:#92400E;font-size:0.72rem;">
+                <i class="bi bi-cup-hot me-1"></i>{{ record.break_minutes }} min
+              </span>
+            {% else %}<span class="text-muted">—</span>{% endif %}
+          </td>
+          <td class="py-3">
+            {% if record.net_hours %}
+              <span class="fw-semibold text-success">{{ record.net_hours }}</span> <small class="text-muted">hrs</small>
+            {% elif record.total_hours %}
               <span class="fw-semibold">{{ record.total_hours }}</span> <small class="text-muted">hrs</small>
             {% else %}—{% endif %}
           </td>
@@ -248,11 +258,20 @@
             </div>
           </div>
           <div class="col-4">
-            <div class="text-muted" style="font-size:0.68rem;font-weight:600;text-transform:uppercase;letter-spacing:.5px;">Hours</div>
+            <div class="text-muted" style="font-size:0.68rem;font-weight:600;text-transform:uppercase;letter-spacing:.5px;">Net Hours</div>
             <div style="font-size:0.82rem;">
-              {% if record.total_hours %}<strong>{{ record.total_hours }}</strong> h{% else %}—{% endif %}
+              {% if record.net_hours %}<strong>{{ record.net_hours }}</strong> h
+              {% elif record.total_hours %}<strong>{{ record.total_hours }}</strong> h
+              {% else %}—{% endif %}
             </div>
           </div>
+          {% if record.break_minutes %}
+          <div class="col-12">
+            <span class="badge" style="background:#FEF3C7;color:#92400E;font-size:0.7rem;">
+              <i class="bi bi-cup-hot me-1"></i>Break: {{ record.break_minutes }} min
+            </span>
+          </div>
+          {% endif %}
         </div>
       </div>
     </div>

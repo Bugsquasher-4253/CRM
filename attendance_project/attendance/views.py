@@ -33,6 +33,7 @@ from .forms import (
     UserForm,
 )
 from .models import (
+    AttendanceBreak,
     AttendanceCorrectionRequest,
     AttendanceRecord,
     Department,
@@ -76,6 +77,19 @@ def _resolve_incomplete_checkins(employee=None):
             skip_q |= Q(employee_id=emp_id, date=dt)
         qs = qs.exclude(skip_q)
 
+    # Also close any open breaks on past records before marking absent
+    for record in qs:
+        open_break = record.breaks.filter(pause_end__isnull=True).first()
+        if open_break:
+            open_break.pause_end = datetime.time(23, 59, 59)
+            open_break.duration_minutes = int(
+                (
+                    datetime.datetime.combine(record.date, open_break.pause_end)
+                    - datetime.datetime.combine(record.date, open_break.pause_start)
+                ).total_seconds()
+                / 60
+            )
+            open_break.save()
     qs.update(status="absent")
 
 
@@ -188,9 +202,38 @@ def dashboard(request):
         return redirect("login")
 
     today = timezone.now().date()
+    now_local = timezone.localtime(timezone.now())
     # Auto-mark past days with check-in but no check-out as absent
     _resolve_incomplete_checkins(employee)
     today_attendance = employee.get_today_attendance()
+
+    # Break state for the dashboard attendance card
+    active_break = None
+    today_breaks = []
+    att_state = "not_checked_in"
+    checkin_elapsed_secs = 0
+    break_elapsed_secs = 0
+
+    if today_attendance and today_attendance.check_in_time:
+        today_breaks = list(today_attendance.breaks.all())
+        active_break = today_attendance.breaks.filter(pause_end__isnull=True).first()
+        if today_attendance.check_out_time:
+            att_state = "checked_out"
+        elif active_break:
+            att_state = "on_break"
+            pause_start_dt = datetime.datetime.combine(today, active_break.pause_start)
+            pause_start_dt = timezone.make_aware(pause_start_dt, timezone.get_current_timezone())
+            break_elapsed_secs = max(0, int((now_local - pause_start_dt).total_seconds()))
+        else:
+            att_state = "working"
+
+        checkin_dt = datetime.datetime.combine(today, today_attendance.check_in_time)
+        checkin_dt = timezone.make_aware(checkin_dt, timezone.get_current_timezone())
+        gross_elapsed = max(0, int((now_local - checkin_dt).total_seconds()))
+        already_broken = (today_attendance.break_minutes or 0) * 60
+        if active_break:
+            already_broken += break_elapsed_secs
+        checkin_elapsed_secs = max(0, gross_elapsed - already_broken)
 
     # ── Build full 7-day view (today back to 6 days ago) ──────────────────
     week_start = today - datetime.timedelta(days=6)
@@ -366,6 +409,12 @@ def dashboard(request):
         "stat_filter": stat_filter,
         "filtered_rows": filtered_rows,
         "show_doc_reminder": show_doc_reminder,
+        # Break feature
+        "att_state": att_state,
+        "active_break": active_break,
+        "today_breaks": today_breaks,
+        "checkin_elapsed_secs": checkin_elapsed_secs,
+        "break_elapsed_secs": break_elapsed_secs,
     }
     return render(request, "attendance/dashboard.html", context)
 
@@ -441,21 +490,95 @@ def check_out(request):
             elif attendance.check_out_time:
                 messages.warning(request, f'Already checked out at {attendance.check_out_time.strftime("%I:%M %p")}')
             else:
-                attendance.check_out_time = now_time
-                attendance.save()
-                attendance.calculate_hours()  # auto-sets status + total_hours
-                status_label = attendance.get_status_display()
-                if attendance.total_hours:
-                    messages.success(
-                        request,
-                        f'Check-out at {now_time.strftime("%I:%M %p")}. '
-                        f"Total: {attendance.total_hours} hrs — {status_label}",
-                    )
+                # Block checkout if a break is still active
+                active_break = attendance.breaks.filter(pause_end__isnull=True).first()
+                if active_break:
+                    messages.error(request, "Please resume from break before checking out.")
                 else:
-                    messages.success(request, f'Check-out at {now_time.strftime("%I:%M %p")}. Status: {status_label}')
+                    attendance.check_out_time = now_time
+                    attendance.save()
+                    attendance.calculate_hours()
+                    net = attendance.net_hours or attendance.total_hours
+                    brk = attendance.break_minutes
+                    status_label = attendance.get_status_display()
+                    detail = f"Net: {net} hrs"
+                    if brk:
+                        detail += f" (break: {brk} min)"
+                    messages.success(
+                        request, f'Checked out at {now_time.strftime("%I:%M %p")}. {detail} — {status_label}'
+                    )
     except AttendanceRecord.DoesNotExist:
         messages.error(request, "No check-in found for today. Please check in first.")
 
+    return redirect("dashboard")
+
+
+@login_required
+def pause_attendance(request):
+    if request.method != "POST":
+        return redirect("dashboard")
+    try:
+        employee = request.user.employee
+    except Employee.DoesNotExist:
+        return redirect("dashboard")
+
+    today = timezone.now().date()
+    now_time = timezone.localtime(timezone.now()).time()
+    try:
+        attendance = AttendanceRecord.objects.get(employee=employee, date=today)
+    except AttendanceRecord.DoesNotExist:
+        messages.error(request, "You have not checked in today.")
+        return redirect("dashboard")
+
+    if not attendance.check_in_time or attendance.check_out_time:
+        messages.error(request, "Cannot start break right now.")
+        return redirect("dashboard")
+
+    if attendance.breaks.filter(pause_end__isnull=True).exists():
+        messages.warning(request, "You are already on a break.")
+        return redirect("dashboard")
+
+    AttendanceBreak.objects.create(attendance=attendance, pause_start=now_time)
+    messages.success(request, f'Break started at {now_time.strftime("%I:%M %p")}.')
+    return redirect("dashboard")
+
+
+@login_required
+def resume_attendance(request):
+    if request.method != "POST":
+        return redirect("dashboard")
+    try:
+        employee = request.user.employee
+    except Employee.DoesNotExist:
+        return redirect("dashboard")
+
+    today = timezone.now().date()
+    now_time = timezone.localtime(timezone.now()).time()
+    try:
+        attendance = AttendanceRecord.objects.get(employee=employee, date=today)
+    except AttendanceRecord.DoesNotExist:
+        messages.error(request, "No check-in found for today.")
+        return redirect("dashboard")
+
+    active_break = attendance.breaks.filter(pause_end__isnull=True).first()
+    if not active_break:
+        messages.warning(request, "You are not currently on a break.")
+        return redirect("dashboard")
+
+    pause_start_dt = datetime.datetime.combine(today, active_break.pause_start)
+    pause_end_dt = datetime.datetime.combine(today, now_time)
+    if pause_end_dt < pause_start_dt:
+        pause_end_dt += datetime.timedelta(days=1)
+    duration_mins = int((pause_end_dt - pause_start_dt).total_seconds() / 60)
+
+    active_break.pause_end = now_time
+    active_break.duration_minutes = duration_mins
+    active_break.save()
+
+    attendance.break_minutes = sum(b.duration_minutes for b in attendance.breaks.filter(pause_end__isnull=False))
+    attendance.save(update_fields=["break_minutes"])
+
+    messages.success(request, f"Break ended. Duration: {duration_mins} min. Back to work!")
     return redirect("dashboard")
 
 

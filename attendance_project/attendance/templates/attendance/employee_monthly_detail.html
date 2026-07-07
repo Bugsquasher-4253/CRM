@@ -132,7 +132,8 @@
           <th class="py-3">Day</th>
           <th class="py-3 text-success">Check-in</th>
           <th class="py-3 text-danger">Check-out</th>
-          <th class="py-3">Hours</th>
+          <th class="py-3">Break</th>
+          <th class="py-3">Net Hours</th>
           <th class="py-3">Status</th>
           <th class="py-3">Notes</th>
           <th class="py-3 text-center">Edit</th>
@@ -148,9 +149,9 @@
           </td>
 
           {% if row.is_future %}
-            <td class="py-3 text-muted" colspan="6"><em>Future date</em></td>
+            <td class="py-3 text-muted" colspan="7"><em>Future date</em></td>
           {% elif row.is_weekend and not row.record %}
-            <td class="py-3 text-muted" colspan="5"><em>Weekly Holiday</em></td>
+            <td class="py-3 text-muted" colspan="6"><em>Weekly Holiday</em></td>
             <td class="py-3 text-center">
               <button class="btn btn-sm btn-outline-secondary"
                       onclick="openEditModal('{{ row.date|date:"Y-m-d" }}', '', '', '', 'leave', '')"
@@ -176,7 +177,18 @@
               {% endif %}
             </td>
             <td class="py-3">
-              {% if row.record.total_hours %}
+              {% if row.record.break_minutes %}
+                <span class="badge" style="background:#FEF3C7;color:#92400E;font-size:0.72rem;">
+                  <i class="bi bi-cup-hot me-1"></i>{{ row.record.break_minutes }} min
+                </span>
+              {% else %}
+                <span class="text-muted">—</span>
+              {% endif %}
+            </td>
+            <td class="py-3">
+              {% if row.record.net_hours %}
+                <span class="fw-bold text-success">{{ row.record.net_hours }} hrs</span>
+              {% elif row.record.total_hours %}
                 <span class="fw-bold">{{ row.record.total_hours }} hrs</span>
               {% else %}
                 <span class="text-muted">—</span>
@@ -200,6 +212,7 @@
               </button>
             </td>
           {% else %}
+            <td class="py-3"><span class="text-muted">—</span></td>
             <td class="py-3"><span class="text-muted">—</span></td>
             <td class="py-3"><span class="text-muted">—</span></td>
             <td class="py-3"><span class="text-muted">—</span></td>

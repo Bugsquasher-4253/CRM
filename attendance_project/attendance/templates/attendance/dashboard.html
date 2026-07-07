@@ -4,47 +4,139 @@
 
 {% block content %}
 <div class="row g-4 mb-4">
-  <!-- Check In Card -->
+  <!-- Check In / Break Card -->
   <div class="col-md-6">
     <div class="stat-card h-100">
-      <h5 class="fw-bold mb-4"><i class="bi bi-clock me-2 text-primary"></i>Today's Attendance</h5>
-      <div class="text-center py-3">
+      <h5 class="fw-bold mb-3"><i class="bi bi-clock me-2 text-primary"></i>Today's Attendance</h5>
+      <div class="text-center">
         <div class="fs-resp-xl" id="clock">--:--:--</div>
-        <div class="text-muted mb-4">{{ today|date:"l, d F Y" }}</div>
+        <div class="text-muted mb-3" style="font-size:0.85rem;">{{ today|date:"l, d F Y" }}</div>
 
-        {% if today_attendance %}
-          <div class="mb-3">
-            <span class="badge bg-success fs-6 px-3 py-2">
-              <i class="bi bi-check-circle me-1"></i>
-              Checked In: {{ today_attendance.check_in_time|time:"h:i A" }}
-            </span>
-          </div>
-          {% if today_attendance.check_out_time %}
-            <div class="mb-3">
-              <span class="badge bg-danger fs-6 px-3 py-2">
-                <i class="bi bi-x-circle me-1"></i>
-                Checked Out: {{ today_attendance.check_out_time|time:"h:i A" }}
-              </span>
-            </div>
-            {% if today_attendance.total_hours %}
-              <p class="text-muted">Total Hours Today: <strong>{{ today_attendance.total_hours }} hrs</strong></p>
-            {% endif %}
-            <p class="text-success fw-bold mt-2">Day Complete!</p>
-          {% else %}
-            <div class="alert mb-3 py-2 px-3" style="background:#FEF3C7;border:1px solid #FDE68A;border-radius:8px;font-size:0.8rem;color:#92400E;">
-              <i class="bi bi-exclamation-triangle-fill me-1"></i>
-              <strong>Remember to check out!</strong> If you forget, today will be marked <strong>Absent</strong>.
-            </div>
-            <a href="{% url 'check_out' %}" class="btn btn-checkout btn-lg px-4 px-sm-5 rounded-pill mt-1 w-100 w-sm-auto" style="max-width:280px;">
-              <i class="bi bi-box-arrow-right me-2"></i>Check Out
-            </a>
-          {% endif %}
-        {% else %}
-          <p class="text-muted mb-4">You haven't checked in yet today</p>
-          <a href="{% url 'check_in' %}" class="btn btn-checkin btn-lg px-4 px-sm-5 rounded-pill w-100 w-sm-auto" style="max-width:280px;">
+        {% if att_state == "not_checked_in" %}
+          <!-- ── Not checked in ── -->
+          <p class="text-muted mb-4" style="font-size:0.9rem;">You haven't checked in yet today</p>
+          <a href="{% url 'check_in' %}" class="btn btn-checkin btn-lg px-5 rounded-pill w-100" style="max-width:260px;">
             <i class="bi bi-box-arrow-in-right me-2"></i>Check In Now
           </a>
+
+        {% elif att_state == "working" %}
+          <!-- ── Working ── -->
+          <div class="mb-2">
+            <span class="badge bg-success px-3 py-2" style="font-size:0.85rem;">
+              <i class="bi bi-check-circle me-1"></i>Checked In: {{ today_attendance.check_in_time|time:"h:i A" }}
+            </span>
+          </div>
+          <div class="mb-1">
+            <span class="badge px-3 py-1 rounded-pill" style="background:#D1FAE5;color:#065F46;font-size:0.78rem;">
+              <i class="bi bi-activity me-1"></i>Working
+            </span>
+          </div>
+          <!-- Net Working Timer -->
+          <div class="my-3">
+            <div class="text-muted" style="font-size:0.72rem;text-transform:uppercase;letter-spacing:.5px;">Net Working Time</div>
+            <div id="workTimer" style="font-size:2rem;font-weight:700;color:#065F46;font-variant-numeric:tabular-nums;">00:00:00</div>
+          </div>
+          {% if today_breaks %}
+          <div class="mb-3 text-muted" style="font-size:0.78rem;">
+            <i class="bi bi-cup-hot me-1"></i>Total break so far: <strong>{{ today_attendance.break_minutes }} min</strong>
+          </div>
+          {% endif %}
+          <div class="d-flex gap-2 justify-content-center flex-wrap">
+            <form method="POST" action="{% url 'pause_attendance' %}">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-warning rounded-pill px-4">
+                <i class="bi bi-pause-circle me-1"></i>Pause Break
+              </button>
+            </form>
+            <a href="{% url 'check_out' %}" class="btn btn-checkout rounded-pill px-4">
+              <i class="bi bi-box-arrow-right me-1"></i>Check Out
+            </a>
+          </div>
+
+        {% elif att_state == "on_break" %}
+          <!-- ── On Break ── -->
+          <div class="mb-2">
+            <span class="badge bg-success px-3 py-2" style="font-size:0.85rem;">
+              <i class="bi bi-check-circle me-1"></i>Checked In: {{ today_attendance.check_in_time|time:"h:i A" }}
+            </span>
+          </div>
+          <div class="mb-1">
+            <span class="badge px-3 py-1 rounded-pill" style="background:#FEF3C7;color:#92400E;font-size:0.78rem;">
+              <i class="bi bi-cup-hot me-1"></i>On Break
+            </span>
+          </div>
+          <!-- Break Timer -->
+          <div class="my-3">
+            <div class="text-muted" style="font-size:0.72rem;text-transform:uppercase;letter-spacing:.5px;">Break Duration</div>
+            <div id="breakTimer" style="font-size:2rem;font-weight:700;color:#D97706;font-variant-numeric:tabular-nums;">00:00:00</div>
+          </div>
+          <div class="mb-3 text-muted" style="font-size:0.78rem;">
+            Break started at <strong>{{ active_break.pause_start|time:"h:i A" }}</strong>
+          </div>
+          <form method="POST" action="{% url 'resume_attendance' %}">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-success btn-lg rounded-pill px-5">
+              <i class="bi bi-play-circle me-1"></i>Resume Work
+            </button>
+          </form>
+
+        {% elif att_state == "checked_out" %}
+          <!-- ── Day complete ── -->
+          <div class="mb-2">
+            <span class="badge bg-success px-3 py-2" style="font-size:0.85rem;">
+              <i class="bi bi-check-circle me-1"></i>In: {{ today_attendance.check_in_time|time:"h:i A" }}
+            </span>
+          </div>
+          <div class="mb-2">
+            <span class="badge bg-danger px-3 py-2" style="font-size:0.85rem;">
+              <i class="bi bi-x-circle me-1"></i>Out: {{ today_attendance.check_out_time|time:"h:i A" }}
+            </span>
+          </div>
+          <div class="my-3 p-3 rounded-3" style="background:#F0FDF4;">
+            {% if today_attendance.net_hours %}
+              <div class="fw-bold" style="font-size:1.6rem;color:#065F46;">{{ today_attendance.net_hours }} hrs</div>
+              <div class="text-muted small">Net working hours</div>
+              {% if today_attendance.break_minutes %}
+                <div class="text-muted mt-1" style="font-size:0.78rem;">
+                  <i class="bi bi-cup-hot me-1"></i>Break: {{ today_attendance.break_minutes }} min
+                  · Gross: {{ today_attendance.total_hours }} hrs
+                </div>
+              {% endif %}
+            {% elif today_attendance.total_hours %}
+              <div class="fw-bold" style="font-size:1.6rem;color:#065F46;">{{ today_attendance.total_hours }} hrs</div>
+              <div class="text-muted small">Total working hours</div>
+            {% endif %}
+          </div>
+          <p class="text-success fw-bold">
+            <i class="bi bi-patch-check-fill me-1"></i>Day Complete!
+            <span class="badge ms-1" style="background:#d4edda;color:#155724;">{{ today_attendance.get_status_display }}</span>
+          </p>
         {% endif %}
+
+        <!-- Break History (shown when checked in) -->
+        {% if today_breaks and att_state != "not_checked_in" %}
+        <div class="mt-3 text-start p-3 rounded-3" style="background:#F8F9FA;font-size:0.8rem;">
+          <div class="fw-semibold mb-2 text-muted"><i class="bi bi-list-check me-1"></i>Break History</div>
+          {% for brk in today_breaks %}
+          <div class="d-flex justify-content-between py-1 border-bottom" style="border-color:#E5E7EB!important;">
+            <span class="text-muted">
+              {{ brk.pause_start|time:"h:i A" }}
+              {% if brk.pause_end %} → {{ brk.pause_end|time:"h:i A" }}{% else %} → now{% endif %}
+            </span>
+            <span class="fw-semibold">
+              {% if brk.pause_end %}{{ brk.duration_minutes }} min{% else %}<span class="text-warning">active</span>{% endif %}
+            </span>
+          </div>
+          {% endfor %}
+          {% if today_attendance.break_minutes %}
+          <div class="d-flex justify-content-between pt-2 fw-bold">
+            <span>Total Break</span>
+            <span>{{ today_attendance.break_minutes }} min</span>
+          </div>
+          {% endif %}
+        </div>
+        {% endif %}
+
       </div>
     </div>
   </div>
@@ -324,15 +416,37 @@
 </div>
 
 <script>
+function pad(n) { return String(n).padStart(2, '0'); }
+function fmtSecs(s) {
+  const h = Math.floor(s / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const sec = s % 60;
+  return pad(h) + ':' + pad(m) + ':' + pad(sec);
+}
+
 function updateClock() {
   const now = new Date();
-  const h = String(now.getHours()).padStart(2, '0');
-  const m = String(now.getMinutes()).padStart(2, '0');
-  const s = String(now.getSeconds()).padStart(2, '0');
-  document.getElementById('clock').textContent = h + ':' + m + ':' + s;
+  document.getElementById('clock').textContent =
+    pad(now.getHours()) + ':' + pad(now.getMinutes()) + ':' + pad(now.getSeconds());
 }
 updateClock();
 setInterval(updateClock, 1000);
+
+// Work timer
+var workEl = document.getElementById('workTimer');
+if (workEl) {
+  var workSecs = {{ checkin_elapsed_secs }};
+  workEl.textContent = fmtSecs(workSecs);
+  setInterval(function() { workSecs++; workEl.textContent = fmtSecs(workSecs); }, 1000);
+}
+
+// Break timer
+var breakEl = document.getElementById('breakTimer');
+if (breakEl) {
+  var breakSecs = {{ break_elapsed_secs }};
+  breakEl.textContent = fmtSecs(breakSecs);
+  setInterval(function() { breakSecs++; breakEl.textContent = fmtSecs(breakSecs); }, 1000);
+}
 </script>
 
 {% if show_doc_reminder %}
