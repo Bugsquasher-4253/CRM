@@ -14,6 +14,7 @@ urlpatterns = [
     path("checkout/", views.check_out, name="check_out"),
     path("my-attendance/", views.my_attendance, name="my_attendance"),
     path("profile/edit/", views.edit_profile, name="edit_profile"),
+    path("profile/change-password/", views.change_password, name="change_password"),
     # Leave requests (employee)
     path("leave/apply/", views.apply_leave, name="apply_leave"),
     path("leave/my-leaves/", views.my_leaves, name="my_leaves"),

@@ -2,7 +2,7 @@ import datetime
 import os
 
 from django.contrib import messages
-from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth import authenticate, login, logout, update_session_auth_hash
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.models import User
 from django.db import IntegrityError, transaction
@@ -596,6 +596,26 @@ def edit_profile(request):
                 employee.pan_card = None
                 employee.save()
 
+            # Handle optional inline password change
+            current_pwd = request.POST.get("current_password", "").strip()
+            new_pwd = request.POST.get("new_password", "").strip()
+            conf_pwd = request.POST.get("confirm_password", "").strip()
+            if current_pwd or new_pwd or conf_pwd:
+                if not user.check_password(current_pwd):
+                    messages.error(request, "Profile saved, but password not changed: current password is incorrect.")
+                elif len(new_pwd) < 8:
+                    messages.error(
+                        request, "Profile saved, but password not changed: new password must be at least 8 characters."
+                    )
+                elif new_pwd != conf_pwd:
+                    messages.error(request, "Profile saved, but password not changed: new passwords do not match.")
+                else:
+                    user.set_password(new_pwd)
+                    user.save()
+                    update_session_auth_hash(request, user)
+                    messages.success(request, "Profile and password updated successfully!")
+                    return redirect("edit_profile")
+
             messages.success(request, "Profile updated successfully!")
             return redirect("edit_profile")
     else:
@@ -616,6 +636,29 @@ def edit_profile(request):
             "employee": employee,
         },
     )
+
+
+@login_required
+def change_password(request):
+    if request.method != "POST":
+        return redirect("edit_profile")
+    current = request.POST.get("current_password", "")
+    new1 = request.POST.get("new_password", "")
+    new2 = request.POST.get("confirm_password", "")
+    if not request.user.check_password(current):
+        messages.error(request, "Current password is incorrect.")
+        return redirect("edit_profile")
+    if len(new1) < 8:
+        messages.error(request, "New password must be at least 8 characters.")
+        return redirect("edit_profile")
+    if new1 != new2:
+        messages.error(request, "New passwords do not match.")
+        return redirect("edit_profile")
+    request.user.set_password(new1)
+    request.user.save()
+    update_session_auth_hash(request, request.user)
+    messages.success(request, "Password changed successfully!")
+    return redirect("edit_profile")
 
 
 # ─── ADMIN DASHBOARD ─────────────────────────────────────────────────────────

@@ -85,6 +85,39 @@
               {{ form.phone }}
             </div>
           </div>
+
+          <hr class="my-4">
+
+          <!-- Change Password (inline) -->
+          <div class="d-flex align-items-center gap-2 mb-3">
+            <i class="bi bi-shield-lock text-warning fs-5"></i>
+            <span class="fw-semibold">Change Password</span>
+            <small class="text-muted">(leave blank to keep current)</small>
+          </div>
+          <div class="row g-3" id="pwdSection">
+            <div class="col-12">
+              <label class="form-label fw-semibold small">Current Password</label>
+              <div class="input-group">
+                <input type="password" name="current_password" id="cur_pwd" class="form-control" placeholder="Enter current password">
+                <button type="button" class="btn btn-outline-secondary" onclick="togglePwd('cur_pwd',this)"><i class="bi bi-eye"></i></button>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold small">New Password</label>
+              <div class="input-group">
+                <input type="password" name="new_password" id="new_pwd" class="form-control" placeholder="Min. 8 characters">
+                <button type="button" class="btn btn-outline-secondary" onclick="togglePwd('new_pwd',this)"><i class="bi bi-eye"></i></button>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-semibold small">Confirm New Password</label>
+              <div class="input-group">
+                <input type="password" name="confirm_password" id="conf_pwd" class="form-control" placeholder="Repeat new password">
+                <button type="button" class="btn btn-outline-secondary" onclick="togglePwd('conf_pwd',this)"><i class="bi bi-eye"></i></button>
+              </div>
+              <div id="pwdMatchMsg" class="mt-1" style="font-size:0.8rem;display:none;"></div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -187,7 +220,39 @@
         <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary px-4">Cancel</a>
       </div>
     </form>
+
   </div>
+
+<script>
+function togglePwd(id, btn) {
+  var inp = document.getElementById(id);
+  var icon = btn.querySelector('i');
+  if (inp.type === 'password') {
+    inp.type = 'text';
+    icon.className = 'bi bi-eye-slash';
+  } else {
+    inp.type = 'password';
+    icon.className = 'bi bi-eye';
+  }
+}
+(function() {
+  var n = document.getElementById('new_pwd');
+  var c = document.getElementById('conf_pwd');
+  var msg = document.getElementById('pwdMatchMsg');
+  function check() {
+    if (!c.value) { msg.style.display = 'none'; return; }
+    if (n.value === c.value) {
+      msg.style.display = '';
+      msg.innerHTML = '<span class="text-success"><i class="bi bi-check-circle me-1"></i>Passwords match</span>';
+    } else {
+      msg.style.display = '';
+      msg.innerHTML = '<span class="text-danger"><i class="bi bi-x-circle me-1"></i>Passwords do not match</span>';
+    }
+  }
+  n && n.addEventListener('input', check);
+  c && c.addEventListener('input', check);
+})();
+</script>
 
 </div>
 {% endblock %}
