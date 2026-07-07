@@ -72,6 +72,7 @@ urlpatterns = [
     path("reimbursements/create/", views.create_reimbursement, name="create_reimbursement"),
     # Reimbursements (admin)
     path("admin-panel/reimbursements/", views.admin_reimbursements, name="admin_reimbursements"),
+    path("admin-panel/reimbursements/bulk-action/", views.bulk_reimb_action, name="bulk_reimb_action"),
     path(
         "admin-panel/reimbursements/export/",
         views.export_reimbursements_excel,

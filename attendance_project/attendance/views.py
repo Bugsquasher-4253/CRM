@@ -1942,6 +1942,13 @@ def admin_tickets(request):
     if status_filter:
         tickets = tickets.filter(status=status_filter)
 
+    if request.method == "POST":
+        ids = request.POST.getlist("ticket_ids")
+        if ids:
+            deleted, _ = SupportTicket.objects.filter(id__in=ids).delete()
+            messages.success(request, f"{deleted} ticket(s) deleted.")
+        return redirect(f"{request.path}{'?status=' + status_filter if status_filter else ''}")
+
     return render(
         request,
         "attendance/admin_tickets.html",
@@ -2574,6 +2581,27 @@ def create_reimbursement(request):
         "attendance/create_reimbursement.html",
         {"form": form, "today": timezone.now().date()},
     )
+
+
+@login_required
+@user_passes_test(is_admin)
+def bulk_reimb_action(request):
+    if request.method != "POST":
+        return redirect("admin_reimbursements")
+    ids = request.POST.getlist("reimb_ids")
+    action = request.POST.get("action", "")
+    next_url = request.POST.get("next", "")
+    if ids and action in ("approved", "rejected"):
+        updated = Reimbursement.objects.filter(id__in=ids).update(
+            status=action,
+            reviewed_by=request.user,
+            reviewed_at=timezone.now(),
+        )
+        label = "approved" if action == "approved" else "rejected"
+        messages.success(request, f"{updated} reimbursement(s) {label}.")
+    if next_url and next_url.startswith("/"):
+        return redirect(next_url)
+    return redirect("admin_reimbursements")
 
 
 @login_required

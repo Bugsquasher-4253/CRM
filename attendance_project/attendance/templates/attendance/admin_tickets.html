@@ -19,73 +19,177 @@
   </div>
 </div>
 
-<!-- Ticket List -->
-<div class="d-flex flex-column gap-3">
-  {% for ticket in tickets %}
-  <div class="card">
-    <div class="card-body p-4">
-      <div class="d-flex justify-content-between align-items-start">
+<!-- Bulk Actions Toolbar -->
+{% if tickets %}
+<form method="POST" id="bulkDeleteForm" action="?{% if status_filter %}status={{ status_filter }}{% endif %}">
+  {% csrf_token %}
+  <div class="d-flex align-items-center justify-content-between mb-3 px-1 flex-wrap gap-2">
+    <div class="d-flex align-items-center gap-2">
+      <input type="checkbox" id="selectAll" class="form-check-input mt-0" style="cursor:pointer;width:18px;height:18px;">
+      <label for="selectAll" class="form-check-label text-muted small" style="cursor:pointer;">Select All</label>
+      <span id="selectedCount" class="text-muted small ms-2" style="display:none;"></span>
+    </div>
+    <button type="button" id="deleteSelectedBtn" class="btn btn-danger btn-sm" disabled
+            onclick="confirmDelete()">
+      <i class="bi bi-trash me-1"></i>Delete Selected
+    </button>
+  </div>
 
-        <div class="d-flex gap-3 flex-fill">
-          <div style="width:45px; height:45px; border-radius:50%; background:linear-gradient(135deg,#e94560,#0f3460); display:flex; align-items:center; justify-content:center; color:white; font-weight:700; flex-shrink:0;">
-            {{ ticket.employee.user.first_name|first|upper }}
+  <!-- Ticket List -->
+  <div class="d-flex flex-column gap-3">
+    {% for ticket in tickets %}
+    <div class="card ticket-card" style="transition:border 0.15s;">
+      <div class="card-body p-4">
+        <div class="d-flex justify-content-between align-items-start">
+
+          <!-- Checkbox -->
+          <div class="me-3 d-flex align-items-start pt-1">
+            <input type="checkbox" name="ticket_ids" value="{{ ticket.id }}"
+                   class="form-check-input ticket-cb mt-0" style="cursor:pointer;width:18px;height:18px;">
           </div>
-          <div class="flex-fill">
-            <div class="d-flex align-items-center gap-2 mb-1">
-              <span class="fw-bold">{{ ticket.employee.user.get_full_name }}</span>
-              <span class="text-muted small">{{ ticket.employee.employee_id }}</span>
-              <span class="text-muted small">·</span>
-              <span class="text-muted small">{{ ticket.employee.department }}</span>
+
+          <div class="d-flex gap-3 flex-fill">
+            <div style="width:45px; height:45px; border-radius:50%; background:linear-gradient(135deg,#e94560,#0f3460); display:flex; align-items:center; justify-content:center; color:white; font-weight:700; flex-shrink:0;">
+              {{ ticket.employee.user.first_name|first|upper }}
             </div>
-
-            <div class="d-flex align-items-center gap-2 mb-2">
-              <span class="text-muted small">#{{ ticket.id }}</span>
-              {% if ticket.priority == 'high' %}
-                <span class="badge bg-danger">🔴 High</span>
-              {% elif ticket.priority == 'medium' %}
-                <span class="badge bg-warning text-dark">🟡 Medium</span>
-              {% else %}
-                <span class="badge bg-success">🟢 Low</span>
-              {% endif %}
-              {% if ticket.status == 'open' %}
-                <span class="badge" style="background:#fff3cd; color:#856404;">Open</span>
-              {% elif ticket.status == 'in_progress' %}
-                <span class="badge bg-primary">In Progress</span>
-              {% elif ticket.status == 'resolved' %}
-                <span class="badge" style="background:#d4edda; color:#155724;">Resolved</span>
-              {% else %}
-                <span class="badge bg-secondary">Closed</span>
-              {% endif %}
-            </div>
-
-            <div class="fw-semibold mb-1">{{ ticket.subject }}</div>
-            <div class="text-muted" style="font-size:0.88rem;">{{ ticket.description|truncatechars:120 }}</div>
-
-            {% if ticket.admin_response %}
-              <div class="mt-2 text-muted small">
-                <strong>Your response:</strong> {{ ticket.admin_response|truncatechars:80 }}
+            <div class="flex-fill">
+              <div class="d-flex align-items-center gap-2 mb-1">
+                <span class="fw-bold">{{ ticket.employee.user.get_full_name }}</span>
+                <span class="text-muted small">{{ ticket.employee.employee_id }}</span>
+                <span class="text-muted small">·</span>
+                <span class="text-muted small">{{ ticket.employee.department }}</span>
               </div>
-            {% endif %}
+
+              <div class="d-flex align-items-center gap-2 mb-2">
+                <span class="text-muted small">#{{ ticket.id }}</span>
+                {% if ticket.priority == 'high' %}
+                  <span class="badge bg-danger">🔴 High</span>
+                {% elif ticket.priority == 'medium' %}
+                  <span class="badge bg-warning text-dark">🟡 Medium</span>
+                {% else %}
+                  <span class="badge bg-success">🟢 Low</span>
+                {% endif %}
+                {% if ticket.status == 'open' %}
+                  <span class="badge" style="background:#fff3cd; color:#856404;">Open</span>
+                {% elif ticket.status == 'in_progress' %}
+                  <span class="badge bg-primary">In Progress</span>
+                {% elif ticket.status == 'resolved' %}
+                  <span class="badge" style="background:#d4edda; color:#155724;">Resolved</span>
+                {% else %}
+                  <span class="badge bg-secondary">Closed</span>
+                {% endif %}
+              </div>
+
+              <div class="fw-semibold mb-1">{{ ticket.subject }}</div>
+              <div class="text-muted" style="font-size:0.88rem;">{{ ticket.description|truncatechars:120 }}</div>
+
+              {% if ticket.admin_response %}
+                <div class="mt-2 text-muted small">
+                  <strong>Your response:</strong> {{ ticket.admin_response|truncatechars:80 }}
+                </div>
+              {% endif %}
+            </div>
           </div>
-        </div>
 
-        <div class="ms-3 text-end" style="flex-shrink:0;">
-          <div class="text-muted small mb-2">{{ ticket.created_at|date:"d M Y" }}</div>
-          <a href="{% url 'admin_ticket_action' ticket.id %}" class="btn btn-sm btn-primary">
-            <i class="bi bi-reply me-1"></i>Respond
-          </a>
-        </div>
+          <div class="ms-3 text-end" style="flex-shrink:0;">
+            <div class="text-muted small mb-2">{{ ticket.created_at|date:"d M Y" }}</div>
+            <a href="{% url 'admin_ticket_action' ticket.id %}" class="btn btn-sm btn-primary">
+              <i class="bi bi-reply me-1"></i>Respond
+            </a>
+          </div>
 
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</form>
+
+{% else %}
+<div class="card">
+  <div class="card-body text-center py-5 text-muted">
+    <i class="bi bi-ticket-perforated display-6 d-block mb-3"></i>
+    No tickets found.
+  </div>
+</div>
+{% endif %}
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-sm">
+    <div class="modal-content" style="border:2px solid #DC2626;border-radius:12px;">
+      <div class="modal-header" style="background:#FEF2F2;border-bottom:1px solid #FECACA;">
+        <h6 class="modal-title fw-bold text-danger mb-0">
+          <i class="bi bi-trash me-2"></i>Delete Tickets?
+        </h6>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body text-center py-3">
+        <p class="mb-0 text-muted" style="font-size:0.9rem;">
+          Delete <strong id="deleteCountLabel"></strong> selected ticket(s)?<br>
+          This cannot be undone.
+        </p>
+      </div>
+      <div class="modal-footer border-0 pt-0 justify-content-center gap-2">
+        <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-danger btn-sm fw-semibold" id="confirmDeleteBtn">
+          <i class="bi bi-trash me-1"></i>Yes, Delete
+        </button>
       </div>
     </div>
   </div>
-  {% empty %}
-  <div class="card">
-    <div class="card-body text-center py-5 text-muted">
-      <i class="bi bi-ticket-perforated display-6 d-block mb-3"></i>
-      No tickets found.
-    </div>
-  </div>
-  {% endfor %}
 </div>
+
+<script>
+(function () {
+  var selectAll = document.getElementById('selectAll');
+  var deleteBtn = document.getElementById('deleteSelectedBtn');
+  var countLabel = document.getElementById('selectedCount');
+  var form = document.getElementById('bulkDeleteForm');
+
+  function updateUI() {
+    var checked = document.querySelectorAll('.ticket-cb:checked');
+    var total   = document.querySelectorAll('.ticket-cb');
+    var n = checked.length;
+    deleteBtn.disabled = n === 0;
+    if (n > 0) {
+      countLabel.textContent = n + ' selected';
+      countLabel.style.display = '';
+    } else {
+      countLabel.style.display = 'none';
+    }
+    selectAll.indeterminate = n > 0 && n < total.length;
+    selectAll.checked = n === total.length && total.length > 0;
+
+    document.querySelectorAll('.ticket-card').forEach(function(card, i) {
+      card.style.border = total[i] && total[i].checked ? '2px solid #DC2626' : '';
+    });
+  }
+
+  if (selectAll) {
+    selectAll.addEventListener('change', function () {
+      document.querySelectorAll('.ticket-cb').forEach(function (cb) {
+        cb.checked = selectAll.checked;
+      });
+      updateUI();
+    });
+  }
+
+  document.querySelectorAll('.ticket-cb').forEach(function (cb) {
+    cb.addEventListener('change', updateUI);
+  });
+
+  window.confirmDelete = function () {
+    var n = document.querySelectorAll('.ticket-cb:checked').length;
+    document.getElementById('deleteCountLabel').textContent = n;
+    var modal = new bootstrap.Modal(document.getElementById('deleteConfirmModal'));
+    modal.show();
+  };
+
+  document.getElementById('confirmDeleteBtn').addEventListener('click', function () {
+    if (form) form.submit();
+  });
+})();
+</script>
+
 {% endblock %}
